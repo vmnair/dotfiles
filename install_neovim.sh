@@ -16,3 +16,15 @@ cd neovim && make CMAKE_BUILD_TYPE=Release
 git checkout stable
 # Using this we can uninstall installed version of Neovim
 cd build && cpack -G DEB && sudo dpkg -i nvim-linux64.deb
+
+
+# Install ZSH
+apt-get install zsh
+
+# Change Shell
+chsh -s $(which zsh)
+
+# Install Oh-My-ZSH
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+Echo "Installation completed, logout & log back in"
+
