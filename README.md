@@ -9,6 +9,7 @@
     - [Official Debian Site for Installation of MacBook Pro](https://wiki.debian.org/MacBookPro)
 2. WiFi
     1. MacBook Pro:
+
         a. Use `lspci` on terminal to list the PCI devices
 
         b. Look for Network Controller: In my case (2015 MBP, A1398) the controller is  Broadcom Inc. and subsidiaries BCM4360 802.11ac Dual Band Wireless Network Adapter (rev 03). We need to install the firmware for this to work.
