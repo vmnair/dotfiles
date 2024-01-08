@@ -1,6 +1,7 @@
 # dotfiles
 ## Checklist For Installation:
 - [ ] Debian Installation
+    - [ ] Screen Resolution and Layout
 - [x] Wifi Card Setup 
 - [x] Neovim Installation & Setup
 - [ ] i3 Windows Manager Installation & Setup

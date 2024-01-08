@@ -103,6 +103,6 @@ alias v=nvim
 
 # Toggle NordVPN
 alias vpn_toggle="~/.config/nordvpn/nordvpn_toggle.sh"
-
+alias dot="vim ~/dotfiles/"
 # alias zshconfig="vim ~/.zshrc"
 # alias ohmyzsh="vim  ~/.oh-my-zsh"
