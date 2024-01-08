@@ -33,8 +33,9 @@
         - `cd ./facetimehd-firmware/`
         - `make`
         - `make install`
-4. [Neovim Installation and Setup](install_neovim.sh)
+4. Neovim Installation and Setup
    1. Debian has Neovim: sudo apt-get install neovim
-   2. Neovim can be build using these steps: [Neovim/BUILD.md](https://github.com/neovim/neovim/blob/master/BUILD.md)
-   3. Setting up Neovim
+   2. [Custom Installation Script](install_neovim.sh)
+   3. Neovim can be build using these steps: [Neovim/BUILD.md](https://github.com/neovim/neovim/blob/master/BUILD.md)
+   4. Setting up Neovim
         1. [typecraft](https://www.youtube.com/@typecraft_dev)
