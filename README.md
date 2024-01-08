@@ -10,10 +10,13 @@
 2. WiFi
     1. MacBook Pro:
         a. Use `lspci` on terminal to list the PCI devices
-        b. Look for Network Controller: In my case (2015 MBP, A1398) the controller is  Broadcom Inc. and subsidiaries BCM4360 802.11ac Dual Band Wireless Network Adapter (rev 03). We need to install the firmware for this to work. 
+
+        b. Look for Network Controller: In my case (2015 MBP, A1398) the controller is  Broadcom Inc. and subsidiaries BCM4360 802.11ac Dual Band Wireless Network Adapter (rev 03). We need to install the firmware for this to work.
+
         c. The interface name is `wlp3s0`
-        d. See Details of the driver installation: [WiFi Driver Installation](https://unix.stackexchange.com/questions/175810/how-to-install-broadcom-bcm4360-on-debian-on-macbook-pro).
-        e. wl driver needed for `bcm4360` [wl](https://wiki.debian.org/wl)
+
+       d. See Details of the driver installation: [WiFi Driver Installation](https://unix.stackexchange.com/questions/175810/how-to-install-broadcom-bcm4360-on-debian-on-macbook-pro).
+       e. wl driver needed for `bcm4360` [wl](https://wiki.debian.org/wl)
 
 3. iSight Camera Not working:
     - [iSight Driver Issue](https://forums.linuxmint.com/viewtopic.php?t=395286)
@@ -25,9 +28,9 @@
     6. `dkms install -m facetimehd -v 0.5.18`
     7. `sudo echo "facetimehd" >> /etc/modules`
     8. `git clone https://github.com/patjak/facetimehd-firmware.git`
-        `cd ./facetimehd-firmware/`
-        `make`
-        `make install`
+    `cd ./facetimehd-firmware/`
+    `make`
+    `make install`
 4. Neovim Installation and Setup
    1. Debian has Neovim: sudo apt-get install neovim
    2. Neovim can be build using these steps: [Neovim/BUILD.md](https://github.com/neovim/neovim/blob/master/BUILD.md)
