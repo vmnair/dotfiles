@@ -1,4 +1,9 @@
 # dotfiles
+## Checklist For Installation:
+- [ ] Debian Installation
+- [x] Wifi Card Setup 
+- [x] Neovim Installation & Setup
+- [ ] i3 Windows Manager Installation & Setup
 
 1. Debian installation.
 2. WiFi
@@ -21,7 +26,7 @@ See this link: [https://forums.linuxmint.com/viewtopic.php?t=395286](iSight Driv
         `cd ./facetimehd-firmware/`
         `make`
         `make install`
-4. Installing Neovim
+4. Neovim Installation and Setup
    1. Debian has Neovim: sudo apt-get install neovim
    2. Neovim can be build using these steps: [https://github.com/neovim/neovim/blob/master/BUILD.md](neovim/BUILD.md)
    3. Setting up Neovim
