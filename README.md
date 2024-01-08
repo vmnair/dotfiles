@@ -14,8 +14,9 @@
         c. The interface name is `wlp3s0`
         d. See Details of the driver installation: [WiFi Driver Installation](https://unix.stackexchange.com/questions/175810/how-to-install-broadcom-bcm4360-on-debian-on-macbook-pro).
         e. wl driver needed for `bcm4360` [wl](https://wiki.debian.org/wl)
+
 3. iSight Camera Not working:
-See this link: [iSight Driver Issue](https://forums.linuxmint.com/viewtopic.php?t=395286)
+    - [iSight Driver Issue](https://forums.linuxmint.com/viewtopic.php?t=395286)
     1.  `apt -y install dkms linux-headers-amd64 git kmod libssl-dev checkinstall`
     2. `wget https://github.com/patjak/facetimehd/archive/refs/tags/0.5.18.tar.gz`
     3. `tar xf 0.5.18.tar.gz -C /usr/src/`
