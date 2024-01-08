@@ -1,7 +1,14 @@
 # dotfiles
 
 1. Debian installation.
-2. iSight Camera Not working:
+2. WiFi
+    1. MacBook Pro:
+        a. Use `lspci` on terminal to list the PCI devices
+        b. Look for Network Controller: In our case it was Broadcom Inc. and subsidiaries BCM4360 802.11ac Dual Band Wireless Network Adapter (rev 03). We need to install the firmware for this to work. 
+        c. The interface name is `wlp3s0`
+        d. See Details of the driver installation: [https://unix.stackexchange.com/questions/175810/how-to-install-broadcom-bcm4360-on-debian-on-macbook-pro](WiFi Driver  Installation).
+        e. wl driver needed for `bcm4360` [https://wiki.debian.org/wl](wl)
+3. iSight Camera Not working:
 See this link: [https://forums.linuxmint.com/viewtopic.php?t=395286](iSight Driver issue)
     1.  apt -y install dkms linux-headers-amd64 git kmod libssl-dev checkinstall
     2. wget https://github.com/patjak/facetimehd/archive/refs/tags/0.5.18.tar.gz
