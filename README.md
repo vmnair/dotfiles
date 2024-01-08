@@ -6,7 +6,7 @@
 - [ ] i3 Windows Manager Installation & Setup
 
 1. Debian installation.
-    - [Official Debian Site for Installation of MacBook Pro] (https://wiki.debian.org/MacBookPro)
+    - [Official Debian Site for Installation of MacBook Pro](https://wiki.debian.org/MacBookPro)
 2. WiFi
     1. MacBook Pro:
         a. Use `lspci` on terminal to list the PCI devices
