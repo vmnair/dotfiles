@@ -21,3 +21,8 @@ See this link: [https://forums.linuxmint.com/viewtopic.php?t=395286](iSight Driv
         - cd ./facetimehd-firmware/
         - make
         - make install
+4. Installing Neovim
+   1. Debian has Neovim: sudo apt-get install neovim
+   2. Neovim can be build using these steps: [https://github.com/neovim/neovim/blob/master/BUILD.md](neovim/BUILD.md)
+   3. Setting up Neovim
+        1. [https://www.youtube.com/@typecraft_dev](typecraft)
