@@ -1,7 +1,7 @@
 # dotfiles
 ## Checklist For Installation:
 - [ ] Debian Installation
-- [x] Wifi Card Setup 
+- [x] Wifi Card Setup :tada:
 - [x] Neovim Installation & Setup
 - [ ] i3 Windows Manager Installation & Setup
 
