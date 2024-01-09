@@ -1,6 +1,7 @@
 # dotfiles
 ## Checklist For Installation:
 - [ ] Debian Installation
+    - [ ] Programs that need to be installed post-debian install.
     - [ ] Screen Resolution and Layout
 - [x] Wifi Card Setup 
 - [x] Neovim Installation & Setup
@@ -8,6 +9,8 @@
 
 1. Debian installation.
     - [Official Debian Site for Installation of MacBook Pro](https://wiki.debian.org/MacBookPro)
+    - Following programs need to be installed.
+        - XFCE
 2. WiFi
     1. MacBook Pro:
 
