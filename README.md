@@ -5,8 +5,10 @@
     - [ ] Screen Resolution and Layout
 - [x] Wifi Card Setup 
 - [x] Neovim Installation & Setup
+    - [ ] lazy.nvim
+    - [ ] lazy.git
 - [ ] i3 Windows Manager Installation & Setup
-
+- [ ] Suspend OS on lid closure functionality
 1. Debian installation.
     - [Official Debian Site for Installation of MacBook Pro](https://wiki.debian.org/MacBookPro)
     - Following programs need to be installed.
@@ -43,3 +45,9 @@
    3. Neovim can be build using these steps: [Neovim/BUILD.md](https://github.com/neovim/neovim/blob/master/BUILD.md)
    4. Setting up Neovim
         1. [typecraft](https://www.youtube.com/@typecraft_dev)
+        2. [lazy.nvim](https://github.com/folke/lazy.nvim)
+
+5. Suspend Laptop on Lid Closure
+    This can be achieved by updating `systemd login.conf` file entry
+    
+        - 
