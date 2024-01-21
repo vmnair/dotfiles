@@ -8,7 +8,7 @@
     - [ ] lazy.nvim
     - [ ] lazy.git
 - [ ] i3 Windows Manager Installation & Setup
-- [ ] Suspend OS on lid closure functionality
+- [ ] Rofi Menu Manger & PICOM Compositor Installation.
 1. Debian installation.
     - [Official Debian Site for Installation of MacBook Pro](https://wiki.debian.org/MacBookPro)
     - Following programs need to be installed.
@@ -17,8 +17,6 @@
     1. MacBook Pro:
 
         a. Use `lspci` on terminal to list the PCI devices
-
-        b. Look for Network Controller: In my case (2015 MBP, A1398) the controller is  Broadcom Inc. and subsidiaries BCM4360 802.11ac Dual Band Wireless Network Adapter (rev 03). We need to install the firmware for this to work.
 
         c. The interface name is `wlp3s0`
 
@@ -47,7 +45,13 @@
         1. [typecraft](https://www.youtube.com/@typecraft_dev)
         2. [lazy.nvim](https://github.com/folke/lazy.nvim)
 
-5. Suspend Laptop on Lid Closure
-    This can be achieved by updating `systemd login.conf` file entry
-    
-        - 
+5. [Rofi](https://gist.github.com/panicwithme/60d371ed85378154bf990fd1092a72c1) and 
+    1. Install rofi (sudo apt install rofi
+    2. Add the following line to the i3 config file. (~/.config/i3/config)
+       `bindsym $mod+x exec "rofi -show drun" 
+       - Reload i3 Config with "$Mod+Shift+r"
+    3. Rofi can be configured by editing ~.config/rofi/config.rasi file. 
+6. [Picom Compositor](https://github.com/yshui/picom)
+    1. [Youtube Video on installation](https://www.youtube.com/watch?v=t6Klg7CvUxA)
+
+         

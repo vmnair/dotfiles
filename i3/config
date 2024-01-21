@@ -227,10 +227,12 @@ bindsym $mod+t border normal
 # bindsym $mod+y border 1pixel 
 # bindsym $mod+u border none 
 
-
 # Custom keyboard shortcuts
 # Browser (Firefox)
 bindsym $mod+b exec --no-startup-id firefox
 # VMWare View:
 bindsym $mod+z exec --no-startup-id vmware-view
-
+# Show rofi
+bindsym $mod+x exec "rofi -show drun"
+# Start picom
+exec_always --no-startup-id picom -b
