@@ -10,7 +10,7 @@ return { "catppuccin/nvim",
     vim.cmd([[colorscheme catppuccin]])
   end,
   opts = {
-    flavor = "latte", -- latte, frappem macchiato, mocha
+    flavor = "macchiato", -- latte, frappem macchiato, mocha
   }
 
 }
