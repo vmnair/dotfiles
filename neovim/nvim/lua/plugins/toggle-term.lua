@@ -5,7 +5,7 @@ return {
 	config = function()
 		require("toggleterm").setup({
 			direction = "float",
-			open_mapping = "<C-t>",
+			open_mapping = "<leader>t",
 			auto_scroll = true,
 			float_opts = {
 				border = "single",
