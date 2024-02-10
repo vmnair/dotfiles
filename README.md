@@ -11,6 +11,7 @@
 - [ ] Rofi Menu Manger & PICOM Compositor Installation.
 1. Debian installation.
     - [Official Debian Site for Installation of MacBook Pro](https://wiki.debian.org/MacBookPro)
+    - See installation info [here](https://www.mail-archive.com/debian-user@lists.debian.org/msg773640.html).
     - Reboot the MacBook while holding the `Alt` button to reach the boot screen.
       
     The following programs need to be installed.
