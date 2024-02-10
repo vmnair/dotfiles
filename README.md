@@ -12,6 +12,7 @@
 1. Debian installation.
     - [Official Debian Site for Installation of MacBook Pro](https://wiki.debian.org/MacBookPro)
     - Reboot the MacBook while holding the `Alt` button to reach the boot screen.
+      
     The following programs need to be installed.
         - XFCE
 2. WiFi
