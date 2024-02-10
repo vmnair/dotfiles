@@ -1,7 +1,7 @@
 # dotfiles
 ## Checklist For Installation:
 - [ ] Debian Installation
-    - [ ] Programs that need to be installed post-debian install.
+    - [ ] Programs that need to be installed post-Debian install.
     - [ ] Screen Resolution and Layout
 - [x] Wifi Card Setup 
 - [x] Neovim Installation & Setup
@@ -11,14 +11,15 @@
 - [ ] Rofi Menu Manger & PICOM Compositor Installation.
 1. Debian installation.
     - [Official Debian Site for Installation of MacBook Pro](https://wiki.debian.org/MacBookPro)
-    - Following programs need to be installed.
+    - Reboot the MacBook while holding the `Alt` button to reach the boot screen.
+    The following programs need to be installed.
         - XFCE
 2. WiFi
     1. MacBook Pro:
 
-        a. Use `lspci` on terminal to list the PCI devices
+        a. Use `lspci` on the terminal to list the PCI devices
 
-        c. The interface name is `wlp3s0`
+        c. The interface name is `wlp3s0`.
 
        d. See Details of the driver installation: [WiFi Driver Installation](https://unix.stackexchange.com/questions/175810/how-to-install-broadcom-bcm4360-on-debian-on-macbook-pro).
        
