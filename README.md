@@ -7,6 +7,7 @@
 - [x] Neovim Installation & Setup
     - [ ] lazy.nvim
     - [ ] lazy.git
+- [x] [Installing getnf and fonts](https://linuxtldr.com/install-fonts-on-linux/)
 - [ ] i3 Windows Manager Installation & Setup
 - [ ] Rofi Menu Manger & PICOM Compositor Installation.
 1. Debian installation.
