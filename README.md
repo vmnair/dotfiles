@@ -3,7 +3,8 @@
 - [ ] Debian Installation
     - [ ] Programs that need to be installed post-Debian install.
     - [ ] Screen Resolution and Layout
-- [x] Wifi Card Setup 
+- [x] Wifi Card Setup
+- [x] Install and [setup Alacritty](https://www.behova.net/fonts-in-alacritty/)
 - [x] Neovim Installation & Setup
     - [ ] lazy.nvim
     - [ ] lazy.git
