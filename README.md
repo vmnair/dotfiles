@@ -19,9 +19,10 @@
     The following programs need to be installed:
    
         - XFCE
-        - fd
+        - Firefox
         - Alacritty
         - Rofi
+        - zshh
         - Neovim
    
 3. WiFi
