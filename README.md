@@ -16,9 +16,15 @@
     - See installation info [here](https://www.mail-archive.com/debian-user@lists.debian.org/msg773640.html).
     - Reboot the MacBook while holding the `Alt` button to reach the boot screen.
       
-    The following programs need to be installed.
+    The following programs need to be installed:
+   
         - XFCE
-2. WiFi
+        - fd
+        - Alacritty
+        - Rofi
+        - Neovim
+   
+3. WiFi
     1. MacBook Pro:
 
         a. Use `lspci` on the terminal to list the PCI devices
@@ -29,7 +35,7 @@
        
        e. wl driver needed for `bcm4360` [wl](https://wiki.debian.org/wl)
 
-3. iSight Camera Not working:
+4. iSight Camera Not working:
     - [iSight Driver Issue](https://forums.linuxmint.com/viewtopic.php?t=395286)
     1.  `apt -y install dkms linux-headers-amd64 git kmod libssl-dev checkinstall`
     2. `wget https://github.com/patjak/facetimehd/archive/refs/tags/0.5.18.tar.gz`
@@ -42,7 +48,7 @@
         - `cd ./facetimehd-firmware/`
         - `make`
         - `make install`
-4. Neovim Installation and Setup
+5. Neovim Installation and Setup
    1. Debian has Neovim: sudo apt-get install neovim
    2. [Custom Installation Script](neovim/install_neovim.sh)
    3. Neovim can be build using these steps: [Neovim/BUILD.md](https://github.com/neovim/neovim/blob/master/BUILD.md)
@@ -50,13 +56,13 @@
         1. [typecraft](https://www.youtube.com/@typecraft_dev)
         2. [lazy.nvim](https://github.com/folke/lazy.nvim)
 
-5. [Rofi](https://gist.github.com/panicwithme/60d371ed85378154bf990fd1092a72c1) and 
+6. [Rofi](https://gist.github.com/panicwithme/60d371ed85378154bf990fd1092a72c1) and 
     1. Install rofi (sudo apt install rofi
     2. Add the following line to the i3 config file. (~/.config/i3/config)
        `bindsym $mod+x exec "rofi -show drun" 
        - Reload i3 Config with "$Mod+Shift+r"
     3. Rofi can be configured by editing ~.config/rofi/config.rasi file. 
-6. [Picom Compositor](https://github.com/yshui/picom)
+7. [Picom Compositor](https://github.com/yshui/picom)
     1. [Youtube Video on installation](https://www.youtube.com/watch?v=t6Klg7CvUxA)
 
          
