@@ -21,6 +21,7 @@
         - XFCE
         - Firefox
         - Alacritty
+        - git
         - Rofi
         - zshh
         - Neovim
