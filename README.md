@@ -23,7 +23,7 @@
         - Alacritty
         - git
         - Rofi
-        - zshh
+        - zsh
         - Neovim
    
 3. WiFi
