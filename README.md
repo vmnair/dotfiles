@@ -26,6 +26,8 @@
         - zsh
         - Neovim
         - tree
+        - nitrogen
+        - picom
    
 3. WiFi
     1. MacBook Pro:
