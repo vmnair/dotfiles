@@ -25,6 +25,7 @@
         - Rofi
         - zsh
         - Neovim
+        - tree
    
 3. WiFi
     1. MacBook Pro:
