@@ -11,6 +11,7 @@
 - [x] [Installing getnf and fonts](https://linuxtldr.com/install-fonts-on-linux/)
 - [ ] i3 Windows Manager Installation & Setup
 - [ ] Rofi Menu Manger & PICOM Compositor Installation.
+- [ ] [Enabling click on tap]
 1. Debian installation.
     - [Official Debian Site for Installation of MacBook Pro](https://wiki.debian.org/MacBookPro)
     - See installation info [here](https://www.mail-archive.com/debian-user@lists.debian.org/msg773640.html).
