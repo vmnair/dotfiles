@@ -5,6 +5,7 @@
     - [ ] Screen Resolution and Layout
 - [x] Wifi Card Setup
 - [x] Install and [setup Alacritty](https://www.behova.net/fonts-in-alacritty/)
+- [x] Preferred: [Build Alacritty from source](https://github.com/alacritty/alacritty/blob/master/INSTALL.md))
 - [x] Neovim Installation & Setup
     - [ ] lazy.nvim
     - [ ] lazy.git
