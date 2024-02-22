@@ -71,8 +71,12 @@
     3. Rofi can be configured by editing ~.config/rofi/config.rasi file.
 
 7. [Picom Compositor](https://github.com/yshui/picom)
+
+8. Setting up PDF Viewing in Neovim
+    - [ ] Prerequisites: [Zathura](https://packages.debian.org/bookworm/zathura), [synctex enabling](https://www.ejmastnak.com/tutorials/vim-latex/pdf-reader/#ensure-zathura-synctex)
+    - [ ] Setting up Neovim for [Latex and PDF Preview](https://www.ejmastnak.com/tutorials/vim-latex/intro/)
     1. [Youtube Video on installation](https://www.youtube.com/watch?v=t6Klg7CvUxA)
   
-8. Enabling [Tap to Click Feature on Scrollpad](https://cravencode.com/post/essentials/enable-tap-to-click-in-i3wm/)
+10. Enabling [Tap to Click Feature on Scrollpad](https://cravencode.com/post/essentials/enable-tap-to-click-in-i3wm/)
 
          
