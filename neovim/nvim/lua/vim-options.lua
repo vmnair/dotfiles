@@ -14,8 +14,12 @@ vim.opt.wrap = false
 vim.opt.expandtab = true
 vim.opt.tabstop = 4
 
-vim.opt.clipboard = "unnamedplus" -- copy to system clipboard
-vim.opt.scrolloff = 999 -- places cursor in the middle of the screen
+-- Synchronizes the system clipboard with
+-- Neovim's clipboard.
+vim.opt.clipboard = "unnamedplus"
+
+-- Places cursor in the middle of the screen
+vim.opt.scrolloff = 999
 
 vim.opt.colorcolumn = "80"
 
