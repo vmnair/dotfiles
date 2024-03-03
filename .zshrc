@@ -107,3 +107,7 @@ alias dot="vim ~/dotfiles/"
 alias ohmyzsh="vim  ~/.oh-my-zsh"
 alias i3config="vim ~/.config/i3/config"
 alias vimrc="vim ~/dotfiles/neovim/nvim/init.lua"
+
+XDG_CONFIG_HOME="$HOME/.config"
+export XDG_CONFIG_HOME
+fpath+=${ZDOTDIR:-~}/.zsh_functions
