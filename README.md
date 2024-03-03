@@ -4,6 +4,7 @@
     - [ ] Programs that need to be installed post-Debian install.
     - [ ] Screen Resolution and Layout
 - [x] Wifi Card Setup
+- [x] Preferred: [Build Alacritty from source](https://github.com/alacritty/alacritty/blob/master/INSTALL.md)
 - [x] Install and [setup Alacritty](https://www.behova.net/fonts-in-alacritty/)
 - [x] Neovim Installation & Setup
     - [ ] lazy.nvim
@@ -71,8 +72,13 @@
     3. Rofi can be configured by editing ~.config/rofi/config.rasi file.
 
 7. [Picom Compositor](https://github.com/yshui/picom)
-    1. [Youtube Video on installation](https://www.youtube.com/watch?v=t6Klg7CvUxA)
+     1. [Youtube Video on installation](https://www.youtube.com/watch?v=t6Klg7CvUxA)
+
+9. Setting up PDF Viewing in Neovim
+    - [ ] Prerequisites: [Zathura](https://packages.debian.org/bookworm/zathura), [synctex enabling](https://www.ejmastnak.com/tutorials/vim-latex/pdf-reader/#ensure-zathura-synctex)
+    - [ ] Setting up Neovim for [Latex and PDF Preview](https://www.ejmastnak.com/tutorials/vim-latex/intro/)
+   
   
-8. Enabling [Tap to Click Feature on Scrollpad](https://cravencode.com/post/essentials/enable-tap-to-click-in-i3wm/)
+10. Enabling [Tap to Click Feature on Scrollpad](https://cravencode.com/post/essentials/enable-tap-to-click-in-i3wm/)
 
          
