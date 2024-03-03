@@ -26,6 +26,9 @@
         - Rofi
         - zsh
         - Neovim
+        - tree
+        - nitrogen
+        - picom
    
 3. WiFi
     1. MacBook Pro:
@@ -51,6 +54,7 @@
         - `cd ./facetimehd-firmware/`
         - `make`
         - `make install`
+        
 5. Neovim Installation and Setup
    1. Debian has Neovim: sudo apt-get install neovim
    2. [Custom Installation Script](neovim/install_neovim.sh)
@@ -64,8 +68,11 @@
     2. Add the following line to the i3 config file. (~/.config/i3/config)
        `bindsym $mod+x exec "rofi -show drun" 
        - Reload i3 Config with "$Mod+Shift+r"
-    3. Rofi can be configured by editing ~.config/rofi/config.rasi file. 
+    3. Rofi can be configured by editing ~.config/rofi/config.rasi file.
+
 7. [Picom Compositor](https://github.com/yshui/picom)
     1. [Youtube Video on installation](https://www.youtube.com/watch?v=t6Klg7CvUxA)
+  
+8. Enabling [Tap to Click Feature on Scrollpad](https://cravencode.com/post/essentials/enable-tap-to-click-in-i3wm/)
 
          
