@@ -75,10 +75,11 @@
      1. [Youtube Video on installation](https://www.youtube.com/watch?v=t6Klg7CvUxA)
 
 9. Setting up PDF Viewing in Neovim
+    - [ ] [Installing TexLive on Linux and Mac](https://www.tug.org/texlive/quickinstall.html)
     - [ ] Prerequisites: [Zathura](https://packages.debian.org/bookworm/zathura), [synctex enabling](https://www.ejmastnak.com/tutorials/vim-latex/pdf-reader/#ensure-zathura-synctex)
     - [ ] Setting up Neovim for [Latex and PDF Preview](https://www.ejmastnak.com/tutorials/vim-latex/intro/)
-   
-  
-10. Enabling [Tap to Click Feature on Scrollpad](https://cravencode.com/post/essentials/enable-tap-to-click-in-i3wm/)
+
+    
+11. Enabling [Tap to Click Feature on Scrollpad](https://cravencode.com/post/essentials/enable-tap-to-click-in-i3wm/)
 
          
