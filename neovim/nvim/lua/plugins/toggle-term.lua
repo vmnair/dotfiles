@@ -5,6 +5,7 @@ return {
 	config = function()
 		require("toggleterm").setup({
       open_mapping = "<leader>tt",
+      autochdir = true, -- Sync with Neovim directory
 		})
 	end,
 }
