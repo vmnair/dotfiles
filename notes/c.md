@@ -10,6 +10,13 @@ debugging.
 6. Assume program will fail and develop a strategy to detect and correct mistakes.
 7. No tools can replace a _clear mind_.
 
+### Utility Functions
+1. `diff` function
+- `diff` function determines if two files are different.
+- `w` argument ignores whitespace
+- `q` argument makes the program suppress display of the lines that are different.
 
-
+```c 
+    diff -q file1.c file2.c
+```
 
