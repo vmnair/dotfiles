@@ -17,7 +17,7 @@ vim.opt.shiftwidth = 4
 
 -- Synchronizes the system clipboard with
 -- Neovim's clipboard.
-vim.opt.clipboard = "unnamedplus"
+vim.opt.clipboard= "unnamedplus"
 
 -- Places cursor in the middle of the screen
 vim.opt.scrolloff = 999
