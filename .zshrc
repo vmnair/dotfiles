@@ -108,6 +108,7 @@ alias vpn_toggle="~/.config/nordvpn/nordvpn_toggle.sh"
 alias dot="cd ~/dotfiles/ && vim"
 alias ohmyzsh="cd ~/.oh-my-zsh && vim ."
 alias i3config="cd ~/.config/i3/ && vim config"
+alias zshrc="cd ~ && vim .zshrc"
 alias vimrc="cd ~/.config/nvim/ && vim"
 
 XDG_CONFIG_HOME="$HOME/.config"
