@@ -1,7 +1,5 @@
 -- vim-options.lua
 
-vim.g.mapleader = ','
-vim.g.localleader = ';'
 
 vim.opt.number = true
 vim.opt.relativenumber = true
