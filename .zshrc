@@ -114,3 +114,7 @@ alias vimrc="cd ~/.config/nvim/ && vim"
 XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CONFIG_HOME
 fpath+=${ZDOTDIR:-~}/.zsh_functions
+
+# Start Authentication agent for github.
+eval "$(ssh-agent)"
+

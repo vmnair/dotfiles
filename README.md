@@ -4,8 +4,10 @@
     - [ ] Programs that need to be installed post-Debian install.
     - [ ] Screen Resolution and Layout
 - [x] Wifi Card Setup
-- [x] Preferred: [Build Alacritty from source](https://github.com/alacritty/alacritty/blob/master/INSTALL.md)
-- [x] Install and [setup Alacritty](https://www.behova.net/fonts-in-alacritty/)
+- [x] Alacritty Inatallation:
+    - Preferred: [Build Alacritty from source](https://github.com/alacritty/alacritty/blob/master/INSTALL.md)
+    - Install and [setup Alacritty](https://www.behova.net/fonts-in-alacritty/)
+    - [Setting up fonts for terminal](https://www.guyrutenberg.com/2020/01/29/install-jetbrains-mono-in-debian-ubuntu/)
 - [x] Neovim Installation & Setup
     - [ ] lazy.nvim
     - [ ] lazy.git
