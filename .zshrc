@@ -115,12 +115,6 @@ XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CONFIG_HOME
 fpath+=${ZDOTDIR:-~}/.zsh_functions
 
-# Start Authentication agent for github.
-# add key to the agent.
-if [ -z "$SSH_AUTH_SOCK" ] ; then
-  eval `ssh-agent -s`
-  ssh-add
-fi
 
 
 
