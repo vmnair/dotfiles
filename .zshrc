@@ -103,10 +103,12 @@ alias v=nvim
 
 # Toggle NordVPN
 alias vpn_toggle="~/.config/nordvpn/nordvpn_toggle.sh"
-alias dot="vim ~/dotfiles/"
-alias ohmyzsh="vim  ~/.oh-my-zsh"
-alias i3config="vim ~/.config/i3/config"
-alias vimrc="vim ~/dotfiles/neovim/nvim/init.lua"
+
+# Aliases for commonly used files to be opened in vim 
+alias dot="cd ~/dotfiles/ && vim"
+alias ohmyzsh="cd ~/.oh-my-zsh && vim ."
+alias i3config="cd ~/.config/i3/ && vim config"
+alias vimrc="cd ~/.config/nvim/ && vim"
 
 XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CONFIG_HOME
