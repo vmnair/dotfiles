@@ -115,7 +115,8 @@ XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CONFIG_HOME
 fpath+=${ZDOTDIR:-~}/.zsh_functions
 
-
+# Export the path to cpptools extension OpenDebugAD7
+export PATH=/home/vinod/cpptools/extensions/debugAdapters/bin/OpenDebugAD7:$PATH
 
 
 

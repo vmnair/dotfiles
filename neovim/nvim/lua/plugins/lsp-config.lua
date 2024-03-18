@@ -7,7 +7,6 @@ return {
             require("mason").setup()
         end,
     },
-
     {
         "williamboman/mason-lspconfig.nvim",
         config = function()
@@ -19,6 +18,7 @@ return {
     {
         "neovim/nvim-lspconfig",
         config = function()
+            local map = vim.keymap.set
             local capabilities = require("cmp_nvim_lsp").default_capabilities()
             local lspconfig = require("lspconfig")
             lspconfig.lua_ls.setup({
@@ -28,11 +28,11 @@ return {
                 capabilities = capabilities
             })
 
-            vim.keymap.set("n", "K", vim.lsp.buf.hover, {})
-            vim.keymap.set("n", "gD", vim.lsp.buf.declaration, {})
-            vim.keymap.set("n", "gd", vim.lsp.buf.definition, {})
-            vim.keymap.set("n", "gr", vim.lsp.buf.references, {})
-            vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, {})
+            map("n", "K", vim.lsp.buf.hover, {})
+            map("n", "gD", vim.lsp.buf.declaration, {})
+            map("n", "gd", vim.lsp.buf.definition, {})
+            map("n", "gr", vim.lsp.buf.references, {})
+            map("n", "<leader>ca", vim.lsp.buf.code_action, {})
         end,
     },
 }

@@ -214,7 +214,7 @@ exec xinput set-prop "bcm5974" "libinput Tapping Enabled" 1
 
 # Customization
 # Assign Alacritty to the first workspace
-assign [class="Alacritty"] 1
+# assign [class="Alacritty"] 1
 # assign [class="Firefox"] 3
 assign [class="Vmware-view"] 5
 # Enable gaps

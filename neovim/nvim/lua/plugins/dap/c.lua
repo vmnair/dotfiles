@@ -1,41 +1,29 @@
 --c.lua
-local ok, dap = pcall(require, 'dap')
+local ok, dap = pcall(require, "dap")
 if not ok then
-    return
+	return
 end
 
-dap.adapters.cppdbg = {
+--enable logging for trouble shooting
+require("dap").set_log_level("TRACE")
+dap.adapters.lldb = {
+    name = "lldb",
     type = "executable",
-    command = "~/.vscode/extensions/ms-vscode.cpptools-1.19.7-linux-64/bin/cpptools",
-    args = {},
-    -- Enviornments that need to be passed to the adapters
-    env = {
-        ["LLDB_LAUNCH_FLAG_LAUNCH_IN_TTY"] = "YES",
-    }
+    command = '/usr/bin/lldb-vscode-14'
 }
 
-
-dap.configurations.cpp = {
-    {
-        name = "Launch",
-        type = "cppdbg",
-        request = "launch",
-        program = function()
-            return vim.fn.input("Path to executable: ", vim.fngetcwd() .. "/", "file")
-        end,
-        cwd = "${workspaceFolder",
-        stopOnEntry = true,
-        setupCommands = {
-            {
-                text = "-enable-pretty-printing",
-                description = "enable pretty printing",
-                ignoreFailures = false
-            },
-        },
-        -- Specify more settings here.
-
-    },
+dap.configurations.c = {
+	{
+		name = "Launch",
+		type = "lldb",
+		request = "launch",
+		program = function()
+			return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+		end,
+		cwd = "${workspaceFolder}",
+		stopOnEntry = false,
+        args = {},
+	},
 }
-
 -- Use same confuratons for C and C++
-dap.configurations.c = dap.configurations.cpp
+dap.configurations.cpp = dap.configurations.c
