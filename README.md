@@ -3,16 +3,30 @@
 - [ ] Debian Installation
     - [ ] Programs that need to be installed post-Debian install.
     - [ ] Screen Resolution and Layout
+- [ ] [Enabling click on tap]
 - [x] Wifi Card Setup
-- [x] Preferred: [Build Alacritty from source](https://github.com/alacritty/alacritty/blob/master/INSTALL.md)
-- [x] Install and [setup Alacritty](https://www.behova.net/fonts-in-alacritty/)
+- [x] Alacritty Inatallation:
+    - Preferred: [Build Alacritty from source](https://github.com/alacritty/alacritty/blob/master/INSTALL.md)
+    - Install and [setup Alacritty](https://www.behova.net/fonts-in-alacritty/)
 - [x] Neovim Installation & Setup
     - [ ] lazy.nvim
     - [ ] lazy.git
-- [x] [Installing getnf and fonts](https://linuxtldr.com/install-fonts-on-linux/)
+- [x] fonts
+    - [Installing getnf and fonts](https://linuxtldr.com/install-fonts-on-linux/)
+    - [Setting up fonts for terminal](https://www.guyrutenberg.com/2020/01/29/install-jetbrains-mono-in-debian-ubuntu/)
 - [ ] i3 Windows Manager Installation & Setup
 - [ ] Rofi Menu Manger & PICOM Compositor Installation.
-- [ ] [Enabling click on tap]
+- [x] Apple device related issues
+    - [Function Keys on the keyboard not working](https://askubuntu.com/questions/1230890/i-set-sys-module-hid-apple-parameters-fnmode-to-2-and-it-gets-overwritten-to-1)
+      The steps below configure an Apple keyboard connected to a Linux system 
+      to treat the F1-F12 keys as standard function keys by default, instead 
+      of special function keys (like adjusting brightness or volume), and 
+      require a system reboot to apply the changes.
+      1. Edit /etc/modprobe.d/hid_apple.conf (create this file if needed)
+      2. Add `options hid_apple fnmode = 2`
+      3. run `sudo update-initamfs -u`
+      4. reboot the system
+
 1. Debian installation.
     - [Official Debian Site for Installation of MacBook Pro](https://wiki.debian.org/MacBookPro)
     - See installation info [here](https://www.mail-archive.com/debian-user@lists.debian.org/msg773640.html).
@@ -63,6 +77,9 @@
    4. Setting up Neovim
         1. [typecraft](https://www.youtube.com/@typecraft_dev)
         2. [lazy.nvim](https://github.com/folke/lazy.nvim)
+        3. Formatting with prettier.
+            - Install `npm`
+            - Select `prettier` from formatter section in Mason.
 
 6. [Rofi](https://gist.github.com/panicwithme/60d371ed85378154bf990fd1092a72c1) and 
     1. Install rofi (sudo apt install rofi
