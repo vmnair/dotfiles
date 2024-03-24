@@ -4,8 +4,13 @@ local M = {
 	dependencies = {
 		"theHamsta/nvim-dap-virtual-text",
 		"rcarriga/nvim-dap-ui",
+<<<<<<< HEAD
 		"nvim-neotest/nvim-nio",
 		--"mortepau/codicons.nvim",
+=======
+		-- "mortepau/codicons.nvim",
+		"nvim-neotest/nvim-nio",  -- asyncio in lua
+>>>>>>> af82d735e4403466dcc1a7e748cdc0930a58b98d
 	},
 
 	-- ft = { 'c', 'go', 'lua', 'python' },
