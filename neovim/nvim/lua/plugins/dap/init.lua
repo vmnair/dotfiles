@@ -4,7 +4,8 @@ local M = {
 	dependencies = {
 		"theHamsta/nvim-dap-virtual-text",
 		"rcarriga/nvim-dap-ui",
-		"mortepau/codicons.nvim",
+		"nvim-neotest/nvim-nio",
+		--"mortepau/codicons.nvim",
 	},
 
 	-- ft = { 'c', 'go', 'lua', 'python' },
@@ -19,9 +20,9 @@ M.config = function()
 
 	require("dapui").setup()
 	require("nvim-dap-virtual-text").setup({
-		-- Use eol instead of inline
-		virt_text_pos = "eol",
+		virt_text_pos = "eol", -- eol or inline
 	})
+	--require("neodev").setup()
 
 	keymap("n", "<F5>", function()
 		dap.continue()
@@ -42,7 +43,10 @@ M.config = function()
 		dap.toggle_breakpoint()
 	end)
 	keymap("n", "<Leader>dB", function()
-		dap.set_breakpoint()
+		dap.list_breakpoints()
+	end)
+	keymap("n", "<Leader>dc", function()
+		dap.clear_breakpoints()
 	end)
 	-- Log Logpoint
 	keymap("n", "<Leader>dl", function()
@@ -68,9 +72,9 @@ M.config = function()
 	end)
 
 	-- dapui configuration
-	dap.listeners.before.attach.dapui_config = function()
-		dapui.open()
-	end
+	 dap.listeners.before.attach.dapui_config = function()
+	 	dapui.open()
+	 end
 	dap.listeners.before.launch.dapui_config = function()
 		dapui.open()
 	end

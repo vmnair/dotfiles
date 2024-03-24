@@ -1,9 +1,9 @@
 # dotfiles
 ## Checklist For Installation:
 - [ ] Debian Installation
-    - [ ] Programs that need to be installed post-Debian install.
+    - [x] Programs that need to be installed post-Debian install.
     - [ ] Screen Resolution and Layout
-- [ ] [Enabling click on tap]
+
 - [x] Wifi Card Setup
 - [x] Alacritty Inatallation:
     - Preferred: [Build Alacritty from source](https://github.com/alacritty/alacritty/blob/master/INSTALL.md)
@@ -26,6 +26,8 @@
       2. Add `options hid_apple fnmode = 2`
       3. run `sudo update-initamfs -u`
       4. reboot the system
+
+- [x] [Enabling click on tap]
 
 1. Debian installation.
     - [Official Debian Site for Installation of MacBook Pro](https://wiki.debian.org/MacBookPro)
@@ -82,7 +84,7 @@
             - Select `prettier` from formatter section in Mason.
 
 6. [Rofi](https://gist.github.com/panicwithme/60d371ed85378154bf990fd1092a72c1) and 
-    1. Install rofi (sudo apt install rofi
+    1. Install rofi (sudo apt install rofi)
     2. Add the following line to the i3 config file. (~/.config/i3/config)
        `bindsym $mod+x exec "rofi -show drun" 
        - Reload i3 Config with "$Mod+Shift+r"
