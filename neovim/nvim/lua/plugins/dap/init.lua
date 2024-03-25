@@ -4,13 +4,8 @@ local M = {
 	dependencies = {
 		"theHamsta/nvim-dap-virtual-text",
 		"rcarriga/nvim-dap-ui",
-<<<<<<< HEAD
 		"nvim-neotest/nvim-nio",
 		--"mortepau/codicons.nvim",
-=======
-		-- "mortepau/codicons.nvim",
-		"nvim-neotest/nvim-nio",  -- asyncio in lua
->>>>>>> af82d735e4403466dcc1a7e748cdc0930a58b98d
 	},
 
 	-- ft = { 'c', 'go', 'lua', 'python' },
@@ -27,7 +22,6 @@ M.config = function()
 	require("nvim-dap-virtual-text").setup({
 		virt_text_pos = "eol", -- eol or inline
 	})
-	--require("neodev").setup()
 
 	keymap("n", "<F5>", function()
 		dap.continue()
@@ -77,7 +71,7 @@ M.config = function()
 	end)
 
 	-- dapui configuration
-	 dap.listeners.before.attach.dapui_config = function()
+	dap.listeners.before.attach.dapui_config = function()
 	 	dapui.open()
 	 end
 	dap.listeners.before.launch.dapui_config = function()
@@ -112,7 +106,7 @@ M.config = function()
 	-- if vim.fn.executable('dlv') == 1 then
 	--     require('plugins.dap.go')
 	-- end
-	if vim.fn.executable("gdb") == 1 then
+	if (vim.fn.executable("gdb") == 1) or (vim.fn.executable("lldb-vscode")) then
 		require("plugins.dap.c")
 	end
 	-- require('plugins.dap.lua')
