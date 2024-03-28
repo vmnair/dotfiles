@@ -1,30 +1,38 @@
 --c.lua
 local ok, dap = pcall(require, "dap")
 if not ok then
-    print("Error with setting up dap")
+	print("Error with setting up dap")
 	return
 end
 
+-- Function to check operating system
+function GetOS()
+	if os.getenv("OS") ~= nil and os.getenv("OS"):match("Windows") then
+		return "Windows"
+	elseif os.getenv("HOME") ~= nil then
+		if os.getenv("XDG_CURRENT_DESKTOP") ~= nil then
+			return "Linux"
+		else
+			return "macOS"
+		end
+	else
+		return "Unknown"
+	end
+end
 
---enable logging for trouble shooting
-require("dap").set_log_level("TRACE")
+local os = GetOS()
+local path_to_vscode
+if os == "macOS" then
+	path_to_vscode = "/opt/homebrew/opt/llvm/bin/lldb-vscode"
+elseif os == "Linux" then
+    path_to_vscode = "/usr/bin/lldb"
+end
+
 dap.adapters.lldb = {
 	name = "lldb",
 	type = "executable",
-    command = "/opt/homebrew/opt/llvm/bin/lldb-vscode"
+	command = path_to_vscode,
 
-	--command = function()
-	--	local handle = io.popen("uname -s")
-	--	local result = handle:read("*a")
-
-	--	if result == "Linux" then
-	--		return "/usr/bin/lldb"
-	--	elseif result == "Darwin" then
-	--		return "/opt/homebrew/opt/llvm/bin/lldb-vscode"
-	--	else
-	--		return "Unsupported operating system"
-	--	end
-	--end,
 }
 
 dap.configurations.c = {

@@ -72,8 +72,8 @@ M.config = function()
 
 	-- dapui configuration
 	dap.listeners.before.attach.dapui_config = function()
-	 	dapui.open()
-	 end
+		dapui.open()
+	end
 	dap.listeners.before.launch.dapui_config = function()
 		dapui.open()
 	end
@@ -106,9 +106,14 @@ M.config = function()
 	-- if vim.fn.executable('dlv') == 1 then
 	--     require('plugins.dap.go')
 	-- end
-	if (vim.fn.executable("gdb") == 1) or (vim.fn.executable("lldb-vscode")) then
-		require("plugins.dap.c")
-	end
+
+    -- TODO: Need to conditionally load dap.c
+    require("plugins.dap.c")
+
+	-- if (vim.fn.executable("gdb") == 1) or (vim.fn.executable("lldb-vscode")) then
+	-- 	print("Loading dap..")
+	-- 	require("plugins.dap.c")
+	-- end
 	-- require('plugins.dap.lua')
 	-- require('plugins.dap.python')
 
