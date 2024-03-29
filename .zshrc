@@ -112,15 +112,13 @@ alias zshrc="cd ~ && vim .zshrc"
 alias vimrc="cd ~/.config/nvim/ && vim"
 alias gdb="gdb --silent"
 alias lg="lazygit"
+alias f="fzf"
 
 XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CONFIG_HOME
 fpath+=${ZDOTDIR:-~}/.zsh_functions
 
 # Export the path to cpptools extension OpenDebugAD7
-export PATH=/home/vinod/cpptools/extensions/debugAdapters/bin/OpenDebugAD7:$PATH
-
-
-
-
+# export PATH=/home/vinod/cpptools/extensions/debugAdapters/bin/OpenDebugAD7:$PATH
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 

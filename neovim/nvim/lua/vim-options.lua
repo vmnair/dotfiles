@@ -21,7 +21,9 @@ vim.opt.clipboard= "unnamedplus"
 vim.opt.scrolloff = 999
 
 vim.opt.colorcolumn = "80"
+vim.opt.signcolumn = 'yes'
 
+vim.opt.showmatch = true
 -- Ability to select cells where there are no
 -- characters, we will set it to only in 
 -- block mode.
@@ -34,3 +36,4 @@ vim.opt.inccommand = "split"
 vim.opt.ignorecase = true
 
 vim.opt.termguicolors = true
+vim.opt.encoding = "utf-8"
