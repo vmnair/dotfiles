@@ -5,33 +5,15 @@ if not ok then
 	return
 end
 
--- Function to check operating system
- function GetOS()
- 	if os.getenv("OS") ~= nil and os.getenv("OS"):match("Windows") then
- 		return "Windows"
- 	elseif os.getenv("HOME") ~= nil then
- 		if os.getenv("XDG_CURRENT_DESKTOP") ~= nil then
- 			return "Linux"
- 		else
- 			return "macOS"
- 		end
- 	else
-         error("Unknown operating system", 1)
- 		return "Unknown"
- 	end
- end
-
-
- local system = GetOS()
- print("OS = " .. system)
-
+-- Setup LLDB Executable based on Operating system
+local system =  require("util").GetOS()
  local path_to_lldb
  if system == "macOS" then
  	path_to_lldb = "/opt/homebrew/opt/llvm/bin/lldb-vscode"
  elseif system  == "Linux" then
      path_to_lldb = "lldb-vscode-14" --lldb-vscode-14
  else
-     error("Unknown operating system: " .. system)
+    vim.notify("OS Unknown: Cannot setup debugger!", vim.log.levels.WARN)
  end
 
 dap.adapters.lldb = {
@@ -42,7 +24,6 @@ dap.adapters.lldb = {
 }
 
 dap.configurations.c = {
-
 	{
 		name = "LLDB: Debug with arguments",
 		type = "lldb",

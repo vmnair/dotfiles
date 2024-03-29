@@ -111,6 +111,7 @@ alias i3config="cd ~/.config/i3/ && vim config"
 alias zshrc="cd ~ && vim .zshrc"
 alias vimrc="cd ~/.config/nvim/ && vim"
 alias gdb="gdb --silent"
+alias lg="lazygit"
 
 XDG_CONFIG_HOME="$HOME/.config"
 export XDG_CONFIG_HOME
