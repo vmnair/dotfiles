@@ -28,7 +28,8 @@ dap.configurations.c = {
 		type = "lldb",
 		request = "launch",
 		program = function()
-			return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+			return vim.fn.input("Path to executable: ",
+                vim.fn.getcwd() .. "/build/app", "file")
 		end,
 		cwd = "${workspaceFolder}",
 		stopOnEntry = false,
@@ -46,7 +47,8 @@ dap.configurations.c = {
 		type = "lldb",
 		request = "launch",
 		program = function()
-			return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+			return vim.fn.input("Path to executable: ",
+                vim.fn.getcwd() .. "/build/app", "file")
 		end,
 		cwd = "${workspaceFolder}",
 		stopOnEntry = false,
