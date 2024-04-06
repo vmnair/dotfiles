@@ -52,6 +52,7 @@ return {
 
 		})
 
+        -- Keymap to open Neo-tree
 		vim.keymap.set("n", "<leader>n", ":Neotree toggle<CR>", {})
 		-- Icons for diagnostic errors, you'll need to define them somewhere:
 		vim.fn.sign_define("DiagnosticSignError", { text = " ", texthl = "DiagnosticSignError" })
