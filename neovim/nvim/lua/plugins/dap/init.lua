@@ -22,11 +22,7 @@ M.config = function()
 
 	require("dapui").setup()
 	require("nvim-dap-virtual-text").setup({
-<<<<<<< HEAD
 		virt_text_pos = vim.fn.has 'nvim-0.10' == 1 and 'inline' or 'eol',
-=======
-		virt_text_pos = vim.fn.has 'nvim-0.10' == 1 and 'inline' or 'eol'
->>>>>>> a1ba6dd2ff1a9ae9a605358f4577d5401f72fc0a
 	})
 
 	keymap("n", "<F5>", function()
