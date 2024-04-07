@@ -9,9 +9,7 @@ return {
 			autochdir = true, -- Sync with Neovim directory
 		})
 
-
-
-		-- function to set keymaps
+		-- Set keymaps function
 		function _G.set_terminal_keymaps()
 			local opts = { noremap = true, silent = true }
 			local map = vim.api.nvim_buf_set_keymap
