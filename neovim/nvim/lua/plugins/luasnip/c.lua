@@ -10,6 +10,7 @@ local c = ls.choice_node
 
 -- C Snippets
 ls.add_snippets("c", {
+    -- Function template
 	s(
 		"fn",
 		fmt([[
@@ -23,5 +24,17 @@ ls.add_snippets("c", {
         params = i(3, "parameters"),
         returnValue = i(4, "0"),
         body = i(5, "function_body")
+	})),
+
+    -- Main function
+    s(
+		"main",
+		fmt([[
+    int main (int argc, char *argv[]) {{
+        {body}
+        return 0;
+   }}
+   ]], {
+        body = i(0, "function_body")
 	})),
 })
