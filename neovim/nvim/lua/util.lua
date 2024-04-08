@@ -33,10 +33,5 @@ vim.api.nvim_create_user_command("OpenZathura", function(input)
     open_zathura(input.args)
 end, {nargs = 1, desc = "Open Zathura"})
 
--- CMake Setup
-local function cmake_build()
--- define project & build directory
---
-end
 
 return util
