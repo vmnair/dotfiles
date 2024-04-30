@@ -6,6 +6,7 @@ local M = {
 		"theHamsta/nvim-dap-virtual-text",
 		"rcarriga/nvim-dap-ui",
 		"nvim-neotest/nvim-nio",
+        "wojciech-kulik/xcodebuild.nvim"
 		--"mortepau/codicons.nvim",
 	},
 

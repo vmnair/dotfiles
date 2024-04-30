@@ -9,7 +9,11 @@ end
 local system = require("util").GetOS()
 local path_to_lldb
 if system == "macOS" then
-	path_to_lldb = "/opt/homebrew/opt/llvm/bin/lldb-vscode"
+    -- path_to_lldb = "/opt/homebrew/opt/llvm/bin/lldb"
+    -- path_to_lldb = "lldb"
+    local xcodebuild = require("xcodebuild.integrations.dap")
+    path_to_lldb =  os.getenv("HOME") .. "/Documents/codelldb-aarch64-darwin/extension/lldb/bin/lldb"
+    xcodebuild.setup(path_to_lldb)
 elseif system == "Linux" then
 	path_to_lldb = "lldb-vscode-14" --lldb-vscode-14
 else
