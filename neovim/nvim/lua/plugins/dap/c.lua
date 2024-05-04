@@ -9,11 +9,9 @@ end
 local system = require("util").GetOS()
 local path_to_lldb
 if system == "macOS" then
-    -- path_to_lldb = "/opt/homebrew/opt/llvm/bin/lldb"
-    -- path_to_lldb = "lldb"
-    local xcodebuild = require("xcodebuild.integrations.dap")
-    path_to_lldb =  os.getenv("HOME") .. "/Documents/codelldb-aarch64-darwin/extension/lldb/bin/lldb"
-    xcodebuild.setup(path_to_lldb)
+	-- install lldb using home brew
+	-- try which lldb-dap in a terminal
+	path_to_lldb = "/opt/homebrew/opt/llvm/bin/lldb-dap"
 elseif system == "Linux" then
 	path_to_lldb = "lldb-vscode-14" --lldb-vscode-14
 else
@@ -32,8 +30,7 @@ dap.configurations.c = {
 		type = "lldb",
 		request = "launch",
 		program = function()
-			return vim.fn.input("Path to executable: ",
-                vim.fn.getcwd() .. "/build/app", "file")
+			return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/build/app", "file")
 		end,
 		cwd = "${workspaceFolder}",
 		stopOnEntry = false,
@@ -51,8 +48,7 @@ dap.configurations.c = {
 		type = "lldb",
 		request = "launch",
 		program = function()
-			return vim.fn.input("Path to executable: ",
-                vim.fn.getcwd() .. "/build/app", "file")
+			return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/build/app", "file")
 		end,
 		cwd = "${workspaceFolder}",
 		stopOnEntry = false,
