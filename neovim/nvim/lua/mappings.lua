@@ -50,6 +50,8 @@ map('n', '<S-Tab>', '<Cmd>bprevious<CR>', cmd_options)
 map('n', '<leader>bq', '<Cmd>bd<CR>', cmd_options)
 
 
+-- See all TODO's in a quicklist
+map('n', '<leader>st', ':grep -l TODO **/*<CR>:copen<CR>', cmd_options)
 
 
 

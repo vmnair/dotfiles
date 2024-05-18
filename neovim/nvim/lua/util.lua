@@ -77,7 +77,10 @@ local function compile_c_program_with_cmake()
         os.execute("mkdir build")
     end
     -- Change to the build directory and run CMake commands, silencing output
-    os.execute("cd build && cmake .. > /dev/null 2>&1 && cmake --build . > /dev/null 2>&1")
+    -- os.execute("cd build && cmake .. > /dev/null 2>&1 && cmake --build . > /dev/null 2>&1")
+    -- TODO: Check if this works as commented
+    -- This will supress the build messages, but will show errors
+    os.execute("cd build && cmake .. > /dev/null && cmake --build . 2>&1 >/dev/null")
     -- print("Compiled program: " .. match)
 
     return match

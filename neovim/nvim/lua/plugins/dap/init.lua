@@ -3,40 +3,47 @@
 local M = {
 	"mfussenegger/nvim-dap",
 	dependencies = {
+        "jay-babu/mason-nvim-dap.nvim",
+        "rcarriga/nvim-dap-ui",
 		"theHamsta/nvim-dap-virtual-text",
-		"rcarriga/nvim-dap-ui",
 		"nvim-neotest/nvim-nio",
-		"wojciech-kulik/xcodebuild.nvim",
+		"leoluz/nvim-dap-go",
+		"nvim-telescope/telescope-dap.nvim",
+		-- "wojciech-kulik/xcodebuild.nvim",
 		--"mortepau/codicons.nvim",
 	},
 
 	-- ft = { 'c', 'go', 'lua', 'python' },
-	ft = { "c", "lua" },
+	ft = { "c", "lua", "go" },
 	version = "*",
 }
 
 M.config = function()
-	local dap = require("dap")
-	local dapui = require("dapui")
-	--local telescope_dap = require("telescope").load_extension("dap")
 	local keymap = vim.keymap.set
+    local sign = vim.fn.sign_define
 
+    local dap = require("dap")
+	dap.set_log_level("DEBUG")
+
+   local dapui = require("dapui")
+
+    --TODO: research 
+	--local telescope_dap = require("telescope").load_extension("dap")
+
+    --TODO: Check about installing C debuggers here
+	require("mason-nvim-dap").setup({
+		ensure_installed = { "delve" },
+	})
 	require("dapui").setup()
 	require("nvim-dap-virtual-text").setup({
 		virt_text_pos = vim.fn.has("nvim-0.10") == 1 and "inline" or "eol",
 	})
 
-	local sign = vim.fn.sign_define
 
-	sign("DapBreakpoint",
-    { text = "●", texthl = "DapBreakpoint", linehl = "", numhl = "" })
-	sign("DapBreakpointCondition",
-    { text = "●", texthl = "DapBreakpointCondition", linehl = "", numhl = "" })
-	sign("DapLogPoint",
-    { text = "◆", texthl = "DapLogPoint", linehl = "", numhl = "" })
-	sign("DapStopped",
-    { text = "", texthl = "DapStopped", linehl = "DapStopped", numhl = "DapStopped" })
-
+	sign("DapBreakpoint", { text = "●", texthl = "DapBreakpoint", linehl = "", numhl = "" })
+	sign("DapBreakpointCondition", { text = "●", texthl = "DapBreakpointCondition", linehl = "", numhl = "" })
+	sign("DapLogPoint", { text = "◆", texthl = "DapLogPoint", linehl = "", numhl = "" })
+	sign("DapStopped", { text = "", texthl = "DapStopped", linehl = "DapStopped", numhl = "DapStopped" })
 
 	-- Keymaps
 	keymap("n", "<F5>", function()
@@ -61,7 +68,7 @@ M.config = function()
 	keymap("n", "<Leader>dB", function()
 		dap.set_breakpoint()
 	end, { desc = "Set breakpoint" })
-	keymap("n", "<Leader>dc", function()
+	keymap("n", "<Leader>dk", function()
 		dap.clear_breakpoints()
 	end, { desc = "Clear breakpoints" })
 	-- Log Logpoint
@@ -87,6 +94,9 @@ M.config = function()
 		widgets.centered_float(widgets.scopes)
 	end, { desc = "Scopes" })
 
+    keymap("n", "<Leader>du", function()
+        dap.run_to_cursor()
+	end, { desc = "Run to cursor" })
 	-- dapui configuration
 	keymap("n", "<leader>do", function()
 		dapui.open()
@@ -99,6 +109,7 @@ M.config = function()
 	if vim.fn.executable("lldb-dap") == 1 or vim.fn.executable("lldb-vscode-14") then
 		require("plugins.dap.c")
 	end
+    require('plugins.dap.go')
 	-- require('plugins.dap.lua')
 	-- require('plugins.dap.python')
 end
