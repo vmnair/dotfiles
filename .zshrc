@@ -122,3 +122,6 @@ fpath+=${ZDOTDIR:-~}/.zsh_functions
 # export PATH=/home/vinod/cpptools/extensions/debugAdapters/bin/OpenDebugAD7:$PATH
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
+
+# Go Executable
+export PATH=$PATH:/usr/local/go/bin
