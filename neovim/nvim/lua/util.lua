@@ -132,4 +132,5 @@ end, { desc = "Compile & run C Program with CMake" })
 -- Keybindings
 vim.keymap.set("n", "<leader>cr", "<cmd>CMakeCompileRunCProgram<cr>", { desc = "Compile + run a C program" })
 vim.keymap.set("n", "<leader>cc", "<cmd>CMakeCompileCProgram<cr>", { desc = "Compile + run a C program" })
+
 return util

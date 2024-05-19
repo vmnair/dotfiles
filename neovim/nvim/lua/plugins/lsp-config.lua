@@ -11,7 +11,8 @@ return {
         "williamboman/mason-lspconfig.nvim",
         config = function()
             require("mason-lspconfig").setup({
-                ensure_installed = { "lua_ls", "clangd", "cmake", "texlab", "marksman" },
+                ensure_installed = { "gopls", "lua_ls", "clangd",
+                    "cmake", "texlab", "marksman" },
             })
         end,
     },
@@ -29,6 +30,21 @@ return {
             lspconfig.clangd.setup({
                 capabilities = capabilities,
             })
+            -- gopls lsp setup
+            lspconfig.gopls.setup({
+                capabilities = capabilities,
+                on_attach = function(_, bufnr)
+                    -- Enable formatting on save
+                    vim.api.nvim_create_autocmd("BufWritePre", {
+                        buffer = bufnr,
+                        callback = function()
+                            vim.lsp.buf.format({ async = true })
+                        end
+                    })
+                end
+            })
+
+
             -- Global mappings
             map("n", "<leader>e", vim.diagnostic.open_float, { desc = "Open diagnostics in a floating window" })
             map("n", "[d", vim.diagnostic.goto_prev, { desc = "Go to previous diagnostic" })
@@ -55,4 +71,5 @@ return {
             })
         end,
     },
+
 }
