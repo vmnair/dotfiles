@@ -18,6 +18,16 @@ return {
 
 		-- Set keymaps using the above function
 		vim.cmd("autocmd! TermOpen term://* lua set_terminal_keymaps()")
-	end,
 
+		-- Keymap to set floating terminal
+		local modes = { "n", "i" }
+		for _, mode in ipairs(modes) do
+			vim.api.nvim_set_keymap(
+				mode,
+				"<leader>tf",
+				":ToggleTerm direction=float<CR>",
+				{ noremap = true, silent = true }
+			)
+		end
+	end,
 }

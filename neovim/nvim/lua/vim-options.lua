@@ -23,7 +23,9 @@ vim.opt.scrolloff = 999
 vim.opt.colorcolumn = "80"
 vim.opt.signcolumn = 'yes'
 
+vim.opt.showmode = false
 vim.opt.showmatch = true
+
 -- Ability to select cells where there are no
 -- characters, we will set it to only in 
 -- block mode.
