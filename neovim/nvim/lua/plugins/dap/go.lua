@@ -11,7 +11,6 @@ require("dap").set_log_level("DEBUG")
 
 -- Get path to dlv executable.
 local dlv_path = vim.fn.exepath("dlv")
-
 if dlv_path ~= "" then -- Configure go dap if dlv is installed
     dap.adapters.go = {
         type = "server",
