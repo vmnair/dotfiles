@@ -1,4 +1,4 @@
--- lsp-config.lua
+-- lsp-config.lualsp
 
 return {
     {
