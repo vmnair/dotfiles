@@ -1,4 +1,4 @@
--- Vinod Nair MD
+-- Vinod Nair MDinitinit
 -- init.lua
 -- https://www.youtube.com/watch?v=zHTeCSVAFNY&t=30s
 

@@ -39,3 +39,9 @@ vim.opt.ignorecase = true
 
 vim.opt.termguicolors = true
 vim.opt.encoding = "utf-8"
+
+-- Which-key
+vim.opt.timeout = true
+vim.opt.timeoutlen = 300
+vim.opt.mouse = ''
+

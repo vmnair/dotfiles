@@ -23,7 +23,7 @@ map("n", "<C-s>", ":w<CR>", options)
 map("n", "<leader>+", "<Cmd>vsplit<CR>", cmd_options)
 -- Horizontal split
 map("n", "<leader>-", "<Cmd>split<CR>", cmd_options)
--- Move in splits with hjkl
+-- Move in splits with hjkl (Terminal and Normal Mode)
 map("n", "<leader>h", "<Cmd>wincmd h<CR>", cmd_options)
 map("n", "<leader>j", "<Cmd>wincmd j<CR>", cmd_options)
 map("n", "<leader>k", "<Cmd>wincmd k<CR>", cmd_options)
@@ -50,4 +50,5 @@ map("n", "<S-Tab>", "<Cmd>bprevious<CR>", cmd_options)
 map("n", "<leader>bq", "<Cmd>bd<CR>", cmd_options)
 
 -- See all TODO's in a quicklist
+-- TODO Check this out
 map("n", "<leader>st", ":grep -l TODO **/*<CR>:copen<CR>", cmd_options)
