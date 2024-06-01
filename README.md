@@ -97,8 +97,13 @@
     - [ ] [Installing TexLive on Linux and Mac](https://www.tug.org/texlive/quickinstall.html)
     - [ ] Prerequisites: [Zathura](https://packages.debian.org/bookworm/zathura), [synctex enabling](https://www.ejmastnak.com/tutorials/vim-latex/pdf-reader/#ensure-zathura-synctex)
     - [ ] Setting up Neovim for [Latex and PDF Preview](https://www.ejmastnak.com/tutorials/vim-latex/intro/)
+10. Github Management
+   - Fetch the latest changes from the remote repository
+     `git fetch origin`
+   - Reset the local repository with the remote
+     `git reset --hard origin/main`
 
     
-11. Enabling [Tap to Click Feature on Scrollpad](https://cravencode.com/post/essentials/enable-tap-to-click-in-i3wm/)
+12. Enabling [Tap to Click Feature on Scrollpad](https://cravencode.com/post/essentials/enable-tap-to-click-in-i3wm/)
 
          
