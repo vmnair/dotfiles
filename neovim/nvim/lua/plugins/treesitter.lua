@@ -7,7 +7,8 @@ return {
 		-- Treesetter
 		local config = require("nvim-treesitter.configs")
 		config.setup({
-			ensure_enabled = { "c", "lua", "vim", "vimdoc", "query" },
+			ensure_enabled = { "c", "lua", "vim", "vimdoc",
+            "query", "markdown", "markdown_inline"},
 			-- automatically install parser if a new filetype has none.
 			auto_install = true,
 			sync_install = false,
