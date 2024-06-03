@@ -23,6 +23,17 @@ return {
 					["cmp.entry.get_documentation"] = true, -- requires hrsh7th/nvim-cmp
 				},
 			},
+            -- do not show "Written messages"
+			routes = {
+				{
+					filter = {
+						event = "msg_show",
+						kind = "",
+						find = "written",
+					},
+					opts = { skip = true },
+				},
+			},
 			-- you can enable a preset for easier configuration
 			presets = {
 				-- bottom_search = false, -- use a classic bottom cmdline for search
