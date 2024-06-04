@@ -106,12 +106,15 @@ M.config = function()
 	end, { desc = "Close debugger UI" })
 
 	-- Need to conditionally load dap.c
-	if vim.fn.executable("lldb-dap") == 1 or vim.fn.executable("lldb-vscode-14") then
-		require("plugins.dap.c")
-	end
-    require('plugins.dap.go')
+   -- if vim.fn.executable("lldb-dap") == 1 or vim.fn.executable("lldb-vscode-14") then
+   -- 	require("plugins.dap.c")
+   -- end
+    --require('plugins.dap.go')
 	-- require('plugins.dap.lua')
 	-- require('plugins.dap.python')
+    require('plugins.dap.c')
+    require('plugins.dap.go')
 end
+
 
 return M
