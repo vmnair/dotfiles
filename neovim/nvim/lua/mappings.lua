@@ -52,3 +52,6 @@ map("n", "<leader>bq", "<Cmd>bd<CR>", cmd_options)
 -- See all TODO's in a quicklist
 -- TODO Check this out
 map("n", "<leader>st", ":grep -l TODO **/*<CR>:copen<CR>", cmd_options)
+
+-- Lazy git in telescope 
+map("n", "<leader>lg", "<Cmd>Telescope<CR>", cmd_options)
