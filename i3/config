@@ -237,3 +237,4 @@ bindsym $mod+x exec --no-startup-id "rofi -show drun"
 # Start picom
 exec_always --no-startup-id picom -b
 
+exec_always --no-startup-id "~/.config/i3/set_default_resolution.sh"
