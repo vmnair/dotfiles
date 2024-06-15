@@ -73,10 +73,13 @@
         - `make install`
         
 5. Neovim Installation and Setup
-   1. Debian has Neovim: sudo apt-get install neovim
-   2. [Custom Installation Script](neovim/install_neovim.sh)
-   3. Neovim can be build using these steps: [Neovim/BUILD.md](https://github.com/neovim/neovim/blob/master/BUILD.md)
-   4. Setting up Neovim
+   1.  Neovim can be build using these steps: [Neovim/BUILD.md](https://github.com/neovim/neovim/blob/master/BUILD.md). This is the preferred method for Linux by me.
+        - Install Prerequisites: `sudo apt-get install ninja-build gettext cmake unzip curl build-essential`
+        - Clone Neovim to a local directory (~/neovim) `git clone https://github.com/neovim/neovim`
+        - Remove current version of Neovim: `sudo dpkg --remove neovim`
+   3. [Custom Installation Script](neovim/install_neovim.sh)
+   4. Debian has Neovim: sudo apt-get install neovim
+   5. Setting up Neovim
         1. [typecraft](https://www.youtube.com/@typecraft_dev)
         2. [lazy.nvim](https://github.com/folke/lazy.nvim)
         3. Formatting with prettier.
