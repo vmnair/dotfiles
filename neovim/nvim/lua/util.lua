@@ -5,6 +5,21 @@ local util = {}
 -- Function to check operating system
 -- Would return Windows, Linux, macOS or Unknown
 
+-- Autocommands
+-- highlight on yank
+local yank_group = vim.api.nvim_create_augroup('YankHighlight', {clear = true})
+
+-- Create a autocommand within the augroup to highlight on yank
+vim.api.nvim_create_autocmd("TextYankPost", {
+    group = yank_group,
+    pattern = "*",
+    callback = function()
+        vim.highlight.on_yank {higroup = "CurSearch", timeout = 200 }
+    end,
+    desc = "Briefly highlight yanked text"
+})
+
+
 -- Check to see if a directory exists
 local function directory_exists(path)
     -- try to open a directory as if it is a file.
