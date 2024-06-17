@@ -7,12 +7,13 @@ return {
             require("mason").setup()
         end,
     },
+
     {
         "williamboman/mason-lspconfig.nvim",
         config = function()
             require("mason-lspconfig").setup({
                 ensure_installed = { "gopls", "lua_ls", "clangd",
-                    "cmake", "texlab", "marksman" },
+                'bash-language-server', "cmake", "texlab", "marksman" },
             })
         end,
     },
@@ -42,6 +43,10 @@ return {
                         end
                     })
                 end
+            })
+
+            lspconfig.bashls.setup({
+                capabilities = capabilities,
             })
 
 
