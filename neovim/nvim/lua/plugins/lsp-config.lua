@@ -30,6 +30,9 @@ return {
             -- clangd lsp setup
             lspconfig.clangd.setup({
                 capabilities = capabilities,
+                cmd = {"clangd"},
+                filetypes = {"c", "cpp"},
+                root_dir = require('lspconfig').util.root_pattern("compile_commands.json", "compile_flags.txt", ".git")
             })
             -- gopls lsp setup
             lspconfig.gopls.setup({
