@@ -46,4 +46,9 @@ return {
 			},
 		})
 	end,
+
+    --Keymaps
+    -- Dismiss Noice Notifications
+    vim.api.nvim_set_keymap("n", "<Space><Space>","<Cmd>NoiceDismiss<CR>",
+    {noremap = true, silent = true, desc = "Dismiss Noice Notifications."})
 }

@@ -10,7 +10,7 @@ return {
         delete_to_trash = true, -- needs full disk access on mac
         skip_confirm_for_simple_edits = true,
         keymaps = {
-            ["<C-h"] = false,
+            ["<C-h>"] = false,
             ["<M-h>"] = "actions.select.split",
         },
         view_options = {
