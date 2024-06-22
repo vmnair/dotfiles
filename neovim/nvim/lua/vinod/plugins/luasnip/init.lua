@@ -1,36 +1,35 @@
 -- luasnip/init.lua
 
 return {
-	"L3MON4D3/LuaSnip",
+    "L3MON4D3/LuaSnip",
     dependencies = { "rafamadriz/friendly-snippets" },
-	version = "v2.*",
-	event = "VeryLazy",
-	build = "make install_jsregexp",
+    version = "v2.*",
+    event = "VeryLazy",
+    build = "make install_jsregexp",
 
-	config = function()
-		local ls = require("luasnip")
+    config = function()
+        require("vinod.plugins.luasnip.snips") -- Custom snippets
+        local ls = require("luasnip")
         -- To trigger frindly snippets
         require("luasnip.loaders.from_vscode").lazy_load()
 
 
         --keymaps
-		vim.keymap.set({ "i" }, "<C-K>", function()
-			ls.expand()
-		end, { silent = true })
-		vim.keymap.set({ "i", "s" }, "<C-L>", function()
-			ls.jump(1)
-		end, { silent = true })
-		vim.keymap.set({ "i", "s" }, "<C-J>", function()
-			ls.jump(-1)
-		end, { silent = true })
+        vim.keymap.set({ "i" }, "<C-K>", function()
+            ls.expand()
+        end, { silent = true })
+        vim.keymap.set({ "i", "s" }, "<C-L>", function()
+            ls.jump(1)
+        end, { silent = true })
+        vim.keymap.set({ "i", "s" }, "<C-J>", function()
+            ls.jump(-1)
+        end, { silent = true })
 
-		vim.keymap.set({ "i", "s" }, "<C-E>", function()
-			if ls.choice_active() then
-				ls.change_choice(1)
-			end
-		end, { silent = true })
-        require("vinod.plugins.luasnip.c")
-        require("vinod.plugins.luasnip.lua")
-	end,
+        vim.keymap.set({ "i", "s" }, "<C-E>", function()
+            if ls.choice_active() then
+                ls.change_choice(1)
+            end
+        end, { silent = true })
+
+    end,
 }
-

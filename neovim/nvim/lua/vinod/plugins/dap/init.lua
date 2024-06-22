@@ -9,6 +9,7 @@ local M = {
 		"nvim-neotest/nvim-nio",
 		"leoluz/nvim-dap-go",
 		"nvim-telescope/telescope-dap.nvim",
+        "jbyuki/one-small-step-for-vimkind",
 		-- "wojciech-kulik/xcodebuild.nvim",
 		--"mortepau/codicons.nvim",
 	},
@@ -120,6 +121,7 @@ M.config = function()
     -- require specific plugins
 	require("vinod.plugins.dap.c")
 	require("vinod.plugins.dap.go")
+
 end
 
 return M

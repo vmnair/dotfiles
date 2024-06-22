@@ -41,6 +41,41 @@ local function directory_exists(path)
     end
 end
 
+-- util.LoadModule(module_name, module_path)
+function util.LoadModule(module_name, module_path)
+    -- check if module exists
+    local file = io.open(module_path, "r")
+    if file then
+        print("File loaded" .. module_path)
+        file:close() -- file exists, so close it
+    else
+        require("noice").notify(module_name .. " does not exist at " .. module_path,
+        "info", { title = "util.LoadModule: Debug Notification" })
+        return nil
+    end
+
+    -- If module is already loaded, unload it.
+    if package.loaded[module_name] then
+        package.loaded[module_name] = nil
+    end
+
+    -- Load the module\
+    local ok, module = pcall(require, module_name)
+    if not ok then
+        require("noice").notify("Failed loading " .. module_name, "info", {
+            title = "util.LoadModule: Debug Notification"
+        })
+        return nil
+    end
+
+    require("noice").notify(module_name .. " loaded", "info", {
+            title = "Module Reload Notification"
+    })
+
+    return module
+end
+
+-- util.GetOS
 function util.GetOS()
     if os.getenv("OS") ~= nil and os.getenv("OS"):match("Windows") then
         return "Windows"
