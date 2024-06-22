@@ -1,10 +1,10 @@
--- luasnip.lua
+-- init.lua
 
 local ls = require("luasnip")
 
 -- Add Snippet files here.
-require("plugins.luasnip.c")
-require("plugins.luasnip.lua")
+require("vinod.plugins.luasnip.c")
+require("vinod.plugins.luasnip.lua")
 
 -- Keybindings
 local map = vim.keymap.set

@@ -118,8 +118,8 @@ M.config = function()
 	end, { desc = "Close debugger UI" })
 
     -- require specific plugins
-	require("plugins.dap.c")
-	require("plugins.dap.go")
+	require("vinod.plugins.dap.c")
+	require("vinod.plugins.dap.go")
 end
 
 return M
