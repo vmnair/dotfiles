@@ -1,26 +1,36 @@
--- init.lua
+-- luasnip/init.lua
 
-local ls = require("luasnip")
+return {
+	"L3MON4D3/LuaSnip",
+    dependencies = { "rafamadriz/friendly-snippets" },
+	version = "v2.*",
+	event = "VeryLazy",
+	build = "make install_jsregexp",
 
--- Add Snippet files here.
-require("vinod.plugins.luasnip.c")
-require("vinod.plugins.luasnip.lua")
-
--- Keybindings
-local map = vim.keymap.set
-map({ "i", "s" }, "<C-k>", function()
-	if ls.expand_or_jumpable() then
-		ls.expand_or_jump()
-	end
-end, { silent = true })
-
-map({ "i", "s" }, "<C-j>", function()
-	if ls.expand_or_jumpable(-1) then
-		ls.expand_or_jump(-1)
-	end
-end, { silent = true })
+	config = function()
+		local ls = require("luasnip")
+        -- To trigger frindly snippets
+        require("luasnip.loaders.from_vscode").lazy_load()
 
 
+        --keymaps
+		vim.keymap.set({ "i" }, "<C-K>", function()
+			ls.expand()
+		end, { silent = true })
+		vim.keymap.set({ "i", "s" }, "<C-L>", function()
+			ls.jump(1)
+		end, { silent = true })
+		vim.keymap.set({ "i", "s" }, "<C-J>", function()
+			ls.jump(-1)
+		end, { silent = true })
 
--- TODO: Need to check why we are returning an empty table.
-return {}
+		vim.keymap.set({ "i", "s" }, "<C-E>", function()
+			if ls.choice_active() then
+				ls.change_choice(1)
+			end
+		end, { silent = true })
+        require("vinod.plugins.luasnip.c")
+        require("vinod.plugins.luasnip.lua")
+	end,
+}
+
