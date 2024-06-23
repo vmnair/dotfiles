@@ -28,6 +28,14 @@ return {
 				":ToggleTerm direction=float<CR>",
 				{ noremap = true, silent = true }
 			)
+
+
+            vim.api.nvim_set_keymap(
+				mode,
+				"<leader>tl",
+				":ToggleTerm direction=float<CR>",
+				{ noremap = true, silent = true }
+			)
 		end
 	end,
 }

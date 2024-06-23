@@ -2,6 +2,7 @@
 
 return {
     "nvim-tree/nvim-tree.lua",
+    cmd = {"NvimTreeOpen", "NvimTreeToggle"},
     config = function()
         require("nvim-tree").setup({
             filters = {
