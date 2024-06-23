@@ -9,7 +9,7 @@ folder which will contain `init.lua` file, which is in the neovim `runtimepath`.
 
 .1 $XDG_CONFIG_HOME. 
 
-.2 nvim.
+.2 nvim. 
 
 .3 init.lua.
 

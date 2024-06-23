@@ -10,17 +10,17 @@ return {
             },
         })
     end,
-    vim.api.nvim_set_keymap('n', "<leader>nn", "<Cmd>NvimTreeOpen<CR>",
-    {noremap = true, desc = "Show nvim-tree"}),
+    vim.api.nvim_set_keymap('n', "<leader>eo", "<Cmd>NvimTreeOpen<CR>",
+    {noremap = true, desc = "Show Explorer"}),
 
-    vim.api.nvim_set_keymap('n', "<leader>nc", "<Cmd>NvimTreeClose<CR>",
-    {noremap = true, desc = "Close nvim-tree"}),
+    vim.api.nvim_set_keymap('n', "<leader>ec", "<Cmd>NvimTreeClose<CR>",
+    {noremap = true, desc = "Close Explorer"}),
 
-    vim.api.nvim_set_keymap('n', "<leader>nt", "<Cmd>NvimTreeToggle<CR>",
-    {noremap = true, desc = "Togggle nvim-tree"}),
+    vim.api.nvim_set_keymap('n', "<leader>ee", "<Cmd>NvimTreeToggle<CR>",
+    {noremap = true, desc = "Togggle Explorer"}),
 
 
-    vim.api.nvim_set_keymap('n', "<leader>nf", "<Cmd>NvimTreeFocus<CR>",
-    {noremap = true, desc = "Focus nvim-tree"}),
+    vim.api.nvim_set_keymap('n', "<leader>ef", "<Cmd>NvimTreeFocus<CR>",
+    {noremap = true, desc = "Focus Explorer"}),
 
 }
