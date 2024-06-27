@@ -12,8 +12,15 @@ return {
         "williamboman/mason-lspconfig.nvim",
         config = function()
             require("mason-lspconfig").setup({
-                ensure_installed = { "gopls", "lua_ls", "clangd",
-                'bashls', "cmake", "texlab", "marksman" },
+                ensure_installed = {
+                    "gopls",
+                    "lua_ls",
+                    "clangd",
+                    "bashls",
+                    "cmake",
+                    "texlab",
+                    "marksman",
+                },
             })
         end,
     },
@@ -28,11 +35,19 @@ return {
                 capabilities = capabilities,
             })
             -- clangd lsp setup
+            local util = require("lspconfig.util")
+
+            -- We will check if CMakeLists.text is present or build/compile_commands
+            -- to determine the root directory
+            local function custom_root_dir(fname)
+                return util.root_pattern("CMakeLists.txt")(fname)
+                    or util.root_pattern("build/compile_commands.json")(fname)
+            end
             lspconfig.clangd.setup({
                 capabilities = capabilities,
-                cmd = {"clangd"},
-                filetypes = {"c", "cpp"},
-                root_dir = require('lspconfig').util.root_pattern("compile_commands.json", "compile_flags.txt", ".git")
+                cmd = { "clangd", "--compile-commands-dir=build" },
+                filetypes = { "c", "cpp" },
+                root_dir = custom_root_dir,
             })
             -- gopls lsp setup
             lspconfig.gopls.setup({
@@ -43,15 +58,14 @@ return {
                         buffer = bufnr,
                         callback = function()
                             vim.lsp.buf.format({ async = true })
-                        end
+                        end,
                     })
-                end
+                end,
             })
 
             lspconfig.bashls.setup({
                 capabilities = capabilities,
             })
-
 
             -- Global mappings
             map("n", "<leader>e", vim.diagnostic.open_float, { desc = "Open diagnostics in a floating window" })
@@ -79,5 +93,4 @@ return {
             })
         end,
     },
-
 }
