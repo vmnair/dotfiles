@@ -1,3 +1,5 @@
+-- lua.vinod.config.lazy.lua
+
 
 -- Lazy.nvim boot-strapping
     local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -13,5 +15,9 @@
 end
 vim.opt.rtp:prepend(lazypath)
 
-require("lazy").setup("vinod.plugins")
+require("lazy").setup({
+    spec = "vinod.plugins",
+    install = {colorscheme  = {"habamax"}}, -- Colorscheme during install
+    checker = {enabled = true}, --Automatically check for updates
+})
 
