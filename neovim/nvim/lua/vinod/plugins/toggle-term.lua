@@ -25,17 +25,9 @@ return {
 			vim.api.nvim_set_keymap(
 				mode,
 				"<leader>tf",
-				":ToggleTerm direction=float<CR>",
-				{ noremap = true, silent = true }
-			)
-
-
-            vim.api.nvim_set_keymap(
-				mode,
-				"<leader>tl",
-				":ToggleTerm direction=float<CR>",
-				{ noremap = true, silent = true }
+				"<Cmd>ToggleTerm direction=float<CR>",
+				{ noremap = true, silent = true, desc = "Floating Terminal"}
 			)
 		end
-	end,
+	end, -- function config ends
 }

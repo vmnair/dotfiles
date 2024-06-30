@@ -4,8 +4,6 @@ local map = vim.api.nvim_set_keymap
 local options = { noremap = true }
 local cmd_options = { noremap = true, silent = true }
 
-vim.g.mapleader = ","
-vim.g.localleader = ";"
 
 -- Disable highlights on pressing <ESC>
 map("n", "<Esc>", ":nohl<CR><Esc>", cmd_options)
@@ -53,5 +51,3 @@ map("n", "<leader>bq", "<Cmd>bd<CR>", cmd_options)
 -- TODO Check this out
 map("n", "<leader>st", ":grep -l TODO **/*<CR>:copen<CR>", cmd_options)
 
--- Lazy git in telescope 
-map("n", "<leader>lg", "<Cmd>Telescope<CR>", cmd_options)
