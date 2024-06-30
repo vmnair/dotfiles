@@ -7,7 +7,7 @@ local c_dap_setup = function()
 	end
 
 	-- Setup LLDB Executable based on Operating system
-	local system = require("util").GetOS()
+	local system = require("vinod.config.util").GetOS()
 	local path_to_lldb
 	if system == "macOS" then
 		-- install lldb using home brew

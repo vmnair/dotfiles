@@ -30,6 +30,15 @@ return {
 	 		 		filter = {
 	 		 			event = "msg_show",
 	 		 			kind = "",
+	 		 			find = "changed",
+	 		 		},
+	 		 		opts = { skip = true },
+	 		 	},
+
+                {
+	 		 		filter = {
+	 		 			event = "msg_show",
+	 		 			kind = "",
 	 		 			find = "written",
 	 		 		},
 	 		 		opts = { skip = true },

@@ -18,10 +18,9 @@ vim.opt.rtp:prepend(lazypath)
 -- Mapleader should be set before Lazy setup so mappings work properly.
 vim.g.mapleader = ","
 vim.g.localleader = ";"
-
 require("lazy").setup({
     spec = "vinod.plugins",
-    install = {colorscheme  = {"habamax"}}, -- Colorscheme during install
+    install = {colorscheme  = {"tokyonight"}}, -- Colorscheme during install
     checker = {enabled = true}, --Automatically check for updates
 })
 
