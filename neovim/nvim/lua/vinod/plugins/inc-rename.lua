@@ -7,6 +7,6 @@ return {
         -- keymap to rename word under cursor
 		vim.keymap.set("n", "<leader>rn", function()
 			return ":IncRename " .. vim.fn.expand("<cword>")
-		end, { expr = true })
+		end, { expr = true, desc = "Rename word under cursor" })
 	end,
 }

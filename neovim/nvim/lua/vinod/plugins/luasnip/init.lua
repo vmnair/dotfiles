@@ -50,11 +50,10 @@ return {
         --reload_snippet(snippet_path)
 
         --keymaps
-        vim.keymap.set({ "n", "i", "v" }, "<leader>r", reload, {
+        vim.keymap.set({ "n", "i", "v" }, "<leader>rs", reload, {
             noremap = true,
-
             silent = true,
-            desc = "Reload Snippets",
+            desc = "Reload snippets",
         })
         vim.keymap.set({ "i" }, "<C-K>", function()
             ls.expand()
