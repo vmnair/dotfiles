@@ -1,4 +1,11 @@
 -- vim-options.lua
+
+-- Disable various Neovim providers
+vim.g.loaded_node_provider = 0
+vim.g.loaded_python3_provider = 0
+vim.g.loaded_ruby_provider = 0
+vim.g.loaded_perl_provider = 0
+
 local opt = vim.opt -- Concisness
 
 opt.number = true
