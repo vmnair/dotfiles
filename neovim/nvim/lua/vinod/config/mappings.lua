@@ -12,7 +12,6 @@ local map = function(mode, lhs, rhs, opts)
   vim.api.nvim_set_keymap(mode, lhs, rhs, options)
 end
 
-
 map("i", "jk", "<ESC>", { desc = "Exit insert mode with jk" })
 map("n", "<Esc>", ":nohl<CR><Esc>", {desc = "Clear search highlights"})
                                       -- Normal mode center next selection

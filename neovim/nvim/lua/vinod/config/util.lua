@@ -1,6 +1,7 @@
 -- util.lua
 -- Utility functions
 
+
 local util = {}
 -- Function to check operating system
 -- Would return Windows, Linux, macOS or Unknown
@@ -104,6 +105,7 @@ end, { nargs = 1, desc = "Open Zathura" })
 
 -- C compilation
 -- Return the program name or nil
+-- FIXME: Need to make sure that this only works with C Filetype.
 local function compile_c_program_with_cmake()
     -- See if CMakeLists.txt file & build/ directory exists
     local match = nil
