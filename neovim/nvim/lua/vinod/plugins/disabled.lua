@@ -1,6 +1,8 @@
 -- disabled plugin
 
 return {
-     "catppuccin/nvim",
-     enabled = false,
- }
+	{
+		"catppuccin/nvim",
+		enabled = false,
+	},
+}
