@@ -12,6 +12,21 @@ local map = function(mode, lhs, rhs, opts)
   vim.api.nvim_set_keymap(mode, lhs, rhs, options)
 end
 
+--This function adds ability to add keymaps to different modes
+local map_for_modes = function(modes, lhs, rhs, opts)
+  local options = {noremap = true, silent = true}
+  if opts then
+    options = vim.tbl_extend("force", options, opts)
+  end
+  for _, mode in ipairs(modes) do
+    local rhs_command = rhs
+    if mode == 't' then
+       rhs_command = [[<C-\><C-n>]] .. rhs
+    end
+    vim.api.nvim_set_keymap(mode, lhs, rhs_command, opts)
+  end
+end
+
 map("i", "jk", "<ESC>", { desc = "Exit insert mode with jk" })
 map("n", "<Esc>", ":nohl<CR><Esc>", {desc = "Clear search highlights"})
                                       -- Normal mode center next selection
@@ -39,7 +54,9 @@ map("v", "<", "<gv", {desc = "Indent selected line to left"})
 -- New buffer
 map("n", "<leader>bn", ":enew<CR>", {desc = "Create new buffer"})
 
--- See all TODO's in a quicklist
--- TODO Check this out
-map("n", "<leader>st", ":grep -l TODO **/*<CR>:copen<CR>", {desc = "Search for TODO's"})
+-- Windows movement
+map_for_modes({'n', 't', 'v'}, "<C-h>", "<C-w>h", {desc = "Move to Left Window"} )
+map_for_modes({'n', 't', 'v'}, "<C-j>", "<C-w>j", {desc = "Move to Down Window"} )
+map_for_modes({'n', 't', 'v'}, "<C-k>", "<C-w>k", {desc = "Move to Top Window"} )
+map_for_modes({'n', 't', 'v'}, "<C-l>", "<C-w>l", {desc = "Move to Right Window"} )
 
