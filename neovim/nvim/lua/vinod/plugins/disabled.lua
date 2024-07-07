@@ -3,6 +3,11 @@
 return {
 	{
 		"catppuccin/nvim",
-		enabled = false,
-	},
+		enabled = true,
+	}, {
+
+    "folke/tokyonight.nvim",
+    enabled = false,
+  }
+
 }
