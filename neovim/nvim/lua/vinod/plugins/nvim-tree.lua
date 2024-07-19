@@ -11,7 +11,7 @@ return {
         })
     end,
     vim.api.nvim_set_keymap('n', "<leader>eo", "<Cmd>NvimTreeOpen<CR>",
-    {noremap = true, desc = "Show Explorer"}),
+    {noremap = true, desc = "Open Explorer"}),
 
     vim.api.nvim_set_keymap('n', "<leader>ec", "<Cmd>NvimTreeClose<CR>",
     {noremap = true, desc = "Close Explorer"}),

@@ -6,4 +6,3 @@ require("vinod.config.options")
 require("vinod.config.lazy")
 require("vinod.config.mappings")
 require("vinod.config.util")
-

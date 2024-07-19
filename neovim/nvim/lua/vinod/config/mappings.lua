@@ -60,3 +60,13 @@ map_for_modes({'n', 't', 'v'}, "<C-j>", "<C-w>j", {desc = "Move to Down Window"}
 map_for_modes({'n', 't', 'v'}, "<C-k>", "<C-w>k", {desc = "Move to Top Window"} )
 map_for_modes({'n', 't', 'v'}, "<C-l>", "<C-w>l", {desc = "Move to Right Window"} )
 
+
+-- Lazy keymaps
+map("n", "<leader>lo", "<Cmd>Lazy<CR>", {desc = "Lazy - Open"})
+map("n", "<leader>lu", "<Cmd>Lazy update<CR>", {desc = "Lazy - Update"})
+map("n", "<leader>ls", "<Cmd>Lazy sync<CR>", {desc = "Lazy - Sync"})
+map("n", "<leader>lh", "<Cmd>Lazy health<CR>", {desc = "Lazy - Health"})
+map("n", "<leader>l?", "<Cmd>Lazy help<CR>", {desc = "Lazy - Help"})
+map("n", "<leader>li", "<Cmd>Lazy install<CR>", {desc = "Lazy - Install "})
+map("n", "<leader>lc", "<Cmd>Lazy clean<CR>", {desc = "Lazy - Clean "})
+

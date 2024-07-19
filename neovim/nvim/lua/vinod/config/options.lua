@@ -21,7 +21,7 @@ opt.tabstop = 2         -- Expand tab to spaces
 opt.shiftwidth = 2
 opt.autoindent = true   -- Copy intent from the current line when starting new.
 
-opt.clipboard= "unnamedplus"  -- Synchronizes the system clipboard
+opt.clipboard = "unnamedplus"  -- Synchronizes the system clipboard
 
 -- Places cursor in the middle of the screen
 opt.scrolloff = 999
