@@ -35,7 +35,7 @@ return {
 			-- 	colors.fg_gutter = fg_gutter
 			-- 	colors.fg_sidebar = fg_dark
 			-- end,
-			style = "night", -- storm, day, moon and night
+			style = "storm", -- storm, day, moon and night
 			terminal_colors = true,
 
 			styles = {
