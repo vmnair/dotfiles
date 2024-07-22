@@ -10,6 +10,7 @@ return {
 				null_ls.builtins.formatting.stylua,
 				null_ls.builtins.formatting.prettier,
 				null_ls.builtins.formatting.clang_format.lua,
+        null_ls.builtins.formatting.gofmt,
 			},
 		})
 

@@ -30,10 +30,12 @@ return {
             local map = vim.keymap.set
             local capabilities = require("cmp_nvim_lsp").default_capabilities()
             local lspconfig = require("lspconfig")
+
             -- Lua Lsp setup
             lspconfig.lua_ls.setup({
                 capabilities = capabilities,
             })
+
             -- clangd lsp setup
             local util = require("lspconfig.util")
 
@@ -49,6 +51,8 @@ return {
                 filetypes = { "c", "cpp" },
                 root_dir = custom_root_dir,
             })
+
+
             -- gopls lsp setup
             lspconfig.gopls.setup({
                 capabilities = capabilities,
@@ -63,6 +67,8 @@ return {
                 end,
             })
 
+
+            -- bash scripts LSP
             lspconfig.bashls.setup({
                 capabilities = capabilities,
             })
