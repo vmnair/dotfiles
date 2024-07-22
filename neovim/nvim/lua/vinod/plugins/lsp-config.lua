@@ -1,15 +1,13 @@
--- lsp-config.lualsp
+-- lsp-config.lua
+-- Mason & mason-lspconfig is also setup here
+-- Need to setup in the order of: mason.nvim, mason-lspconfig.nvim followed by
+-- nvim-lspconfig
 
 return {
-    {
-        "williamboman/mason.nvim",
-        config = function()
-            require("mason").setup()
-        end,
-    },
 
     {
         "williamboman/mason-lspconfig.nvim",
+        dependency = {"mason"},
         config = function()
             require("mason-lspconfig").setup({
                 ensure_installed = {
@@ -24,12 +22,14 @@ return {
             })
         end,
     },
+
     {
         "neovim/nvim-lspconfig",
         config = function()
             local map = vim.keymap.set
             local capabilities = require("cmp_nvim_lsp").default_capabilities()
             local lspconfig = require("lspconfig")
+            local util = require("lspconfig.util")
 
             -- Lua Lsp setup
             lspconfig.lua_ls.setup({
@@ -37,11 +37,9 @@ return {
             })
 
             -- clangd lsp setup
-            local util = require("lspconfig.util")
-
             -- We will check if CMakeLists.text is present or build/compile_commands
             -- to determine the root directory
-            local function custom_root_dir(fname)
+            local function clangd_custom_root_dir(fname)
                 return util.root_pattern("CMakeLists.txt")(fname)
                     or util.root_pattern("build/compile_commands.json")(fname)
             end
@@ -49,7 +47,7 @@ return {
                 capabilities = capabilities,
                 cmd = { "clangd", "--compile-commands-dir=build" },
                 filetypes = { "c", "cpp" },
-                root_dir = custom_root_dir,
+                root_dir = clangd_custom_root_dir,
             })
 
 
@@ -74,10 +72,10 @@ return {
             })
 
             -- Global mappings
-            map("n", "<leader>e", vim.diagnostic.open_float, { desc = "Open diagnostics in a floating window" })
+            map("n", "<leader>o", vim.diagnostic.open_float, { desc = "Open diagnostics in a floating window" })
+            map("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Show diagnostics in a location list" })
             map("n", "[d", vim.diagnostic.goto_prev, { desc = "Go to previous diagnostic" })
             map("n", "]d", vim.diagnostic.goto_next, { desc = "Go to next diagnostic" })
-            map("n", "<leader>q", vim.diagnostic.setloclist, { desc = "Show diagnostics in a location list" })
 
             -- Create an autocommand when the lsp server attaches
             vim.api.nvim_create_autocmd("LspAttach", {
