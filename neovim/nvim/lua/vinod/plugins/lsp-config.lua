@@ -66,6 +66,7 @@ return {
             })
 
 
+
             -- bash scripts LSP
             lspconfig.bashls.setup({
                 capabilities = capabilities,
