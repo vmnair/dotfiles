@@ -51,6 +51,7 @@ opt.backspace = "indent,eol,start" -- Allow backspace on insert mode start.
 
 opt.encoding = "utf-8"
 
+opt.foldmethod = "indent"
 -- Which-key
 opt.timeout = true
 opt.timeoutlen = 300

@@ -1,11 +1,12 @@
 return {
+  -- Completion sources
 	{
-		"hrsh7th/cmp-nvim-lsp", -- completion plugin
-		"hrsh7th/cmp-buffer", -- source for text in buffer
+		"hrsh7th/cmp-nvim-lsp", -- completion plugin for Neovim's build-in LSP
+		"hrsh7th/cmp-buffer", -- source for text in the current buffer
 		"hrsh7th/cmp-path", -- source for file system paths
-		"hrsh7th/cmp-cmdline", -- source for command mode
+		"hrsh7th/cmp-cmdline", -- source for command line mode
 	},
-
+  -- Snippet engine and dependencies
 	{
 		"L3MON4D3/LuaSnip", -- snippet engine
 		-- follow latest release.
@@ -13,13 +14,13 @@ return {
 		-- install jsregexp (optional!).
 		build = "make install_jsregexp",
 		dependencies = {
-			"saadparwaiz1/cmp_luasnip", -- for autocompletion
-			"rafamadriz/friendly-snippets", -- useful snippets
+			"saadparwaiz1/cmp_luasnip", -- source for integrating Luasnip with cmp
+			"rafamadriz/friendly-snippets", -- collection of predefined snippets
 		},
 	},
-
+  -- nvim-cmp setup
 	{
-		"hrsh7th/nvim-cmp",
+		"hrsh7th/nvim-cmp", -- Main completion engine.
 		config = function()
 			-- Set up nvim-cmp.
 			local cmp = require("cmp")
@@ -75,6 +76,7 @@ return {
 				}, {
 					{ name = "cmdline" },
 				}),
+        matching = { disallow_symbol_nonprefix_matching = false }
 			})
 		end,
 	},
