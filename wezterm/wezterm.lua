@@ -18,11 +18,6 @@ config.keys = {
   { key = "UpArrow",    mods = "LEADER", action = act.AdjustPaneSize({ "Up", 5 }) },
   { key = "DownArrow",  mods = "LEADER", action = act.AdjustPaneSize({ "Down", 5 }) },
   -- Move betweeen panes
-  { key = "h",          mods = "LEADER", action = act.AdjustPaneSize({ "Down", 5 }) },
-  { key = "DownArrow",  mods = "LEADER", action = act.AdjustPaneSize({ "Down", 5 }) },
-  { key = "DownArrow",  mods = "LEADER", action = act.AdjustPaneSize({ "Down", 5 }) },
-  { key = "DownArrow",  mods = "LEADER", action = act.AdjustPaneSize({ "Down", 5 }) },
-
   { key = "h",          mods = "LEADER", action = act.ActivatePaneDirection("Left") },
   { key = "l",          mods = "LEADER", action = act.ActivatePaneDirection("Right") },
   { key = "k",          mods = "LEADER", action = act.ActivatePaneDirection("Up") },
