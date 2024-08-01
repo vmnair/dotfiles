@@ -1,2 +1,17 @@
--- autocmds.lua
-
+-- -- autocmds.lua
+--
+-- -- Create an autocmd group in Lua
+-- vim.api.nvim_create_augroup("VimtexConfig", { clear = true })
+--
+-- -- Define the autocmds for LaTeX files
+-- vim.api.nvim_create_autocmd("FileType", {
+-- 	pattern = "tex",
+-- 	group = "VimtexConfig",
+-- 	callback = function()
+-- 		vim.o.foldmethod = "expr"
+-- 		vim.o.foldexpr = "vimtex#fold#level(v:lnum)"
+-- 		vim.o.foldtext = "vimtex#fold#text()"
+-- 		vim.o.foldlevel = 2
+-- 	end,
+-- })
+--

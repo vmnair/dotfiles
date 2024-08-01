@@ -4,6 +4,8 @@
         "local"
     ],
     "diagnostics.disable": [
-        "unused-function"
+        "unused-function",
+        "redundant-value",
+        "unused-local"
     ]
 }
