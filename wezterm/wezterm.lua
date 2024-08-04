@@ -11,7 +11,7 @@ config.keys = {
   { key = "z",          mods = "LEADER", action = act.TogglePaneZoomState },
   -- Split into panes
   { key = "|",          mods = "LEADER", action = act.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
-  { key = "-",          mods = "LEADER", action = act.SplitVertical({ domain = "CurrentPaneDomain" }) },
+  { key = "_",          mods = "LEADER", action = act.SplitVertical({ domain = "CurrentPaneDomain" }) },
   -- Adjust Pane Size
   { key = "RightArrow", mods = "LEADER", action = act.AdjustPaneSize({ "Right", 5 }) },
   { key = "LeftArrow",  mods = "LEADER", action = act.AdjustPaneSize({ "Left", 5 }) },

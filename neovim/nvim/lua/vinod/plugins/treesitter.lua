@@ -2,13 +2,24 @@
 
 return {
 	"nvim-treesitter/nvim-treesitter",
-	build = ":TSUpdate",
+	dependencies = {
+		"nvim-treesitter/nvim-treesitter-textobjects",
+	},
+	build = ":TSUpdate", -- update parsers using this command,
 	config = function()
-		-- Treesetter
 		local config = require("nvim-treesitter.configs")
 		config.setup({
-			ensure_enabled = { "c", "lua", "vim", "vimdoc", "query", "go",
-                        "markdown", "markdown_inline" },
+			ensure_enabled = {
+				"c",
+				"lua",
+				"vim",
+				"vimdoc",
+				"query",
+				"go",
+				"markdown",
+				"markdown_inline",
+				"latex",
+			},
 			-- automatically install parser if a new filetype has none.
 			auto_install = true,
 			sync_install = false,
@@ -17,10 +28,10 @@ return {
 			incremental_selection = {
 				enable = true,
 				keymaps = {
-					init_selection = "<Leader>ss",
+					init_selection = "<CR>",
 					node_incremental = "<Tab>",
-					scope_incremental = "<S-Tab>",
 					node_decremental = "<BS>",
+					scope_incremental = "<S-Tab>",
 				},
 			},
 
@@ -28,38 +39,42 @@ return {
 				select = {
 					enable = true,
 
-					-- Automatically jump forward to textobj, similar to targets.vim
+					-- automatically jump forward to textobj, similar to targets.vim
 					lookahead = true,
 
 					keymaps = {
-						-- You can use the capture groups defined in textobjects.scm
+						-- you can use the capture groups defined in textobjects.scm
 						["af"] = "@function.outer",
 						["if"] = "@function.inner",
 						["ac"] = "@class.outer",
-						-- You can optionally set descriptions to the mappings (used in the desc parameter of
+						["aa"] = "@parameter.outer", -- "around argument"
+						["ia"] = "@parameter.inner", -- "inside argument"
+						["ab"] = "@block.outer", -- "around block"
+						["ib"] = "@block.inner", -- "inside block"
+						-- you can optionally set descriptions to the mappings (used in the desc parameter of
 						-- nvim_buf_set_keymap) which plugins like which-key display
-						["ic"] = { query = "@class.inner", desc = "Select inner part of a class region" },
-						-- You can also use captures from other query groups like `locals.scm`
-						["as"] = { query = "@scope", query_group = "locals", desc = "Select language scope" },
+						["ic"] = { query = "@class.inner", desc = "select inner part of a class region" },
+						-- you can also use captures from other query groups like `locals.scm`
+						["as"] = { query = "@scope", query_group = "locals", desc = "select language scope" },
 					},
-					-- You can choose the select mode (default is charwise 'v')
+					-- you can choose the select mode (default is charwise 'v')
 					--
-					-- Can also be a function which gets passed a table with the keys
+					-- can also be a function which gets passed a table with the keys
 					-- * query_string: eg '@function.inner'
 					-- * method: eg 'v' or 'o'
-					-- and should return the mode ('v', 'V', or '<c-v>') or a table
+					-- and should return the mode ('v', 'v', or '<c-v>') or a table
 					-- mapping query_strings to modes.
 					selection_modes = {
 						["@parameter.outer"] = "v", -- charwise
-						["@function.outer"] = "V", -- linewise
+						["@function.outer"] = "v", -- linewise
 						["@class.outer"] = "<c-v>", -- blockwise
 					},
-					-- If you set this to `true` (default is `false`) then any textobject is
-					-- extended to include preceding or succeeding whitespace. Succeeding
+					-- if you set this to `true` (default is `false`) then any textobject is
+					-- extended to include preceding or succeeding whitespace. succeeding
 					-- whitespace has priority in order to act similarly to eg the built-in
 					-- `ap`.
 					--
-					-- Can also be a function which gets passed a table with the keys
+					-- can also be a function which gets passed a table with the keys
 					-- * query_string: eg '@function.inner'
 					-- * selection_mode: eg 'v'
 					-- and should return true or false
@@ -68,8 +83,4 @@ return {
 			},
 		})
 	end,
-
-	{
-		"nvim-treesitter/nvim-treesitter-textobjects",
-	},
 }

@@ -7,3 +7,5 @@ require("vinod.config.lazy")
 require("vinod.config.mappings")
 require("vinod.config.util")
 require("vinod.config.autocmds")
+
+vim.g.ts_debug = true
