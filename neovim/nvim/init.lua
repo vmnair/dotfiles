@@ -8,4 +8,4 @@ require("vinod.config.mappings")
 require("vinod.config.util")
 require("vinod.config.autocmds")
 
-vim.g.ts_debug = true
+--vim.g.ts_debug = true
