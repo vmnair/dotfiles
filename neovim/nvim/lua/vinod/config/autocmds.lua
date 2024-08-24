@@ -1,5 +1,15 @@
 -- -- autocmds.lua
---
+-- Move the help file to the right insted of the bottom
+
+vim.api.nvim_create_autocmd("BufWinEnter", {
+	pattern = "*.txt",
+	callback = function()
+		if vim.bo.filetype == "help" then
+			vim.cmd("wincmd L") -- L for moving to the right
+		end
+	end,
+})
+-- LaTeX configuration
 -- -- Create an autocmd group in Lua
 vim.api.nvim_create_augroup("VimtexConfig", { clear = true })
 

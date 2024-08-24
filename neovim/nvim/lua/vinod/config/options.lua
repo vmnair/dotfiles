@@ -6,15 +6,15 @@ vim.g.loaded_python3_provider = 0
 vim.g.loaded_ruby_provider = 0
 vim.g.loaded_perl_provider = 0
 
-local opt = vim.opt -- Concisness
+local opt = vim.opt -- Conciseness
 
 opt.number = true
 opt.relativenumber = true
 
-opt.splitright = true --split horizondal window to below
-opt.splitbelow = true -- split horizondal window to below
+opt.splitright = true --split horizontal window to below
+opt.splitbelow = true -- split horizontal window to below
 
-opt.wrap = false      -- disable line wraping
+opt.wrap = false      -- disable line wrapping
 
 opt.expandtab = true
 opt.tabstop = 2               -- Expand tab to spaces
@@ -27,7 +27,7 @@ opt.clipboard = "unnamedplus" -- Synchronizes the system clipboard
 opt.scrolloff = 999
 opt.cursorline = true -- Highlight current line.
 
-opt.swapfile = false  -- Turn off swapfile.
+opt.swapfile = false  -- Turn off swap file.
 
 opt.showmode = false
 opt.showmatch = true
@@ -42,7 +42,7 @@ opt.ignorecase = true    -- Ignore case sensitivity in commands
 opt.smartcase = true     -- Mixed case in search assumes case sensitivity.
 
 opt.termguicolors = true -- Use true colors
-opt.background = "dark"  -- Colorschemes (light or dark) will be made dark.
+opt.background = "dark"  -- Color schemes (light or dark) will be made dark.
 opt.colorcolumn = "80"
 opt.signcolumn = "yes"
 
@@ -55,3 +55,7 @@ opt.encoding = "utf-8"
 opt.timeout = true
 opt.timeoutlen = 300
 opt.mouse = ""
+
+-- Set spell check
+-- opt.spell = true
+-- opt.spelllang = { "en" }

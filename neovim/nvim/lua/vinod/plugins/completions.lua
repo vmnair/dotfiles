@@ -1,31 +1,26 @@
 return {
   -- Completion sources
   {
-    "hrsh7th/cmp-nvim-lsp", -- completion plugin for Neovim's build-in LSP
-    "hrsh7th/cmp-buffer", -- source for text in the current buffer
-    "hrsh7th/cmp-path",   -- source for file system paths
-    "hrsh7th/cmp-cmdline", -- source for command line mode
+    "hrsh7th/cmp-nvim-lsp",              -- completion plugin for Neovim's build-in LSP
+    "hrsh7th/cmp-buffer",                -- source for text in the current buffer
+    "hrsh7th/cmp-path",                  -- source for file system paths
+    "hrsh7th/cmp-cmdline",               -- source for command line mode
+    "hrsh7th/cmp-nvim-lsp-signature-help", -- signature help for functions
   },
   -- Snippet engine and dependencies
   {
-    "L3MON4D3/LuaSnip", -- snippet engine
-    -- follow latest release.
-    version = "v2.*", -- Replace <CurrentMajor> by the latest released major (first number of latest release)
-    -- install jsregexp (optional!).
-    build = "make install_jsregexp",
+    "L3MON4D3/LuaSnip",            -- snippet engine
+    version = "v2.*",              -- follow latest release.
+    build = "make install_jsregexp", -- install jsregexp (optional!).
     dependencies = {
-      "saadparwaiz1/cmp_luasnip", -- source for integrating Luasnip with cmp
-      -- "rafamadriz/friendly-snippets", -- collection of predefined snippets
+      "saadparwaiz1/cmp_luasnip",  -- source for integrating Luasnip with cmp
     },
   },
   -- nvim-cmp setup
   {
     "hrsh7th/nvim-cmp", -- Main completion engine.
     config = function()
-      -- Set up nvim-cmp.
       local cmp = require("cmp")
-      --require("luasnip.loaders.from_vscode").lazy_load()
-
       cmp.setup({
         snippet = {
           expand = function(args)
@@ -41,25 +36,33 @@ return {
           ["<C-f>"] = cmp.mapping.scroll_docs(4),
           ["<C-Space>"] = cmp.mapping.complete(),
           ["<C-e>"] = cmp.mapping.abort(),
-          ["<CR>"] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+          -- Accept currently selected item.
+          -- Set `select` to `false` to only confirm explicitly selected items.
+          ["<CR>"] = cmp.mapping.confirm({ select = true }),
         }),
         sources = cmp.config.sources({
           { name = "nvim_lsp" },
           { name = "luasnip" },
+          { name = "nvim_lsp_signature_help", max_item_count = 5 },
+          {
+            name = "spell",
+            max_item_count = 5,
+            keyword_length = 3,
+            option = {
+              keep_all_entries = false,
+              enable_in_context = function()
+                return true
+              end,
+            },
+          },
         }, {
           { name = "buffer" },
         }),
-      })
 
-      -- Set configuration for specific filetype.
-      --[[cmp.setup.filetype("gitcommit", {
-        sources = cmp.config.sources({
-          { name = "git" }, -- You can specify the `git` source if [you were installed it](https://github.com/petertriho/cmp-git).
-        }, {
-          { name = "buffer" },
-        }),
-      }) ]]
-      --
+        experimental = {
+          ghost_text = true,
+        },
+      })
 
       -- Use buffer source for `/` and `?` (if you enabled `native_menu`, this won't work anymore).
       cmp.setup.cmdline({ "/", "?" }, {

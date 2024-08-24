@@ -58,11 +58,11 @@ local c_dap_setup = function()
 	}
 	-- Use same confuratons for C and C++
 	dap.configurations.cpp = dap.configurations.c
-    print("DAP Setup completed for C/C++")
+	-- print("DAP Setup completed for C/C++")
 end
 
 -- Set up autocommand for C & C++ files
 vim.api.nvim_create_autocmd({ "FileType" }, {
 	pattern = { "c", "cpp" },
-    callback = c_dap_setup,
+	callback = c_dap_setup,
 })
