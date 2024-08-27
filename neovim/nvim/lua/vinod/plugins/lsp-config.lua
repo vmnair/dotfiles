@@ -33,6 +33,14 @@ return {
       -- Lua Lsp setup
       lspconfig.lua_ls.setup({
         capabilities = capabilities,
+        settings = {
+          Lua = {
+            diagnostics = {
+              -- get the language server to recognize the `vim` global
+              globals = { "vim" },
+            },
+          },
+        },
       })
       -- clangd lsp setup
       -- We will check if CMakeLists.text is present or build/compile_commands

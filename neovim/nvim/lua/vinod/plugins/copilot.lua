@@ -1,13 +1,9 @@
 -- Github Copilot
 return {
-
-  "github/copilot.vim",
-  -- what is wrong with this code snippet? It's not working
+  "zbirenbaum/copilot.lua",
+  cmd = "Copilot",
+  event = "InsertEnter",
   config = function()
-    -- What other default options do we have here?
-    vim.g.copilot_filetypes = {
-      xml = false,
-      markdown = false,
-    }
+    require("copilot").setup({})
   end,
 }
