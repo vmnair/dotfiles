@@ -35,6 +35,14 @@ config.keys = {
     mods = "LEADER",
     action = act.SplitVertical({ domain = "CurrentPaneDomain" }),
   },
+
+  -- Switch panes
+  {
+    key = "{",
+    mods = "LEADER",
+    action = act.PaneSelect({ mode = "SwapWithActiveKeepFocus" }),
+  },
+
   -- Adjust Pane Size
   {
     key = "RightArrow",
@@ -88,6 +96,59 @@ config.keys = {
       one_shot = false,
     }),
   },
+
+  --Copy mode
+  {
+    key = "[",
+    mods = "LEADER",
+    action = wezterm.action.ActivateCopyMode,
+  },
+  -- Create a new tab
+  {
+    key = "t",
+    mods = "LEADER",
+    action = act.SpawnTab("CurrentPaneDomain"),
+  },
+
+  {
+    key = "n",
+    mods = "LEADER",
+    action = wezterm.action.ActivateTabRelative(1),
+  },
+
+  {
+    key = "p",
+    mods = "LEADER",
+    action = wezterm.action.ActivateTabRelative(-1),
+  },
+  -- Tab Management
+  -- name a tab
+  {
+    key = "e",
+    mods = "LEADER",
+    action = act.PromptInputLine({
+      description = "Tab Name: ",
+      action = wezterm.action_callback(function(window, _, line)
+        if line then
+          window:active_tab():set_title(line)
+        end
+      end),
+    }),
+  },
+
+  -- Navigate tabs
+  {
+    key = "w",
+    mods = "LEADER",
+    action = act.ShowTabNavigator,
+  },
+
+  -- Close tab
+  {
+    key = "x",
+    mods = "LEADER",
+    action = act.CloseCurrentTab({ confirm = true }),
+  },
 }
 
 config.key_tables = {
@@ -110,7 +171,10 @@ config.key_tables = {
 }
 
 -- Show tabbar
-config.enable_tab_bar = false
+config.enable_tab_bar = true
+config.tab_bar_at_bottom = true
+config.use_fancy_tab_bar = false
+config.switch_to_last_active_tab_when_closing_tab = true
 config.colors = {
   tab_bar = {
     background = "#1a1b26",
