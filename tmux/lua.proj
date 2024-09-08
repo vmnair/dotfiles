@@ -4,7 +4,7 @@
 
 tmux has-session -t LearnLua
 
-if [ $? != 0 ]
+if tmux ! has-session -t LearnLua 
 then
 
 # Neovim 

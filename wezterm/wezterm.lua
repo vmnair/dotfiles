@@ -6,6 +6,12 @@ local mux = wezterm.mux
 -- local config = wezterm.config_builder()
 local config = {}
 
+-- maximize on startup
+-- wezterm.on("gui-startup", function(cmd)
+-- 	local _, _, window = mux.spawn_window(cmd or {})
+-- 	window:gui_window():maximize()
+-- end)
+
 -- use config_builder if it is available
 if wezterm.config_builder then
 	config = wezterm.config_builder()
@@ -21,7 +27,7 @@ wezterm.on("update-right-status", function(window, _)
 end)
 
 config.window_background_opacity = 0.9
-config.window_decorations = "RESIZE"
+-- config.window_decorations = "RESIZE"
 config.default_workspace = "home"
 
 -- Show tabbar
@@ -49,6 +55,8 @@ config.colors = {
 		},
 	},
 }
+
+-- Font configuration
 config.font = wezterm.font("JetBrains Mono")
 -- config.color_scheme = "Catppuccin Mocha"
 config.color_scheme = "Tokyo Night Storm"
