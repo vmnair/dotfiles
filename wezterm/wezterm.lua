@@ -8,16 +8,16 @@ local config = {}
 
 -- use config_builder if it is available
 if wezterm.config_builder then
-  config = wezterm.config_builder()
+	config = wezterm.config_builder()
 end
 -- Local functions
 -- Show which key table is active in the status area
 wezterm.on("update-right-status", function(window, _)
-  local name = window:active_key_table()
-  if name then
-    name = "TABLE: " .. name
-  end
-  window:set_right_status(name or "")
+	local name = window:active_key_table()
+	if name then
+		name = "TABLE: " .. name
+	end
+	window:set_right_status(name or "")
 end)
 
 config.window_background_opacity = 0.9
@@ -28,26 +28,26 @@ config.default_workspace = "home"
 config.enable_tab_bar = false
 config.tab_bar_at_bottom = false -- default is top
 config.use_fancy_tab_bar = false
-config.tab_max_width = 32
-config.switch_to_last_active_tab_when_closing_tab = true
-config.pane_focus_follows_mouse = true
+-- config.tab_max_width = 32
+-- config.switch_to_last_active_tab_when_closing_tab = true
+-- config.pane_focus_follows_mouse = true
 config.scrollback_lines = 5000
 
 --  No padding between panes
 config.window_padding = {
-  left = 0,
-  right = 0,
-  top = 0,
-  bottom = 0,
+	left = 0,
+	right = 0,
+	top = 0,
+	bottom = 0,
 }
 config.colors = {
-  tab_bar = {
-    background = "#1a1b26",
-    active_tab = {
-      bg_color = "#1a1b26",
-      fg_color = "#7aa2f7",
-    },
-  },
+	tab_bar = {
+		background = "#1a1b26",
+		active_tab = {
+			bg_color = "#1a1b26",
+			fg_color = "#7aa2f7",
+		},
+	},
 }
 config.font = wezterm.font("JetBrains Mono")
 -- config.color_scheme = "Catppuccin Mocha"
