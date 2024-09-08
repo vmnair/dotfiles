@@ -9,7 +9,7 @@
   "cmp-path": { "branch": "main", "commit": "91ff86cd9c29299a64f968ebb45846c485725f23" },
   "cmp_luasnip": { "branch": "master", "commit": "05a9ab28b53f71d1aece421ef32fee2cb857a843" },
   "copilot.lua": { "branch": "master", "commit": "86537b286f18783f8b67bccd78a4ef4345679625" },
-  "fzf": { "branch": "master", "commit": "8af0af3400fc36651b59a7e3f9a2bedd4a51daed" },
+  "fzf": { "branch": "master", "commit": "a0f28583e733c4daa776aed6ebc3a6e3b65dd8cb" },
   "fzf-lua": { "branch": "main", "commit": "db41613292b88b5306d65caf6ae8996db5498ccb" },
   "gitsigns.nvim": { "branch": "main", "commit": "1ef74b546732f185d0f806860fa5404df7614f28" },
   "inc-rename.nvim": { "branch": "main", "commit": "8ba77017ca468f3029bf88ef409c2d20476ea66b" },

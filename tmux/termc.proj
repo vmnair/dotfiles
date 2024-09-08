@@ -2,9 +2,9 @@
 
 # tmux setup for termcontacts development
 
-tmux has-session -t TermContacts
+# tmux has-session -t TermContacts
 
-if [ $? != 0 ]
+if ! tmux has-session -t TermContacts
 then
 
 # Neovim 
