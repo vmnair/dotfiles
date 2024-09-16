@@ -1,3 +1,16 @@
+-- Detect the OS and set the vimtex_view_method accordingly
+local os_type = require("vinod.config.util").detect_os()
+if os_type == "Darwin" then
+	--print("MacOSX Detected: Setting Skim as the PDF Viewer")
+	vim.g.vimtex_view_method = "skim"
+elseif os_type == "Linux" then
+	-- print("Linux Detected: Setting Zathura as the PDF Viewer")
+	vim.g.vimtex_view_method = "zathura"
+else
+	print("Error: Unsupported OS\nModule: vimtex.lua")
+	return
+end
+
 return {
 	"lervag/vimtex",
 	ft = "tex",
@@ -5,7 +18,7 @@ return {
 	config = function()
 		-- Set Zathura as the view method
 		vim.g.tex_flavor = "latex"
-		vim.g.vimtex_view_method = "skim"
+		-- vim.g.vimtex_view_method = "skim"
 		-- Enable quickfix mode for Latex errors
 		vim.g.vimtex_quickfix_mode = 1
 		vim.opt.conceallevel = 1
@@ -20,32 +33,14 @@ return {
 		vim.api.nvim_set_keymap(
 			"n",
 			"<leader>ll",
-			":VimtexCompile<CR>",
+			":VimtexCompile<CR>", -- autocmds.lua
 			{ noremap = true, silent = true, desc = "Compile Latex" }
 		)
 		vim.api.nvim_set_keymap(
 			"n",
 			"<leader>lv",
-			":VimtexView<CR>",
+			":VimtexView<CR>", -- autocmds.lua
 			{ noremap = true, silent = true, desc = "View Latex" }
 		)
-		-- vim.g.vimtex_view_method = "skim"
-		-- --vim.g.vimtext_view_general_options = "--keep-focus"
-		-- vim.g.vimtex_view_general_options = "--unique file:@pdf\\#src:@line@tex --keep-focus"
-		-- vim.g.vimtex_view_skim_sync = 1
-		-- vim.g.vimtex_view_skim_activate = 0 -- Do not activate skim
-		-- vim.g.vimtex_view_skim_reading_bar = 0
-		-- vim.g.vimtex_compiler_latexmk = {
-		--   options = {
-		--     "-pdf",
-		--     "-shell-escape",
-		--     "-verbose",
-		--     "-file-line-error",
-		--     "-synctex=1",
-		--     "-interaction=nonstopmode",
-		--   },
-		-- }
-		-- vim.g.vimtex_compiler_method = "latexmk" -- LaTeX compiler
-		-- vim.g.vimtex_compiler_latexmk.continous = 0
 	end,
 }

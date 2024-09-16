@@ -4,11 +4,8 @@ return {
   "zbirenbaum/copilot.lua",
   cmd = "Copilot",
   event = "InsertEnter",
-
   config = function()
     require("copilot").setup({
-      -- What options are available  here
-
       panel = {
         enabled = true,
         auto_refresh = false,
