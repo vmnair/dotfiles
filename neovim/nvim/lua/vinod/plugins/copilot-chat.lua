@@ -46,23 +46,23 @@ return {
     -- explain this
     keys = {
       -- Show help actions with telescope
-      {
-        "<leader>ah",
-        function()
-          local actions = require("CopilotChat.actions")
-          require("CopilotChat.integrations.telescope").pick(actions.help_actions())
-        end,
-        desc = "CopilotChat - Help actions",
-      },
-      -- Show prompts actions with telescope
-      {
-        "<leader>ap",
-        function()
-          local actions = require("CopilotChat.actions")
-          require("CopilotChat.integrations.telescope").pick(actions.prompt_actions())
-        end,
-        desc = "CopilotChat - Prompt actions",
-      },
+      -- {
+      --   "<leader>ah",
+      --   function()
+      --     local actions = require("CopilotChat.actions")
+      --     require("CopilotChat.integrations.telescope").pick(actions.help_actions())
+      --   end,
+      --   desc = "CopilotChat - Help actions",
+      -- },
+      -- -- Show prompts actions with telescope
+      -- {
+      --   "<leader>ap",
+      --   function()
+      --     local actions = require("CopilotChat.actions")
+      --     require("CopilotChat.integrations.telescope").pick(actions.prompt_actions())
+      --   end,
+      --   desc = "CopilotChat - Prompt actions",
+      -- },
       -- Code related commands
       { "<leader>ae", "<cmd>CopilotChatExplain<cr>",       desc = "CopilotChat - Explain code" },
       { "<leader>at", "<cmd>CopilotChatTests<cr>",         desc = "CopilotChat - Generate tests" },
@@ -122,7 +122,7 @@ return {
       -- Clear buffer and chat history
       { "<leader>al", "<cmd>CopilotChatReset<cr>",         desc = "CopilotChat - Clear buffer and chat history" },
       -- Toggle Copilot Chat Vsplit
-      { "<leader>av", "<cmd>CopilotChatToggle<cr>",        desc = "CopilotChat - Toggle" },
+      { "<leader>at", "<cmd>CopilotChatToggle<cr>",        desc = "CopilotChat - Toggle" },
       -- Copilot Chat Models
       { "<leader>a?", "<cmd>CopilotChatModels<cr>",        desc = "CopilotChat - Select Models" },
     },

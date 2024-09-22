@@ -28,6 +28,7 @@ return {
         --   dismiss = "<C-]>",
         -- },
       },
+      -- Explain this to me
       filetypes = {
         c = true,
         lua = true,
@@ -35,7 +36,7 @@ return {
         go = true,
         ["."] = false,            -- disable foe all other filetypes
       },
-      copilot_node_command = "node", -- Node.js version must be > 16.x
+      copilot_node_command = "node", -- Node.js version must be > 17.x
       server_opts_overrides = {},
     })
   end,
