@@ -28,6 +28,12 @@ tmux new-window -n Lazygit -t TermContacts
 tmux send-keys -t TermContacts:3  'cd ~/Projects/TermContacts' C-m
 tmux send-keys -t TermContacts:3  'lazygit' C-m
 
+
+# Documentation
+tmux new-window -n Documentation -t TermContacts
+tmux send-keys -t TermContacts:4  'cd ~/Projects/TermContacts/docs/latex' C-m
+tmux send-keys -t TermContacts:4  'vim termc.tex' C-m
+
 # Select the Neovim window
 tmux select-window -t TermContacts:1
 tmux select-pane -t TermContacts:1.1    

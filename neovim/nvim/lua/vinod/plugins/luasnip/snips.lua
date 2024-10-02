@@ -59,3 +59,31 @@ ls.add_snippets("c", {
     )
   ),
 })
+
+-- Tex Snippets
+ls.add_snippets("tex", {
+  -- Document template
+  s(
+    "doc",
+    fmt(
+      [[
+      \documentclass{{article}}
+      \usepackage{{{}}}
+      \title{{{}}}
+      \author{{{}}}
+      \date{{{}}}
+      \begin{{document}}
+      \maketitle
+      {}
+      \end{{document}}
+      ]],
+      {
+        i(1, "amsmath"), -- Insert node for package
+        i(2, "Title"), -- Insert node for title
+        i(3, "Author"), -- Insert node for author
+        i(4, "\\today"), -- Insert node for date
+        i(5, "Content"), -- Insert node for document content
+      }
+    )
+  ),
+})
