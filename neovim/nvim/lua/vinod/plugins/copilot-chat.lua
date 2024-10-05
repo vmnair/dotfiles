@@ -10,8 +10,8 @@ local prompts = {
   FixError = "Please explain the error in the following text and provide a solution.",
   BetterNamings = "Please provide better names for the following variables and functions.",
   Documentation = "Please provide documentation for the following code.",
-  SwaggerApiDocs = "Please provide documentation for the following API using Swagger.",
-  SwaggerJsDocs = "Please write JSDoc for the following API using Swagger.",
+  -- SwaggerApiDocs = "Please provide documentation for the following API using Swagger.",
+  -- SwaggerJsDocs = "Please write JSDoc for the following API using Swagger.",
   -- Text related prompts
   Summarize = "Please summarize the following text.",
   Spelling = "Please correct any grammar and spelling errors in the following text.",
@@ -40,13 +40,13 @@ return {
       separator = "───", -- Separator to use in chat
       auto_follow_cursor = false, -- Auto-follow cursor in chat
       auto_insert_mode = false, -- Automatically enter insert mode when opening window and if auto follow cursor is enabled on new prompt
-      window = {
-        layout = "float",
-        -- relative = "cursor",
-        -- width = 0.8,
-        -- height = 0.4,
-        -- row = 1,
-      },
+      -- window = {
+      --   layout = "float",
+      --   -- relative = "cursor",
+      --   -- width = 0.8,
+      --   -- height = 0.4,
+      --   -- row = 1,
+      -- },
     },
 
     config = function(_, opts)
