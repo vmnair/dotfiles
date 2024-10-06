@@ -29,7 +29,15 @@ return {
         exclude = {},
       },
       -- List of filetypes to disable indent-blankline
-      exclude = {},
+      exclude = { filetypes = { "Markdown" } },
     })
   end,
+
+  -- Set a key-binding to toggle indent-blankline
+  vim.api.nvim_set_keymap(
+    "n",
+    "<leader>ti",
+    "<Cmd>IBLToggle<CR>",
+    { noremap = true, silent = true, desc = "Toggle indent_blankline" }
+  ),
 }

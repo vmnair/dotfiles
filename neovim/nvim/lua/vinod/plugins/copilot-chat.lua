@@ -32,7 +32,7 @@ return {
     build = "make tiktoken", -- Only on MacOS or Linux
     event = "VeryLazy",
     opts = {
-      debug = true, -- Enable debugging
+      debug = false, -- Enable debugging
       show_help = true,
       question_header = "## Vinod ", -- Header to use for user questions
       answer_header = "## Copilot ", -- Header to use for AI answers
@@ -181,6 +181,8 @@ return {
       { "<leader>ccf", "<cmd>CopilotChatFixDiagnostic<cr>", desc = "CopilotChat - Fix Diagnostic" },
       -- Coplot Chat Models
       { "<leader>cc?", "<cmd>CopilotChatModels<cr>",        desc = "CopilotChat - Select Models" },
+      -- Toggle CopilotChat
+      { "<leader>tcc", "<Cmd>CopilotChatToggle<Cr>",        desc = "Toggle Copilot Chat" },
     },
   },
 }

@@ -38,7 +38,7 @@ local go_dap_setup = function()
   -- Run a go file
   vim.api.nvim_create_user_command("RunGoFile", 'lua vim.cmd("!go run %")', {})
   vim.api.nvim_set_keymap("n", "<leader>gr", ":RunGoFile<CR>", { noremap = true, silent = true })
-  print("DAP for GO Setup")
+  -- print("DAP for GO Setup")
 end
 
 -- Set up autocommand for go files
