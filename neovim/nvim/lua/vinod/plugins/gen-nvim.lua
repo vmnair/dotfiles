@@ -2,7 +2,8 @@ return {
 	"David-Kunz/gen.nvim",
 
 	opts = {
-		model = "qwen2.5:7b",
+		model = "deepseek-coder-v2:16b",
+		-- model = "qwen2.5:7b",
 		-- model = "codellama:70b",
 		-- model = "codellama:7b",
 		-- model = "gemma2:27b",
