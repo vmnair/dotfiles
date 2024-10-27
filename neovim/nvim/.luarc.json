@@ -6,6 +6,7 @@
     "diagnostics.disable": [
         "unused-function",
         "redundant-value",
-        "unused-local"
+        "unused-local",
+        "undefined-doc-name"
     ]
 }

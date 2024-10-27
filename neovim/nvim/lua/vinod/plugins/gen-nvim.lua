@@ -1,31 +1,36 @@
+-- Custom Parameters (with defaults)
+
+-- local gen = require("gen")
+-- Helper function to map for multiple modes
+local function map(modes, key, command, desc, options)
+	options = options or { noremap = true, silent = true }
+	options.desc = desc
+	for _, mode in ipairs(modes) do
+		vim.api.nvim_set_keymap(mode, key, command, options)
+	end
+end
+
 return {
 	"David-Kunz/gen.nvim",
-
 	opts = {
-		model = "deepseek-coder-v2:16b",
-		-- model = "qwen2.5:7b",
-		-- model = "codellama:70b",
-		-- model = "codellama:7b",
-		-- model = "gemma2:27b",
-		-- model = "llama3.2:latest",
-
+		model = "qwen2.5:7b", -- The default model to use.
 		quit_map = "q", -- set keymap to close the response window
 		retry_map = "<c-r>", -- set keymap to re-send the current prompt
 		accept_map = "<c-cr>", -- set keymap to replace the previous selection with the last result
 		host = "localhost", -- The host running the Ollama service.
 		port = "11434", -- The port on which the Ollama service is listening.
-		display_mode = "split", -- The display mode. Can be "float" or "split" or "horizontal-split".
+		display_mode = "split", -- The display mode. Can be 'float' or 'split' or 'horizontal-split'.
 		show_prompt = false, -- Shows the prompt submitted to Ollama.
 		show_model = true, -- Displays which model you are using at the beginning of your chat session.
 		no_auto_close = false, -- Never closes the window automatically.
-		file = false, -- Write the payload to a temporary file to keep the command short.
+		file = true, -- Write the payload to a temporary file to keep the command short.
 		hidden = false, -- Hide the generation window (if true, will implicitly set `prompt.replace = true`), requires Neovim >= 0.10
-		debug = false, -- Prints errors and the command which is run.
+		debug = false,
 		init = function(options)
 			pcall(io.popen, "ollama serve > /dev/null 2>&1 &")
 		end,
-		-- Function to initialize Ollama
 
+		-- Function to initialize Ollama
 		command = function(options)
 			local body = { model = options.model, stream = true }
 			return "curl --silent --no-buffer -X POST http://"
@@ -34,18 +39,9 @@ return {
 				.. options.port
 				.. "/api/chat -d $body"
 		end,
-		-- The command for the Ollama service. You can use placeholders $prompt, $model and $body (shellescaped).
-		-- This can also be a command string.
-		-- The executed command must return a JSON object with { response, context }
-		-- (context property is optional).
-		-- list_models = '<omitted lua function>', -- Retrieves a list of model names
 	},
 
-	-- Keymaps
-	vim.api.nvim_set_keymap(
-		"n",
-		"<leader>g",
-		"<cmd>Gen Ask<cr>",
-		{ noremap = true, silent = true, desc = "Generate code using Local LLM" }
-	),
+	--Keymaps
+	map({ "n", "v" }, "<leader>op", ":Gen<CR>", "Ollama Prompts"),
+	map({ "n", "v" }, "<leader>ol", ":lua require('gen').select_model()<Cr>", "Ollama List Models"),
 }

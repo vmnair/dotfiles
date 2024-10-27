@@ -40,6 +40,21 @@ local function directory_exists(path)
 	end
 end
 
+-- Text Management Functions
+-- util.GetVisualSelection
+-- function util.GetVisualSelection()
+-- 	---@diagnostic disable-next-line: deprecated
+-- 	local _, csrow, cscol, _ = unpack(vim.fn.getpos("'<"))
+-- 	---@diagnostic disable-next-line: deprecated
+-- 	local _, cerow, cecol, _ = unpack(vim.fn.getpos("'<"))
+--
+-- 	local lines = vim.fn.getline(csrow, cerow)
+-- 	lines[1] = string.sub(lines[1], cscol)
+-- 	lines[#lines] = string.sub(lines[#lines], 1, cecol - 1)
+--
+-- 	return table.concat(lines, "\n")
+-- end
+
 -- util.LoadModule(module_name, module_path)
 function util.LoadModule(module_name, module_path)
 	-- check if module exists

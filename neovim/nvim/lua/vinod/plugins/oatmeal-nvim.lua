@@ -8,5 +8,6 @@ return {
 		backend = "ollama",
 		-- model = "gemma3:27b",
 		model = "codellama:7b",
+		close_terminal_on_exit = true,
 	},
 }
