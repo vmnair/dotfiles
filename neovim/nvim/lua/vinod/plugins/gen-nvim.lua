@@ -1,15 +1,5 @@
 -- Custom Parameters (with defaults)
 
--- local gen = require("gen")
--- Helper function to map for multiple modes
-local function map(modes, key, command, desc, options)
-	options = options or { noremap = true, silent = true }
-	options.desc = desc
-	for _, mode in ipairs(modes) do
-		vim.api.nvim_set_keymap(mode, key, command, options)
-	end
-end
-
 return {
 	"David-Kunz/gen.nvim",
 	opts = {
