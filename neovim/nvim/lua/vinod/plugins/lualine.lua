@@ -17,22 +17,20 @@ return {
 		require("lualine").setup({
 			options = {
 				theme = "tokyonight-night",
-				--theme = 'catppuccin'
 			},
+			--theme = 'catppuccin'
 
 			sections = {
 				lualine_a = { "mode" },
-				lualine_b = { "branch" },
-				lualine_c = { "filename" },
+				lualine_b = { "filename" },
+				lualine_c = { "branch" },
 				lualine_x = {
 					{ get_current_ollama_model, icon = "", color = { fg = "#ff9e64", gui = "bold" } },
 				},
 				lualine_y = { "filetype" },
 				lualine_z = { "progress" },
 			},
-			refresh = {
-				statusline = 1000,
-			},
+			refresh = { statusline = 1000 },
 		})
 	end,
 }
