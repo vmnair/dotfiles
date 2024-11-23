@@ -1,4 +1,5 @@
 -- gen-nvim.lua
+
 -- Custom Parameters (with default
 -- Define the map function
 local function map(modes, lhs, rhs, desc)
@@ -6,22 +7,6 @@ local function map(modes, lhs, rhs, desc)
 	for _, mode in ipairs(modes) do
 		vim.api.nvim_set_keymap(mode, lhs, rhs, options)
 	end
-end
-
--- Custom function to refresh lualine
-local function refresh_lualine()
-	local lualine = require("lualine")
-	print("Lualine Refreshed")
-	lualine.refresh()
-end
-
--- Select Ollama Model (Wrapper function aroung Gen.select_model)
-local function select_ollama_model()
-	local gen = require("gen")
-	gen.select_model()
-	-- FIXME: This is not working
-	-- vim.api.nvim_command("redraw") -- Ensure the screen is updated after changing models
-	-- refresh_lualine()
 end
 
 return {
@@ -54,10 +39,5 @@ return {
 				.. "/api/chat -d $body"
 		end,
 	},
-	-- User Commands for selecting Ollama Model
-	vim.api.nvim_create_user_command("SelectOllamaModel", select_ollama_model, {}),
-	--Keymaps
 	map({ "n", "v" }, "<leader>op", ":Gen<CR>", "Ollama Prompts"),
-	map({ "n", "v" }, "<leader>ol", ":SelectOllamaModel<CR>", "Select a Ollama Model"),
-	-- map({ "n", "v" }, "<leader>ol", ":lua require('gen').select_model()<Cr>", "Ollama List Models"),
 }
