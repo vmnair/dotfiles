@@ -9,6 +9,77 @@ local function map(modes, lhs, rhs, desc)
 	end
 end
 
+-- Create the augroup and autocommand right after gen.nvim setup
+local augroup = vim.api.nvim_create_augroup("LualineOllamaUpdate", { clear = true })
+
+vim.api.nvim_create_autocmd("User", {
+	pattern = "GenModelChanged",
+	group = augroup,
+	callback = function()
+		require("lualine").refresh()
+	end,
+})
+
+-- Setup the model change detection
+local gen_select_model_original = nil
+local function setup_model_change_detection()
+	local ok, gen = pcall(require, "gen")
+	if not ok then
+		return
+	end
+	if not gen_select_model_original then
+		gen_select_model_original = gen.select_model
+	end
+	gen.select_model = function(...)
+		local result = gen_select_model_original(...)
+		vim.api.nvim_exec_autocmds("User", { pattern = "GenModelChanged" })
+		return result
+	end
+end
+
+-- Call the Model Change Detection
+setup_model_change_detection()
+
+local function select_model()
+	local handle = io.popen("ollama list")
+	if not handle then
+		return
+	end
+	local result = handle:read("*a")
+	handle:close()
+	local models = {}
+	for line in result:gmatch("[^\r\n]+") do
+		-- Skip the header line
+		if not line:match("NAME") then
+			-- Extract just the model name from the first column
+			local model_name = line:match("^(%S+)")
+			if model_name then
+				table.insert(models, model_name)
+			end
+		end
+	end
+
+	-- Show model selection menu
+	vim.ui.select(models, {
+		prompt = "Select Ollama model:",
+		format_item = function(item)
+			return item
+		end,
+	}, function(model_name)
+		if model_name then
+			-- Update the runtime model
+			local gen = require("gen")
+			gen.model = model_name
+
+			-- Notify user
+			vim.notify("Switched to model: " .. model_name, vim.log.levels.INFO)
+
+			-- Trigger our custom event for lualine update
+			vim.api.nvim_exec_autocmds("User", { pattern = "GenModelChanged" })
+		end
+	end)
+end
+
 return {
 	"David-Kunz/gen.nvim",
 	opts = {
@@ -39,5 +110,10 @@ return {
 				.. "/api/chat -d $body"
 		end,
 	},
+
+	-- User Commands
+	vim.api.nvim_create_user_command("GenSelectModel", select_model, {}),
 	map({ "n", "v" }, "<leader>op", ":Gen<CR>", "Ollama Prompts"),
+	-- Create command and optional keybinding
+	vim.keymap.set("n", "<leader>om", ":GenSelectModel<CR>", { silent = true, desc = "Select Ollama model" }),
 }
