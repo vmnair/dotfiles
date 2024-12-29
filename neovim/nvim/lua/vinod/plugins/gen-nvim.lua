@@ -115,5 +115,5 @@ return {
 	vim.api.nvim_create_user_command("GenSelectModel", select_model, {}),
 	map({ "n", "v" }, "<leader>op", ":Gen<CR>", "Ollama Prompts"),
 	-- Create command and optional keybinding
-	vim.keymap.set("n", "<leader>om", ":GenSelectModel<CR>", { silent = true, desc = "Select Ollama model" }),
+	vim.keymap.set("n", "<leader>oo", ":GenSelectModel<CR>", { silent = true, desc = "Select Ollama model" }),
 }
