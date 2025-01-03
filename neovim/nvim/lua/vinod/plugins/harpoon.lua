@@ -17,17 +17,24 @@ return {
     map("<leader>hh", function()
       harpoon.ui:toggle_quick_menu(harpoon:list())
     end, { desc = "Harpoon toggle quick menu" })
-    map("<leader>1", function()
-      harpoon:list():select(1)
-    end, { desc = "Harpoon select 1st file" })
-    map("<leader>2", function()
-      harpoon:list():select(2)
-    end, { desc = "Harpoon select 2nd file" })
-    map("<leader>3", function()
-      harpoon:list():select(3)
-    end, { desc = "Harpoon select 3rd file" })
-    map("<leader>4", function()
-      harpoon:list():select(4)
-    end, { desc = "Harpoon select 4th file" })
+
+    -- for i = 1, 9 do
+    -- 	map("<leader>" .. i, function()
+    -- 		harpoon:list():select(i)
+    -- 	end, { desc = "Harpoon select " .. i .. "th file" })
+    -- end
+
+    -- map("<leader>1", function()
+    --   harpoon:list():select(1)
+    -- end, { desc = "Harpoon select 1st file" })
+    -- map("<leader>2", function()
+    --   harpoon:list():select(2)
+    -- end, { desc = "Harpoon select 2nd file" })
+    -- map("<leader>3", function()
+    --   harpoon:list():select(3)
+    -- end, { desc = "Harpoon select 3rd file" })
+    -- map("<leader>4", function()
+    --   harpoon:list():select(4)
+    -- end, { desc = "Harpoon select 4th file" })
   end,
 }
