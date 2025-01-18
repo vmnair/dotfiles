@@ -29,7 +29,7 @@ ZSH_THEME="robbyrussell"
 # zstyle ':omz:update' mode reminder  # just remind me to update when it's time
 
 # Uncomment the following line to change how often to auto-update (in days).
-# zstyle ':omz:update' frequency 13
+zstyle ':omz:update' frequency 30 
 
 # Uncomment the following line if pasting URLs and other text is messed up.
 # DISABLE_MAGIC_FUNCTIONS="true"
@@ -115,7 +115,7 @@ alias dot="nvim ~/dotfiles"
 # alias nvim_config=" cd ~/dotfiles/neovim/nvim && nvim ."
 alias nv_config=" cd ~/dotfiles/neovim/nvim && nvim . "
 
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+# test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 # Brew version of LLVM
 export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
 
@@ -126,7 +126,7 @@ export LUA_CPATH="/usr/local/lib/lua/5.1/?.so;;"
 
 
 # Set up fzf key bindings and fuzzy completion
-source <(fzf --zsh)
+# source <(fzf --zsh)
 # eval "$(fzf --zsh)"
 # [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 # export FZF_DEFAULT_OPTS=' - height=40% - preview="bat - color=always {}" - preview-window=right:60%:wrap'
@@ -136,7 +136,4 @@ export PYENV_ROOT="$HOME/.pyenv"
 [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
 
-# nvm config
-export NVM_DIR="$HOME/.nvm"
-  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
-  [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
+export OLLAMA_API_BASE=http://127.0.0.1:11434

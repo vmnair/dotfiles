@@ -10,17 +10,17 @@ then
 tmux new-session -s CVScores -n Neovim -d 
 tmux send-keys -t CVScores 'cd ~/Projects/cvscores/' C-m
 tmux send-keys -t CVScores 'vim .' C-m
-# tmux split-window -v -t LearnGo
+tmux split-window -h -t CVScores 
 # tmux select-layout -t LearnGo main-horizontal
-# tmux send-keys -t LearnGo:1.2  'cd ~/Projects/LearnGo/build' C-m
-# tmux send-keys -t LearnGo:1.2  'clear' C-m
+tmux send-keys -t CVScores:1.2  'cd ~/Projects/cvscores' C-m
+tmux send-keys -t CVScores:1.2  'clear' C-m
+tmux send-keys -t CVScores:1.2  'aider --model ollama_chat/codeqwen:latest' C-m
 
 
 # Console Window
 tmux new-window -n Console -t CVScores 
 tmux send-keys -t CVScores:2  'cd ~/Projects/cvscores' C-m
 tmux send-keys -t CVScores:2  'clear' C-m
-
 
 # Lazygit
 tmux new-window -n Lazygit -t CVScores 
