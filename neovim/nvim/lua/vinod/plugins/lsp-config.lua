@@ -91,6 +91,7 @@ return {
 			-- bash scripts LSP
 			lspconfig.bashls.setup({
 				capabilities = capabilities,
+				filetypes = { "sh", "bash", "zsh", "zshrc", "proj" },
 			})
 
 			-- texlab configuration

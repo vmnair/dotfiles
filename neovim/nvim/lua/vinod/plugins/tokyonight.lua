@@ -8,7 +8,7 @@ return {
 	config = function()
 		-- Setup function
 		require("tokyonight").setup({
-			style = "storm", -- storm, day, moon and night
+			style = "moon", -- storm, day, moon and night
 			terminal_colors = true,
 
 			styles = {

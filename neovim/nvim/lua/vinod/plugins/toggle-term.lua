@@ -29,6 +29,14 @@ return {
         "<Cmd>ToggleTerm direction=float<CR>",
         { noremap = true, silent = true, desc = "Floating Terminal" }
       )
+
+      -- Keymap to hide floating terminal
+      vim.api.nvim_set_keymap(
+        "n",
+        "<leader>th",
+        "<Cmd>ToggleTerm<CR>",
+        { noremap = true, silent = true, desc = "Hide Floating Terminal" }
+      )
     end
   end, -- function config ends
 }

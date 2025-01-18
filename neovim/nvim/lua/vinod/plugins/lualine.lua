@@ -24,7 +24,6 @@ return {
 				lualine_b = { "filename" },
 				lualine_c = { "branch" },
 				lualine_x = {
-					-- TODO: Add color to the model.
 					{
 						get_ollama_model,
 						color = { fg = "FF9e64" },

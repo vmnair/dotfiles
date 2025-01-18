@@ -8,34 +8,44 @@ return {
 	},
 	config = function()
 		-- calling `setup` is optional for customization
-		require("fzf-lua").setup({})
+		require("fzf-lua").setup({
+			winopts = {
+				split = "belowright 10new",
+				preview = {
+					hidden = "hidden",
+					border = "single",
+					title = false,
+					layout = "horizontal",
+					horizontal = "right:50%",
+				},
+			},
+		})
 	end,
 
-	-- Example key mappings for fzf-lua
-	vim.keymap.set("n", "<leader>ff", "require('fzf-lua').files", { desc = "Fzf Files" }),
+	-- Key mappings for fzf-lua
 
-	vim.keymap.set("n", "<leader>fb", "require('fzf-lua').buffers", { desc = "Fzf Buffers" }),
-
-	vim.keymap.set("n", "<leader>fg", "require('fzf-lua').live_grep", { desc = "Fzf Live Grep" }),
-
-	vim.keymap.set("n", "<leader>fh", "require('fzf-lua').help_tags", { desc = "Fzf Help Tags" }),
-
-	--  vim.api.nvim_set_keymap(
-	-- 	"n",
-	-- 	"<leader>fg",
-	-- 	":lua require('fzf-lua').live_grep()<CR>",
-	-- 	{ noremap = true, silent = true }
-	-- ),
-	-- vim.api.nvim_set_keymap(
-	-- 	"n",
-	-- 	"<leader>fb",
-	-- 	":lua require('fzf-lua').buffers()<CR>",
-	-- 	{ noremap = true, silent = true }
-	-- ),
-	-- vim.api.nvim_set_keymap(
-	-- 	"n",
-	-- 	"<leader>fh",
-	-- 	":lua require('fzf-lua').help_tags()<CR>",
-	-- 	{ noremap = true, silent = true }
-	-- ),
+	vim.api.nvim_set_keymap(
+		"n",
+		"<leader>ff",
+		":lua require('fzf-lua').files()<CR>",
+		{ noremap = true, silent = true }
+	),
+	vim.api.nvim_set_keymap(
+		"n",
+		"<leader>fg",
+		":lua require('fzf-lua').live_grep()<CR>",
+		{ noremap = true, silent = true }
+	),
+	vim.api.nvim_set_keymap(
+		"n",
+		"<leader>fb",
+		":lua require('fzf-lua').buffers()<CR>",
+		{ noremap = true, silent = true }
+	),
+	vim.api.nvim_set_keymap(
+		"n",
+		"<leader>fh",
+		":lua require('fzf-lua').help_tags()<CR>",
+		{ noremap = true, silent = true }
+	),
 }
