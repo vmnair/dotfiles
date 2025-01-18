@@ -2,7 +2,8 @@ return {
 	"ibhagwan/fzf-lua",
 	-- optional for icon support
 	dependencies = {
-		"nvim-tree/nvim-web-devicons",
+		-- "nvim-tree/nvim-web-devicons",
+		"echasnovski/mini.icons",
 		"junegunn/fzf",
 		-- build = "./install --bin",
 	},
@@ -46,6 +47,27 @@ return {
 		"n",
 		"<leader>fh",
 		":lua require('fzf-lua').help_tags()<CR>",
+		{ noremap = true, silent = true }
+	),
+	-- Search project level
+	vim.api.nvim_set_keymap(
+		"n",
+		"<leader>fp",
+		":lua require('fzf-lua').grep_project()<CR>",
+		{ noremap = true, silent = true }
+	),
+	-- Search for keyword under cursor
+	vim.api.nvim_set_keymap(
+		"n",
+		"<leader>fk",
+		":lua require('fzf-lua').grep_cword()<CR>",
+		{ noremap = true, silent = true }
+	),
+
+	vim.api.nvim_set_keymap(
+		"n",
+		"<leader>fq",
+		":lua require('fzf-lua').grep_quickfix()<CR>",
 		{ noremap = true, silent = true }
 	),
 }
