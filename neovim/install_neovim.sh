@@ -1,6 +1,3 @@
-# Install Alacritty
-sudo apt-get install wezterm
-
 # Install Neovim
 # Prerequisites
 sudo apt-get install ninja-build gettext cmake unzip curl
