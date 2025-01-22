@@ -14,4 +14,4 @@ git checkout stable
 # Using this we can uninstall installed version of Neovim
 cd build && cpack -G DEB && sudo dpkg -i nvim-linux64.deb
 
-Echo "Installation completed, logout & log back in"
+echo "Installation completed, logout & log back in"
