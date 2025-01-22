@@ -1,5 +1,5 @@
 # Install Alacritty
-sudo apt-get install alacritty
+sudo apt-get install wezterm
 
 # Install Neovim
 # Prerequisites
