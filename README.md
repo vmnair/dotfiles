@@ -54,7 +54,9 @@
 
         c. The interface name is `wlp3s0`.
 
-       d. See Details of the driver installation: [WiFi Driver Installation](https://unix.stackexchange.com/questions/175810/how-to-install-broadcom-bcm4360-on-debian-on-macbook-pro).
+       d. See Details of the driver installation:
+           1. [WiFi Driver Installation](https://unix.stackexchange.com/questions/175810/how-to-install-broadcom-bcm4360-on-debian-on-macbook-pro).
+           2. [Install wl Driver](https://wiki.debian.org/wl#Debian_7_.22Wheezy.22)
        
        e. wl driver needed for `bcm4360` [wl](https://wiki.debian.org/wl)
 
