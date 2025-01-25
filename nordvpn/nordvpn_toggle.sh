@@ -16,7 +16,8 @@ fi
 # Function to check NordVPN status
 check_status() {
     # This command gets the full status and then checks if it contains 'Connected' or 'Disconnected'
-    local full_status=$(nordvpn status)
+    local full_status
+    full_status=$(nordvpn status)
     if [[ $full_status == *"Connected"* ]]; then
 	    echo "Connected"
     elif [[ $full_status == *"Disconnected"* ]]; then
