@@ -1,4 +1,4 @@
-# dotfiles
+lg# dotfiles
 ## Checklist For Installation:
 - [ ] Debian Installation
     - [x] Programs that need to be installed post-Debian install.
@@ -110,5 +110,13 @@
 
     
 12. Enabling [Tap to Click Feature on Scrollpad](https://cravencode.com/post/essentials/enable-tap-to-click-in-i3wm/)
+
+13. [Installing lazygit](https://github.com/jesseduffield/lazygit?tab=readme-ov-file#ubuntu)
+    - Currently (Jan 2025) there is no Debian package available.
+    - Lazygit can be installed manually.
+    - Go is a prerequisite
+    - git clone https://github.com/jesseduffield/lazygit.git
+    - cd lazygit
+    - go install
 
          
