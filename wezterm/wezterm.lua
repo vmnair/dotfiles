@@ -17,11 +17,11 @@ local config = {}
 -- Local functions
 -- Show which key table is active in the status area
 wezterm.on("update-right-status", function(window, _)
-  local name = window:active_key_table()
-  if name then
-    name = "TABLE: " .. name
-  end
-  window:set_right_status(name or "")
+	local name = window:active_key_table()
+	if name then
+		name = "TABLE: " .. name
+	end
+	window:set_right_status(name or "")
 end)
 
 config.window_background_opacity = 0.9
@@ -40,20 +40,20 @@ config.scrollback_lines = 5000
 
 --  No padding between panes
 config.window_padding = {
-  left = 0,
-  right = 0,
-  top = 0,
-  bottom = 0,
+	left = 0,
+	right = 0,
+	top = 0,
+	bottom = 0,
 }
 
 config.colors = {
-  tab_bar = {
-    background = "#1a1b26",
-    active_tab = {
-      bg_color = "#1a1b26",
-      fg_color = "#7aa2f7",
-    },
-  },
+	tab_bar = {
+		background = "#1a1b26",
+		active_tab = {
+			bg_color = "#1a1b26",
+			fg_color = "#7aa2f7",
+		},
+	},
 }
 
 -- Font configuration
