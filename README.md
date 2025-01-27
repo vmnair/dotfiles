@@ -119,4 +119,29 @@ lg# dotfiles
     - cd lazygit
     - go install
 
-         
+14. Setting up lightDM display manager to correct resolution
+    - During boot, the init system (e.g., systemd) starts various services, including the display manager. If LightDM is the display manager, the service lightdm.service is started.
+    - LightDM starts and initializes its components. It reads its configuration files to determine the settings to apply.
+Configuration is loaded from:
+
+    /etc/lightdm/lightdm.conf (main configuration file).
+    /usr/share/lightdm/lightdm.conf.d/ or /etc/lightdm/lightdm.conf.d/ (additional configuration snippets).
+
+    - We will be adding configurations under `/usr/share/lightdm/lightdm.conf.d`
+    - LightDM starts an X server (or Wayland compositor in some setups) for the graphical display. The X server initializes and manages the screen, input devices, and graphical environment.
+   - Steps
+   - 1. sudo nano /usr/share/lightdm/lightdm.conf.d/50-resolution.conf
+     2. Add the following content: [Seat:*]
+`display-setup-script=/usr/share/lightdm/display-setup.sh`
+  - Create the script
+    `sudo nano /usr/share/lightdm/display-setup.sh` the add
+    `#!/bin/bash
+    xrandr --output <MONITOR_NAME> --mode <DESIRED_RESOLUTION>`
+
+  - Restart lightdm to test
+    `sudo systemctl restart lightdm`
+ 
+
+    
+
+
