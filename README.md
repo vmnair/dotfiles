@@ -24,7 +24,7 @@ lg# dotfiles
       require a system reboot to apply the changes.
       1. Edit /etc/modprobe.d/hid_apple.conf (create this file if needed)
       2. Add `options hid_apple fnmode = 2`
-      3. run `sudo update-initamfs -u`
+      3. run `sudo update-initramfs -u`
       4. reboot the system
 
 - [x] [Enabling click on tap]
