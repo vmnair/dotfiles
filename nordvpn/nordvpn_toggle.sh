@@ -32,10 +32,10 @@ status=$(check_status)
 
 # Toggle VPN connection based on the current status
 if [ "$status" = "Connected" ]; then
-    echo "Disconnecting from NordVPN..."
+    # echo "Disconnecting from NordVPN..."
     nordvpn disconnect > /dev/null
 elif [ "$status" = "Disconnected" ]; then
-    echo "Connecting to NordVPN..."
+    # echo "Connecting to NordVPN..."
     nordvpn connect > /dev/null
 else
     echo "Unable to determine NordVPN status. Current status: $status"
