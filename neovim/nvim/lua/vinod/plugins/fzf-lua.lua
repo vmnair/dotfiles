@@ -12,12 +12,38 @@ return {
 		require("fzf-lua").setup({
 			winopts = {
 				split = "belowright 10new",
+
 				preview = {
-					hidden = "nohidden",
-					border = "single",
-					title = false,
-					layout = "horizontal",
-					horizontal = "right:50%",
+					-- default = "bat", -- override the default previewer?
+					-- default uses the 'builtin' previewer
+					border = "rounded", -- preview border: accepts both `nvim_open_win`
+					wrap = false, -- preview line wrap (fzf's 'wrap|nowrap')
+					hidden = false, -- start preview hidden
+					vertical = "down:45%", -- up|down:size
+					horizontal = "right:60%", -- right|left:size
+					layout = "flex", -- horizontal|vertical|flex
+					flip_columns = 100, -- #cols to switch to horizontal on flex
+					-- Only used with the builtin previewer:
+					title = true, -- preview border title (file/buf)?
+					title_pos = "center", -- left|center|right, title alignment
+					scrollbar = "false", -- `false` or string:'float|border'
+					-- float:  in-window floating border
+					-- border: in-border "block" marker
+					scrolloff = -1, -- float scrollbar offset from right
+					-- applies only when scrollbar = 'float'
+					delay = 20, -- delay(ms) displaying the preview
+					-- prevents lag on fast scrolling
+					winopts = { -- builtin previewer window options
+						number = true,
+						relativenumber = false,
+						cursorline = true,
+						cursorlineopt = "both",
+						cursorcolumn = false,
+						signcolumn = "no",
+						list = false,
+						foldenable = false,
+						foldmethod = "manual",
+					},
 				},
 			},
 		})
