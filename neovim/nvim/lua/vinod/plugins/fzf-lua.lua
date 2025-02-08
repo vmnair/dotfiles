@@ -13,7 +13,7 @@ return {
 			winopts = {
 				split = "belowright 10new",
 				preview = {
-					hidden = "hidden",
+					hidden = "nohidden",
 					border = "single",
 					title = false,
 					layout = "horizontal",
@@ -23,8 +23,7 @@ return {
 		})
 	end,
 
-	-- Key mappings for fzf-lua
-
+	-- Key mappings
 	vim.api.nvim_set_keymap(
 		"n",
 		"<leader>ff",
