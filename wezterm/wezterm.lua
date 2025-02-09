@@ -54,5 +54,26 @@ config.color_scheme = "Tokyo Night Storm"
 config.font_size = 16
 
 -- Leader key for Wezterm <C-a>
-config.leader = { key = "Space", mods = "CTRL", timeout_milliseconds = 2000 }
+-- timeout_milliseconds defaults to 1000 and can be omitted
+config.leader = { key = "a", mods = "CTRL", timeout_milliseconds = 1000 }
+config.keys = {
+	-- Send "CTRL-A" to the terminal when pressing CTRL-A, CTRL-A
+	{
+		key = "a",
+		mods = "LEADER|CTRL",
+		action = wezterm.action.SendKey({ key = "a", mods = "CTRL" }),
+	},
+	{
+		key = "%",
+		mods = "LEADER|SHIFT",
+		action = wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }),
+	},
+
+	{
+		key = '"',
+		mods = "LEADER|SHIFT",
+		action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }),
+	},
+}
+
 return config
