@@ -4,7 +4,7 @@ vim.g.copilot_no_tab_map = true
 return {
   "zbirenbaum/copilot.lua",
   cmd = "Copilot",
-  event = "InsertEnter", -- what does this do ?
+  event = "VeryLazy",
   config = function()
     require("copilot").setup({
       panel = {
