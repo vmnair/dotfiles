@@ -80,3 +80,5 @@ XDG_CONFIG_HOME="$HOME/.config"
 # # Call configure_monitors function
 # configure_monitors
 
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh

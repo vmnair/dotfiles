@@ -9,6 +9,7 @@
 general {
         colors = true
         interval = 1
+        separator = " | "
 }
 
 
@@ -33,6 +34,7 @@ wireless _first_ {
 
 
 battery all {
+        # path = "/sys/class/power_supply/ADP1/uevent"
         format = "%status %percentage %remaining"
 }
 
@@ -45,7 +47,8 @@ load {
 }
 
 memory {
-        format = "RAM: %used | %available"
+        # format = "RAM: %used | %available"
+        format = "RAM: %used"
         threshold_degraded = "1G"
         format_degraded = "MEMORY < %available"
 }
