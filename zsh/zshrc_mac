@@ -137,3 +137,8 @@ export PYENV_ROOT="$HOME/.pyenv"
 eval "$(pyenv init -)"
 
 export OLLAMA_API_BASE=http://127.0.0.1:11434
+# The following lines have been added by Docker Desktop to enable Docker CLI completions.
+fpath=(/Users/vinodnair/.docker/completions $fpath)
+autoload -Uz compinit
+compinit
+# End of Docker CLI completions

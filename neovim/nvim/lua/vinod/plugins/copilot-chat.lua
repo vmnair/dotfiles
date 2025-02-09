@@ -42,11 +42,11 @@ return {
 			auto_insert_mode = false, -- Automatically enter insert mode when opening window and if auto follow cursor is enabled on new prompt
 			chat_autocomplete = true,
 			-- window = {
-			-- 	layout = "float",
-			-- 	relative = "cursor",
-			-- 	width = 0.8,
-			-- 	height = 0.4,
-			-- 	row = 1,
+			--   layout = "float",
+			--   -- relative = "cursor",
+			--   -- width = 0.8,
+			--   -- height = 0.4,
+			--   -- row = 1,
 			-- },
 		},
 
