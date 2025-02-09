@@ -82,7 +82,11 @@ end
 
 return {
 	"David-Kunz/gen.nvim",
+<<<<<<< HEAD
 	event = "BufReadPost",
+=======
+	event = "VeryLazy",
+>>>>>>> 851b830545db38bb37aa5587b3ef11e8a723fdf7
 	opts = {
 		model = "qwen2.5:latest", -- The default model to use.
 		quit_map = "q", -- set keymap to close the response window

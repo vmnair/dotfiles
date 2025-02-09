@@ -10,6 +10,7 @@ return {
 	-- Snippet engine and dependencies
 	{
 		"L3MON4D3/LuaSnip", -- snippet engine
+		event = "VeryLazy",
 		version = "v2.*", -- follow latest release.
 		-- build = "make install_jsregexp", -- install jsregexp (optional!).
 		dependencies = {

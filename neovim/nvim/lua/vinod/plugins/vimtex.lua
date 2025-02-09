@@ -20,7 +20,8 @@ end
 return {
 	"lervag/vimtex",
 	ft = "tex",
-	lazy = false,
+	event = "VeryLazy",
+	-- lazy = false,
 	config = function()
 		vim.g.tex_flavor = "latex"
 		-- Enable quickfix mode for Latex errors
