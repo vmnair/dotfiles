@@ -50,8 +50,8 @@ config.colors = {
 }
 
 -- Font configuration
---config.font = wezterm.font("JetBrains Mono")
-config.font = wezterm.font("FiraCode Nerd Font")
+config.font = wezterm.font("JetBrains Mono")
+-- config.font = wezterm.font("FiraCode Nerd Font")
 config.font_size = 18
 -- config.color_scheme = "Catppuccin Mocha"
 config.color_scheme = "Tokyo Night Storm"
