@@ -108,6 +108,7 @@ alias vi=nvim
 alias v=nvim
 alias vim=nvim
 alias nv=nvim
+alias e=nvim
 alias zsh_config="nvim ~/.zshrc"
 alias ohmyzsh_config="nvim ~/.oh-my-zsh"
 alias lg="lazygit"
