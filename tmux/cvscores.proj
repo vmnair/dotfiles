@@ -10,7 +10,7 @@ then
 tmux new-session -s CVScores -n Neovim -d 
 tmux send-keys -t CVScores 'cd ~/Projects/cvscores' C-m
 tmux send-keys -t CVScores 'vim .' C-m
-
+tmux send-keys -t CVScores  'clear' C-m
 
 # Console Window
 tmux new-window -n Console -t CVScores
