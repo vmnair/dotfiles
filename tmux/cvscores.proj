@@ -10,20 +10,16 @@ then
 tmux new-session -s CVScores -n Neovim -d 
 tmux send-keys -t CVScores 'cd ~/Projects/cvscores' C-m
 tmux send-keys -t CVScores 'vim .' C-m
-tmux send-keys -t CVScores  'clear' C-m
 
 # Console Window
 tmux new-window -n Console -t CVScores
 tmux send-keys -t CVScores:2  'cd ~/Projects/cvscores' C-m
-tmux send-keys -t CVScores:2  'clear' C-m
-
+tmux send-keys -t CVScores 'clear' C-m
 
 # Lazygit
 tmux new-window -n Lazygit -t CVScores 
 tmux send-keys -t CVScores:3  'cd ~/Projects/cvscores' C-m
-tmux send-keys -t CVScores:3  'cd ~/Projects/cvscores' C-m
 tmux send-keys -t CVScores:3  'lg' C-m
-tmux send-keys -t CVScores:2  'clear' C-m
 
 # Select the Neovim window
 tmux select-window -t CVScores:1

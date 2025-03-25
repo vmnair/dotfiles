@@ -73,10 +73,10 @@ zstyle ':omz:update' frequency 30
 
 source $ZSH/oh-my-zsh.sh
 # zsh-autocomple
-source /opt/homebrew/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
+# source /opt/homebrew/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
 plugins=(
 	git
-	brew
+	# brew
   zsh-autocomplete
 )
 
@@ -114,8 +114,8 @@ alias ohmyzsh_config="nvim ~/.oh-my-zsh"
 alias lg="lazygit"
 alias dot="nvim ~/dotfiles"
 # alias nvim_config=" cd ~/dotfiles/neovim/nvim && nvim ."
-alias nv_config=" cd ~/dotfiles/neovim/nvim && nvim . "
-
+alias nv=" cd ~/dotfiles/neovim/nvim && nvim . "
+alias gc="cd  ~/.config/ghostty && nvim config"
 # test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 # Brew version of LLVM
 export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
@@ -127,8 +127,7 @@ export LUA_CPATH="/usr/local/lib/lua/5.1/?.so;;"
 
 
 # Set up fzf key bindings and fuzzy completion
-# source <(fzf --zsh)
-# eval "$(fzf --zsh)"
+eval "$(fzf --zsh)"
 # [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 # export FZF_DEFAULT_OPTS=' - height=40% - preview="bat - color=always {}" - preview-window=right:60%:wrap'
 
@@ -139,7 +138,7 @@ eval "$(pyenv init -)"
 
 export OLLAMA_API_BASE=http://127.0.0.1:11434
 # The following lines have been added by Docker Desktop to enable Docker CLI completions.
-fpath=(/Users/vinodnair/.docker/completions $fpath)
-autoload -Uz compinit
-compinit
+# fpath=(/opt/homebrew/share/zsh/site-functions $fpath)
+# autoload -Uz compinit
+# compinit
 # End of Docker CLI completions

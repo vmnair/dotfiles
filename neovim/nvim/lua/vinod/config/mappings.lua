@@ -5,26 +5,26 @@
 -- noremap and silent.
 --]]
 local map = function(mode, lhs, rhs, opts)
-	local options = { noremap = true, silent = true }
-	if opts then
-		options = vim.tbl_extend("force", options, opts)
-	end
-	vim.api.nvim_set_keymap(mode, lhs, rhs, options)
+  local options = { noremap = true, silent = true }
+  if opts then
+    options = vim.tbl_extend("force", options, opts)
+  end
+  vim.api.nvim_set_keymap(mode, lhs, rhs, options)
 end
 
 --This function adds ability to add keymaps to different modes
 local map_for_modes = function(modes, lhs, rhs, opts)
-	local options = { noremap = true, silent = true }
-	if opts then
-		options = vim.tbl_extend("force", options, opts)
-	end
-	for _, mode in ipairs(modes) do
-		local rhs_command = rhs
-		if mode == "t" then
-			rhs_command = [[<C-\><C-n>]] .. rhs
-		end
-		vim.api.nvim_set_keymap(mode, lhs, rhs_command, opts)
-	end
+  local options = { noremap = true, silent = true }
+  if opts then
+    options = vim.tbl_extend("force", options, opts)
+  end
+  for _, mode in ipairs(modes) do
+    local rhs_command = rhs
+    if mode == "t" then
+      rhs_command = [[<C-\><C-n>]] .. rhs
+    end
+    vim.api.nvim_set_keymap(mode, lhs, rhs_command, opts)
+  end
 end
 
 map("i", "jk", "<ESC>", { desc = "Exit insert mode with jk" })
@@ -51,8 +51,12 @@ map("n", "<S-Down>", "<Cmd>resize +2<CR>", { desc = "Resize pane down" })
 -- Indent/Unindent selected text with Tab and Shift+Tab
 map("v", ">", ">gv", { desc = "Indent selected line to right" })
 map("v", "<", "<gv", { desc = "Indent selected line to left" })
--- New buffer
+-- Buffer management
 map("n", "<leader>bn", ":enew<CR>", { desc = "Create new buffer" })
+map("n", "]b", ":bnext<CR>", { desc = "Move to next buffer" })
+map("n", "[b", ":bprevious<CR>", { desc = "Move to previous buffer" })
+map("n", "]B", ":blast<CR>", { desc = "Move to last buffer" })
+map("n", "[B", ":bfirst<CR>", { desc = "Move to first buffer" })
 
 -- Windows movement
 map_for_modes({ "n", "t", "v" }, "<C-h>", "<C-w>h", { desc = "Move to Left Window" })

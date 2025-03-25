@@ -1,0 +1,19 @@
+# ghostty configuration
+# Vinod Nair MD
+
+font-size = 16 
+theme = "tokyonight-storm"
+macos-auto-secure-input = true
+macos-secure-input-indication = true
+macos-titlebar-style = "transparent"
+auto-update = download
+
+# keybinding
+keybind = cmd+f=toggle_fullscreen
+# keybind = ctrl+g>r=reload_config
+# keybind = ctrl+g>z=toggle_split_zoom
+# keybind = ctrl+g>c=open_config
+# keybind = ctrl+g>x=close_surface
+# keybind = ctrl+g>f=toggle_fullscreen
+# keybind = ctrl+g>t=toggle_quick_terminal
+# keybind = ctrl+g>q=quit

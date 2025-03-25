@@ -16,4 +16,4 @@
 4. Plugins
 
 5. PDF Processing
-   - Use AI to learn about capturing text from PDk
+   - Use AI to learn about capturing text from PDF
