@@ -5,26 +5,26 @@
 -- noremap and silent.
 --]]
 local map = function(mode, lhs, rhs, opts)
-  local options = { noremap = true, silent = true }
-  if opts then
-    options = vim.tbl_extend("force", options, opts)
-  end
-  vim.api.nvim_set_keymap(mode, lhs, rhs, options)
+	local options = { noremap = true, silent = true }
+	if opts then
+		options = vim.tbl_extend("force", options, opts)
+	end
+	vim.api.nvim_set_keymap(mode, lhs, rhs, options)
 end
 
 --This function adds ability to add keymaps to different modes
 local map_for_modes = function(modes, lhs, rhs, opts)
-  local options = { noremap = true, silent = true }
-  if opts then
-    options = vim.tbl_extend("force", options, opts)
-  end
-  for _, mode in ipairs(modes) do
-    local rhs_command = rhs
-    if mode == "t" then
-      rhs_command = [[<C-\><C-n>]] .. rhs
-    end
-    vim.api.nvim_set_keymap(mode, lhs, rhs_command, opts)
-  end
+	local options = { noremap = true, silent = true }
+	if opts then
+		options = vim.tbl_extend("force", options, opts)
+	end
+	for _, mode in ipairs(modes) do
+		local rhs_command = rhs
+		if mode == "t" then
+			rhs_command = [[<C-\><C-n>]] .. rhs
+		end
+		vim.api.nvim_set_keymap(mode, lhs, rhs_command, opts)
+	end
 end
 
 map("i", "jk", "<ESC>", { desc = "Exit insert mode with jk" })
@@ -38,7 +38,9 @@ map("v", "x", '"_x', { desc = "Delete the char cursor to void in visual mode" })
 -- Format pasted line
 map("n", "p", "p==", { desc = "Auto formats / indents the pasted text" })
 -- Save file
-map("n", "<C-s>", ":w<CR>", { desc = "Saves current buffer" })
+map("n", "<C-s>", "<Cmd>w<CR>", { desc = "Saves current buffer" })
+-- Close Neovim
+map("n", "<C-q>", "<Cmd>q<CR>", { desc = "Exit Neovim" })
 -- Vertical split
 map("n", "<leader>+", "<Cmd>vsplit<CR>", { desc = "Splits vertically" })
 -- Horizontal split
@@ -67,11 +69,6 @@ map_for_modes({ "n", "t", "v" }, "<C-l>", "<C-w>l", { desc = "Move to Right Wind
 -- Lazy keymaps
 map("n", "<leader>lo", "<Cmd>Lazy<CR>", { desc = "Lazy - Open" })
 map("n", "<leader>lu", "<Cmd>Lazy update<CR>", { desc = "Lazy - Update" })
--- map("n", "<leader>ls", "<Cmd>Lazy sync<CR>", { desc = "Lazy - Sync" })
--- map("n", "<leader>lh", "<Cmd>Lazy health<CR>", { desc = "Lazy - Health" })
--- map("n", "<leader>l?", "<Cmd>Lazy help<CR>", { desc = "Lazy - Help" })
--- map("n", "<leader>lc", "<Cmd>Lazy clean<CR>", { desc = "Lazy - Clean " })
--- map("n", "<leader>li", "<Cmd>Lazy install<CR>", { desc = "Lazy - Install " })
 
 -- LaTeX keymaps
 map("n", "<leader>lv", "<Cmd>LatexCompileAndOpenPDF<CR>", { desc = "Compile & View LaTeX file." })
