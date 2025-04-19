@@ -17,6 +17,8 @@ opt.path:append(".,**")
 -- Wildmenu
 opt.wildmenu = true
 
+-- only show one line below the status line
+opt.cmdheight = 1
 opt.number = true
 opt.relativenumber = true
 

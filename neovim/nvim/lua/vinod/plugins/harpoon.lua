@@ -1,22 +1,22 @@
 -- harpoon.nvim
 return {
-	"ThePrimeagen/harpoon",
-	branch = "harpoon2",
-	event = "VeryLazy",
-	dependencies = { "nvim-lua/plenary.nvim" },
+  "ThePrimeagen/harpoon",
+  branch = "harpoon2",
+  event = "VeryLazy",
+  dependencies = { "nvim-lua/plenary.nvim" },
 
-	config = function()
-		local harpoon = require("harpoon")
-		harpoon:setup()
-		local function map(lhs, rhs, opts)
-			vim.keymap.set("n", lhs, rhs, opts or {})
-		end
+  config = function()
+    local harpoon = require("harpoon")
+    harpoon:setup()
+    local function map(lhs, rhs, opts)
+      vim.keymap.set("n", lhs, rhs, opts or {})
+    end
 
-		map("<leader>ha", function()
-			harpoon:list():add()
-		end, { desc = "Harpoon add file" })
-		map("<leader>hh", function()
-			harpoon.ui:toggle_quick_menu(harpoon:list())
-		end, { desc = "Harpoon toggle quick menu" })
-	end,
+    map("<leader>ha", function()
+      harpoon:list():add()
+    end, { desc = "Harpoon add file" })
+    map("<leader>hh", function()
+      harpoon.ui:toggle_quick_menu(harpoon:list())
+    end, { desc = "Harpoon toggle quick menu" })
+  end,
 }

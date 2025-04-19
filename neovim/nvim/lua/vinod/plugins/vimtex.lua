@@ -1,4 +1,3 @@
--- vimtex.lua
 -- Plugin: lervag/vimtex
 -- Author: Vinod Nair
 

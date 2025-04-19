@@ -6,4 +6,4 @@ require("vinod.config.options")
 require("vinod.config.util")
 require("vinod.config.autocmds")
 require("vinod.config.aliases")
--- require("vinod.config.mappings") Called from lazy.lu
+-- require("vinod.config.mappings") Called from lazy.lua

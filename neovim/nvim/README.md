@@ -15,5 +15,6 @@
 
 4. Plugins
 
-5. PDF Processing
-   - Use AI to learn about capturing text from PDF
+- [x] markdown-preview
+- [x] live-preview
+- [x] render-markdown
