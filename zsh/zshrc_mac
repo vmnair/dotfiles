@@ -125,7 +125,8 @@ export PATH="/usr/local/bin/lua5.1:$PATH"
 export LUA_PATH="/usr/local/share/lua/5.1/?.lua;;"
 export LUA_CPATH="/usr/local/lib/lua/5.1/?.so;;"
 
-
+# Set neovim as the manpager
+export MANPAGER="nvim +Man!"
 # Set up fzf key bindings and fuzzy completion
 eval "$(fzf --zsh)"
 # [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
@@ -135,6 +136,10 @@ eval "$(fzf --zsh)"
 export PYENV_ROOT="$HOME/.pyenv"
 [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
+
+export NVM_DIR="$HOME/.nvm"
+  [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
+  [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
 
 export OLLAMA_API_BASE=http://127.0.0.1:11434
 # The following lines have been added by Docker Desktop to enable Docker CLI completions.

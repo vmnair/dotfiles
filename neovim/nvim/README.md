@@ -18,3 +18,10 @@
 - [x] markdown-preview
 - [x] live-preview
 - [x] render-markdown
+
+5. Miscellenous
+
+- [x] [Use Neovim as the man pager reader (manpager)](https://www.visualmode.dev/a-better-man-page-viewer)
+  ```bash
+  export MANPAGER="nvim +Man!"
+  ```
