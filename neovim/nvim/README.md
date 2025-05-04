@@ -3,7 +3,9 @@
 ## Contents
 
 1. Directory Structure
-   The folder structure should be that `$XDG_CONFIG_HOME` should have an `nvim` folder which will contain a `init.lua` file, which is in the neovim `runtimepath`.
+   The folder structure should be that `$XDG_CONFIG_HOME` should have an
+   `nvim` folder which will contain a `init.lua` file, which is in the
+   neovim `runtimepath`.
 
 - `$XDG_CONFIG_HOME`
 - `nvim`
@@ -15,13 +17,15 @@
 
 4. Plugins
 
-- [x] markdown-preview
-- [x] live-preview
-- [x] render-markdown
+- [x] [markdown-preview](https://github.com/iamcco/markdown-preview.nvim)
+- [x] [render-markdown](https://github.com/MeanderingProgrammer/render-markdown.nvim)
+- [x] [live-preview](https://github.com/brianhuster/live-preview.nvim)
+- [x] [showkeys](https://github.com/nvzone/showkeys)
 
 5. Miscellenous
 
 - [x] [Use Neovim as the man pager reader (manpager)](https://www.visualmode.dev/a-better-man-page-viewer)
+
   ```bash
-  export MANPAGER="nvim +Man!"
+   export MANPAGER="nvim +Man!"
   ```
