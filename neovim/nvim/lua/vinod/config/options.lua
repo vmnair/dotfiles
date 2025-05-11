@@ -68,6 +68,7 @@ opt.timeout = true
 opt.timeoutlen = 300
 opt.mouse = ""
 
+opt.winborder = "single"
 -- Set spell check
 -- opt.spell = true
 -- opt.spelllang = { "en" }

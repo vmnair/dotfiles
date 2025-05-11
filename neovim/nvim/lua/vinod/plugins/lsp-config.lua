@@ -11,6 +11,7 @@ return {
     config = function()
       require("mason-lspconfig").setup({
         automatic_installation = false,
+        automatic_enable = true,
         handlers = {},
         ensure_installed = {
           "gopls",
