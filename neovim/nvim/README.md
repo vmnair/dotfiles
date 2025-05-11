@@ -21,6 +21,11 @@
 - [x] [render-markdown](https://github.com/MeanderingProgrammer/render-markdown.nvim)
 - [x] [live-preview](https://github.com/brianhuster/live-preview.nvim)
 - [x] [showkeys](https://github.com/nvzone/showkeys)
+- [ ] [zk-nvim](https://github.com/zk-org/zk-nvim)
+  - Install _zk cli_ with brew,
+  ```bash
+  brew install zk
+  ```
 
 5. Miscellenous
 
