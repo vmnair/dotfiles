@@ -80,6 +80,7 @@ plugins=(
   zsh-autocomplete
 )
 
+export EDITOR="nvim" 
 
 # User configuration
 
@@ -116,6 +117,7 @@ alias dot="nvim ~/dotfiles"
 # alias nvim_config=" cd ~/dotfiles/neovim/nvim && nvim ."
 alias nv=" cd ~/dotfiles/neovim/nvim && nvim . "
 alias gc="cd  ~/.config/ghostty && nvim config"
+alias update="brew update && brew upgrade && brew cleanup"
 # test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 # Brew version of LLVM
 export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
@@ -127,6 +129,7 @@ export LUA_CPATH="/usr/local/lib/lua/5.1/?.so;;"
 
 # Set neovim as the manpager
 export MANPAGER="nvim +Man!"
+
 # Set up fzf key bindings and fuzzy completion
 eval "$(fzf --zsh)"
 # [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
