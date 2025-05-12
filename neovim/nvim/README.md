@@ -21,6 +21,8 @@
 - [x] [render-markdown](https://github.com/MeanderingProgrammer/render-markdown.nvim)
 - [x] [live-preview](https://github.com/brianhuster/live-preview.nvim)
 - [x] [showkeys](https://github.com/nvzone/showkeys)
+- [x] [mason-nvim](https://github.com/mason-org/mason.nvim)
+- [x] [mason-lspconfig](https://github.com/mason-org/mason-lspconfig.nvim)
 - [x] [zk-nvim](https://github.com/zk-org/zk-nvim)
   - Install _zk cli_ with brew,
   ```bash
