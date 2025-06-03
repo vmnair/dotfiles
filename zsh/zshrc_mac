@@ -128,7 +128,7 @@ export LUA_PATH="/usr/local/share/lua/5.1/?.lua;;"
 export LUA_CPATH="/usr/local/lib/lua/5.1/?.so;;"
 
 # Set the default notes directory for zk.
-export ZK_NOTEBOOK_DIR="$HOME/notes"
+export ZK_NOTEBOOK_DIR="$HOME/notebook"
 
 # Set neovim as the manpager
 export MANPAGER="nvim +Man!"

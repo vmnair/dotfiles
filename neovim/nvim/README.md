@@ -36,3 +36,8 @@
   ```bash
    export MANPAGER="nvim +Man!"
   ```
+
+```
+
+```
+

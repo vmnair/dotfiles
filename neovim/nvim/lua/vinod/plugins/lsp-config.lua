@@ -11,7 +11,7 @@ return {
     config = function()
       require("mason-lspconfig").setup({
         automatic_installation = false,
-        automatic_enable = true,
+        automatic_enable = false,
         handlers = {},
         ensure_installed = {
           "gopls",
@@ -113,6 +113,10 @@ return {
           },
         },
       })
+      -- configure marksman language server
+      -- lspconfig.marksman.setup({
+      -- 	settings = {},
+      -- })
       -- Diagnostic floating window should have rounded borders
       vim.diagnostic.config({
         float = {
@@ -146,7 +150,6 @@ return {
       })
     end,
   },
-
   -- This is for the diagnostic signs
   vim.diagnostic.config({
     signs = {

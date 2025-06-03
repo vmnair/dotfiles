@@ -25,6 +25,7 @@ opt.relativenumber = true
 opt.splitright = true --split horizontal window to below
 opt.splitbelow = true -- split horizontal window to below
 
+opt.textwidth = 80    -- Set the text width to 80 characters
 opt.wrap = false      -- disable line wrapping
 
 opt.expandtab = true
@@ -32,7 +33,6 @@ opt.tabstop = 2               -- Expand tab to spaces
 opt.shiftwidth = 2
 opt.autoindent = true         -- Copy intent from the current line when starting new.
 
-opt.textwidth = 80            -- Set the text width to 80 characters
 opt.clipboard = "unnamedplus" -- Synchronizes the system clipboard
 
 -- Places cursor in the middle of the screen

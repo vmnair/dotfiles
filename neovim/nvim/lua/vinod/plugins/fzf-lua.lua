@@ -12,7 +12,7 @@ return {
     -- calling `setup` is optional for customization
     require("fzf-lua").setup({
       winopts = {
-        split = "belowright 20new",
+        -- split = "belowright 20new",
 
         preview = {
           -- default = "bat", -- override the default previewer?
@@ -23,6 +23,7 @@ return {
           vertical = "down:45%", -- up|down:size
           horizontal = "right:60%", -- right|left:size
           layout = "flex",     -- horizontal|vertical|flex
+          -- layout = "horizontal", -- horizontal|vertical|flex
           flip_columns = 100,  -- #cols to switch to horizontal on flex
           -- Only used with the builtin previewer:
           title = true,        -- preview border title (file/buf)?
@@ -100,6 +101,13 @@ return {
     "n",
     "<leader>fr",
     ":lua require('fzf-lua').resume()<CR>",
-    { noremap = true, silent = true, desc = "Fuzzy find quickfix" }
+    { noremap = true, silent = true, desc = "Resume fuzzy find" }
+  ),
+
+  vim.api.nvim_set_keymap(
+    "n",
+    "<leader>fm",
+    ":lua require('fzf-lua').keymaps()<CR>",
+    { noremap = true, silent = true, desc = "Display keymaps" }
   ),
 }

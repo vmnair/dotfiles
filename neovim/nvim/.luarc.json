@@ -1,12 +1,9 @@
 {
-    "diagnostics.globals": [
-        "vim",
-        "local"
-    ],
-    "diagnostics.disable": [
-        "unused-function",
-        "redundant-value",
-        "unused-local",
-        "undefined-doc-name"
-    ]
+  "diagnostics.globals": ["vim", "local"],
+  "diagnostics.disable": [
+    "unused-function",
+    "redundant-value",
+    "unused-local",
+    "undefined-doc-name"
+  ]
 }

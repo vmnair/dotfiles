@@ -1,4 +1,14 @@
 -- -- autocmds.lua
+-- Enables line wrapping and sets text width for markdown files
+
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = "markdown",
+	callback = function()
+		vim.opt_local.wrap = true
+		vim.opt_local.textwidth = 80
+	end,
+})
+
 -- Move the help file to the right insted of the bottom
 vim.api.nvim_create_autocmd("BufWinEnter", {
 	pattern = "*.txt",
@@ -93,21 +103,34 @@ vim.api.nvim_create_autocmd("BufWritePost", {
 	end,
 })
 
-
-
 -- Enable [[ to trigger the completion menu in markdown files
 vim.api.nvim_create_autocmd("FileType", {
-  pattern = "markdown",
-  callback = function()
-    if vim.lsp.omnifunc then
-      -- Set the omnifunc to the LSP's omnifunc
-      vim.opt_local.omnifunc = "v:lua.vim.lsp.omnifunc"
-      -- Create a buffer-local mapping for [[ to trigger completion
-      vim.api.nvim_buf_set_keymap(0, "i", "[[", "[[<C-x><C-o>", { noremap = true, silent = true })
-    else
-      vim.notify("LSP omnifunc not available", vim.log.levels.WARN)
-    end
-    -- assign the omnifunc of  lsp to local buffer (markdown filetype)
-    -- vim.opt_local.omnifunc = "v:lua.vim.lsp.omnifunc"
-  end,
+	pattern = "markdown",
+	callback = function()
+		if vim.lsp.omnifunc then
+			-- Set the omnifunc to the LSP's omnifunc
+			vim.opt_local.omnifunc = "v:lua.vim.lsp.omnifunc"
+			-- Create a buffer-local mapping for [[ to trigger completion
+			vim.api.nvim_buf_set_keymap(0, "i", "[[", "[[<C-x><C-o>", { noremap = true, silent = true })
+		else
+			vim.notify("LSP omnifunc not available", vim.log.levels.WARN)
+		end
+		-- assign the omnifunc of  lsp to local buffer (markdown filetype)
+		-- vim.opt_local.omnifunc = "v:lua.vim.lsp.omnifunc"
+	end,
 })
+
+-- Keymaps for Copilot
+-- Open Copilot Panel
+vim.keymap.set("n", "<M-p>", "<cmd>Copilot panel<cr>", { desc = "Open Copilot Panel" })
+-- Close the Copilot panel
+vim.keymap.set("n", "<M-c>", "<cmd>Copilot panel close<cr>", { desc = "Close Copilot Panel" })
+-- Traverse Copilot Suggestions
+vim.keymap.set("i", "<M-j>", "<cmd>Copilot next<cr>", { desc = "Next Copilot Suggestion" })
+vim.keymap.set("i", "<M-k>", "<cmd>Copilot prev<cr>", { desc = "Previous Copilot Suggestion" })
+-- Accept Copilot Suggestion
+vim.keymap.set("i", "<M-l>", "<cmd>Copilot accept<cr>", { desc = "Accept Copilot Suggestion" })
+-- Dismiss Copilot Suggestion
+vim.keymap.set("i", "<M-d>", "<cmd>Copilot dismiss<cr>", { desc = "Dismiss Copilot Suggestion" })
+-- Refresh Copilot Suggestions
+vim.keymap.set("i", "<M-r>", "<cmd>Copilot refresh<cr>", { desc = "Refresh Copilot Suggestions" })
