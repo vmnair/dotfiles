@@ -6,7 +6,6 @@ return {
 
   ---@type snacks.Config
   opts = {
-
     animate = {
       enabled = true,          -- enable animations
       duration = 200,          -- duration of the animation in ms
@@ -33,18 +32,54 @@ return {
     -- picker configuration
     picker = {
       sources = {
+        -- files = {
+        --   hidden = true, -- show hidden files
+        --   follow = true, -- follow symlinks
+        --   format = "file",
+        -- },
+        -- grep = {
+        --   format = "file",
+        -- },
+        -- buffers = {
+        --   format = "file",
+        -- },
         explorer = {
           replace_netrw = true,
           enabled = true,
           auto_close = false,
           jumb = { close = false },
-        }
-      }
+          format = "file",
+        },
+      },
+
+      ---@class snacks.picker.formatters.Config
+      formatters = {
+        text = {
+          ft = nil, ---@type string? filetype for highlighting
+        },
+        file = {
+          filename_first = true, -- display filename before the file path
+          truncate = 40,         -- truncate the file path to (roughly) this length
+          filename_only = false, -- only show the filename
+          icon_width = 2,        -- width of the icon (in characters)
+          git_status_hl = true,  -- use the git status highlight group for the filename
+        },
+        selected = {
+          show_always = false, -- only show the selected column when there are multiple selections
+          unselected = true,   -- use the unselected icon for unselected items
+        },
+        severity = {
+          icons = true,  -- show severity icons
+          level = false, -- show severity level
+          ---@type "left"|"right"
+          pos = "left",  -- position of the diagnostics
+        },
+      },
+
     },
     -- terminal configuration
     terminal = {
-      enabed = true,
-
+      enabled = true,
     },
 
 

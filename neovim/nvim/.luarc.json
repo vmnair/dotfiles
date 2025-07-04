@@ -1,5 +1,6 @@
 {
-  "diagnostics.globals": ["vim", "local"],
+  "diagnostics.globals": ["vim", "local",
+        "if"],
   "diagnostics.disable": [
     "unused-function",
     "redundant-value",

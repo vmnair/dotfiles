@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# tmux setup for learning Lua
+
+
+if ! tmux  has-session -t Readwise 2>/dev/null;
+then
+
+# Neovim 
+tmux new-session -s Readwise -n Neovim -d
+tmux send-keys -t Readwise 'cd ~/Projects/Readwise' C-m
+tmux send-keys -t Readwise 'vim .' C-m
+
+# tmux split-window -v -t Readwise
+# tmux select-layout -t Readwise main-horizontal
+# tmux send-keys -t Readwise:1.2  'cd ~/Projects/LearnLua' C-m
+# tmux send-keys -t Readwise:1.2  'clear' C-m
+
+
+# Console Window
+tmux new-window -n Console -t Readwise
+tmux send-keys -t Readwise:2  'cd ~/Projects/Readwise' C-m
+tmux send-keys -t Readwise:2  'clear' C-m
+
+
+# Lazygit
+tmux new-window -n Lazygit -t Readwise
+tmux send-keys -t Readwise:3  'cd ~/Projects/Readwise' C-m
+tmux send-keys -t Readwise:3  'lazygit' C-m
+tmux send-keys -t Readwise:3  'clear' C-m
+
+# Select the Neovim window
+tmux select-window -t Readwise:1
+tmux select-pane -t Readwise:1.1
+fi
+
+# No running session, so start a new session
+tmux attach -t Readwise
+
+
+

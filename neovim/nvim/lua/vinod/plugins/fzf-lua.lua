@@ -11,9 +11,17 @@ return {
   config = function()
     -- calling `setup` is optional for customization
     require("fzf-lua").setup({
+      files = {
+        formatter = "path.filename_first", -- display filename before the file path
+      },
       winopts = {
         -- split = "belowright 20new",
-
+        border = "rounded",
+        backdrop = 80,
+        treesitter = {
+          enabled = true,
+          fzf_colors = { ["hl"] = "-1:reverse", ["hl+"] = "-1:reverse" },
+        },
         preview = {
           -- default = "bat", -- override the default previewer?
           -- default uses the 'builtin' previewer

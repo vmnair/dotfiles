@@ -118,6 +118,8 @@ alias dot="nvim ~/dotfiles"
 alias nv=" cd ~/dotfiles/neovim/nvim && nvim . "
 alias gc="cd  ~/.config/ghostty && nvim config"
 alias update="brew update && brew upgrade && brew cleanup"
+alias search="zk search "
+
 # test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 # Brew version of LLVM
 export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
@@ -153,3 +155,9 @@ export OLLAMA_API_BASE=http://127.0.0.1:11434
 # autoload -Uz compinit
 # compinit
 # End of Docker CLI completions
+
+
+# Aerospace customization
+# use ff to list aerospace files.j
+alias ff='aerospace list-windows --all --format "%{window-id}: [%{app-name}] %{window-title}" | fzf --prompt="Switch to window: " | cut -d: -f1 | xargs -I{} aerospace focus --window-id {}'
+

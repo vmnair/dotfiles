@@ -1,8 +1,12 @@
--- -- autocmds.lua
--- Enables line wrapping and sets text width for markdown files
+-- autocmds.lua
 
+-- Markdown configuration
+local MarkdownConfig = vim.api.nvim_create_augroup("MarkdownConfig", { clear = true })
+
+-- Enables line wrapping and sets text width for markdown files
 vim.api.nvim_create_autocmd("FileType", {
 	pattern = "markdown",
+	group = MarkdownConfig,
 	callback = function()
 		vim.opt_local.wrap = true
 		vim.opt_local.textwidth = 80
@@ -23,11 +27,12 @@ vim.api.nvim_create_autocmd("BufWinEnter", {
 -- C configuration
 
 -- Create an augroup for autoindenting C files
-local autoindent_c = vim.api.nvim_create_augroup("autoindent_c", { clear = true })
+local AutoindentC = vim.api.nvim_create_augroup("AutoindentC", { clear = true })
 
 -- Add an autocmd to the augroup to autoindent C files on save
 vim.api.nvim_create_autocmd("BufWritePre", {
 	pattern = "*.c",
+	group = AutoindentC,
 	callback = function()
 		-- Save the current cursor position
 		local pos = vim.api.nvim_win_get_cursor(0)
@@ -36,7 +41,6 @@ vim.api.nvim_create_autocmd("BufWritePre", {
 		-- Restore the cursor position
 		vim.api.nvim_win_set_cursor(0, pos)
 	end,
-	group = autoindent_c,
 })
 
 -- LaTeX configuration
