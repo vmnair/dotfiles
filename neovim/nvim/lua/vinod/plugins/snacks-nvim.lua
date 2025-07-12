@@ -49,6 +49,7 @@ return {
           auto_close = false,
           jumb = { close = false },
           format = "file",
+          hidden = true,
         },
       },
 

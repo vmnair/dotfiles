@@ -2,13 +2,13 @@
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 
 # Path to your oh-my-zsh installation.
-export ZSH="$HOME/.oh-my-zsh"
+# export ZSH="$HOME/.oh-my-zsh"
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="robbyrussell"
+# ZSH_THEME="robbyrussell"
 
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
@@ -29,7 +29,7 @@ ZSH_THEME="robbyrussell"
 # zstyle ':omz:update' mode reminder  # just remind me to update when it's time
 
 # Uncomment the following line to change how often to auto-update (in days).
-zstyle ':omz:update' frequency 30 
+# zstyle ':omz:update' frequency 30 
 
 # Uncomment the following line if pasting URLs and other text is messed up.
 # DISABLE_MAGIC_FUNCTIONS="true"
@@ -47,7 +47,7 @@ zstyle ':omz:update' frequency 30
 # You can also set it to another string to have that shown instead of the default red dots.
 # e.g. COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
 # Caution: this setting can cause issues with multiline prompts in zsh < 5.7.1 (see #5765)
-# COMPLETION_WAITING_DOTS="true"
+COMPLETION_WAITING_DOTS="true"
 
 # Uncomment the following line if you want to disable marking untracked files
 # under VCS as dirty. This makes repository status check for large repositories
@@ -70,40 +70,25 @@ zstyle ':omz:update' frequency 30
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
+# ~/.zshrc
 
-source $ZSH/oh-my-zsh.sh
-# zsh-autocomple
-# source /opt/homebrew/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
+eval "$(starship init zsh)"
+# source $ZSH/oh-my-zsh.sh
 plugins=(
 	git
 	# brew
   zsh-autocomplete
+  zsh-autosuggestions
+  zsh-syntax-highlighting
 )
+#
+# # zsh-autocomple
+source /opt/homebrew/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
+source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 
 export EDITOR="nvim" 
 
-# User configuration
-
-# export MANPATH="/usr/local/man:$MANPATH"
-
-# You may need to manually set your language environment
-# export LANG=en_US.UTF-8
-
-# Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='mvim'
-# fi
-
-# Compilation flags
-# export ARCHFLAGS="-arch x86_64"
-
-# Set personal aliases, overriding those provided by oh-my-zsh libs,
-# plugins, and themes. Aliases can be placed here, though oh-my-zsh
-# users are encouraged to define aliases within the ZSH_CUSTOM folder.
-# For a full list of active aliases, run `alias`.
-#
 # Custom aliases
 alias vi=nvim
 alias v=nvim
@@ -119,6 +104,50 @@ alias nv=" cd ~/dotfiles/neovim/nvim && nvim . "
 alias gc="cd  ~/.config/ghostty && nvim config"
 alias update="brew update && brew upgrade && brew cleanup"
 alias search="zk search "
+# Shows avalaiable aliases for zk
+zkhelp() {
+      echo "ZK Aliases:"
+      awk '/^\[alias\]$/,/^\[/ {
+        zkhelp() {
+      echo "ZK Aliases:"
+      awk '/^\[alias\]$/,/^\[/ {
+          if ($0 ~ /^[a-zA-Z]/ && $0 ~ /=/) {
+              gsub(/'\''/, "", $0)
+              split($0, parts, " = ")
+              alias_name = parts[1]
+              command = parts[2]
+              gsub(/.*--title /, "", command)
+              gsub(/\$\{@:-/, "", command)
+              gsub(/\}.*/, "", command)
+              gsub(/"/, "", command)
+              printf "  zk %-12s - %s\n", alias_name, command
+          }
+      }' "$ZK_NOTEBOOK_DIR/.zk/config.toml" 2>/dev/null || \
+      awk '/^\[alias\]$/,/^\[/ {
+          if ($0 ~ /^[a-zA-Z]/ && $0 ~ /=/) {
+              gsub(/'\''/, "", $0)
+              split($0, parts, " = ")
+              alias_name = parts[1]
+              command = parts[2]
+              gsub(/.*--title /, "", command)
+              gsub(/\$\{@:-/, "", command)
+              gsub(/\}.*/, "", command)
+              gsub(/"/, "", command)
+              printf "  zk %-12s - %s\n", alias_name, command
+          }
+      }' ~/.zk/config.toml
+
+
+# Alias for eza
+alias l="eza --icons"
+alias ls="eza --icons"
+alias ll="eza -lg --icons"
+alias la="eza -lag --icons"
+alias lta="eza -lTag --level=1 --icons"
+alias lta1="eza -lTag --level=1 --icons"
+alias lta2="eza -lTag --level=2 --icons"
+alias lta3="eza -lTag --level=3 --icons"
+
 
 # test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 # Brew version of LLVM
@@ -135,10 +164,20 @@ export ZK_NOTEBOOK_DIR="$HOME/notebook"
 # Set neovim as the manpager
 export MANPAGER="nvim +Man!"
 
+# FZF configuration
 # Set up fzf key bindings and fuzzy completion
 eval "$(fzf --zsh)"
-# [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-# export FZF_DEFAULT_OPTS=' - height=40% - preview="bat - color=always {}" - preview-window=right:60%:wrap'
+
+# Preview file content using bat (https://github.com/sharkdp/bat)
+export FZF_CTRL_T_OPTS="
+  --walker-skip .git,node_modules,target
+  --preview 'bat -n --color=always {}'
+  --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+
+
+
+# zoxide configuration
+eval "$(zoxide init zsh --cmd cd)"
 
 # pyenv config
 export PYENV_ROOT="$HOME/.pyenv"
@@ -150,14 +189,4 @@ export NVM_DIR="$HOME/.nvm"
   [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
 
 export OLLAMA_API_BASE=http://127.0.0.1:11434
-# The following lines have been added by Docker Desktop to enable Docker CLI completions.
-# fpath=(/opt/homebrew/share/zsh/site-functions $fpath)
-# autoload -Uz compinit
-# compinit
-# End of Docker CLI completions
-
-
-# Aerospace customization
-# use ff to list aerospace files.j
-alias ff='aerospace list-windows --all --format "%{window-id}: [%{app-name}] %{window-title}" | fzf --prompt="Switch to window: " | cut -d: -f1 | xargs -I{} aerospace focus --window-id {}'
 

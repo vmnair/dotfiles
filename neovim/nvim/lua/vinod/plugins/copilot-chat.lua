@@ -133,7 +133,6 @@ return {
 			},
 			-- Code related commands
 			{ "<leader>cce", "<cmd>CopilotChatExplain<cr>", desc = "CopilotChat - Explain code" },
-			{ "<leader>cct", "<cmd>CopilotChatTests<cr>", desc = "CopilotChat - Generate tests" },
 			{ "<leader>ccr", "<cmd>CopilotChatReview<cr>", desc = "CopilotChat - Review code" },
 			{ "<leader>ccR", "<cmd>CopilotChatRefactor<cr>", desc = "CopilotChat - Refactor code" },
 			{ "<leader>ccn", "<cmd>CopilotChatBetterNamings<cr>", desc = "CopilotChat - Better Naming" },
@@ -192,7 +191,7 @@ return {
 			-- Coplot Chat Models
 			{ "<leader>cc?", "<cmd>CopilotChatModels<cr>", desc = "CopilotChat - Select Models" },
 			-- Toggle CopilotChat
-			{ "<leader>tcc", "<Cmd>CopilotChatToggle<Cr>", desc = "Toggle Copilot Chat" },
+			{ "<leader>cct", "<Cmd>CopilotChatToggle<Cr>", desc = "Toggle Copilot Chat" },
 		},
 	},
 }
