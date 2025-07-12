@@ -45,6 +45,9 @@ alias gdb="gdb --silent"
 alias lg="lazygit"
 alias f="fzf"
 
+# Load ZK (Zettelkasten) functionality
+source "$HOME/dotfiles/zsh/zk_functions.zsh"
+
 # Toggle NordVPN
 alias vpn_toggle="~/.config/nordvpn/nordvpn_toggle.sh"
 # alias home_dual_monitors="~/.screenlayout/home_dual_monitors.sh"

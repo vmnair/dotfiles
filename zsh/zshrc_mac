@@ -103,41 +103,9 @@ alias dot="nvim ~/dotfiles"
 alias nv=" cd ~/dotfiles/neovim/nvim && nvim . "
 alias gc="cd  ~/.config/ghostty && nvim config"
 alias update="brew update && brew upgrade && brew cleanup"
-alias search="zk search "
-# Shows avalaiable aliases for zk
-zkhelp() {
-      echo "ZK Aliases:"
-      awk '/^\[alias\]$/,/^\[/ {
-        zkhelp() {
-      echo "ZK Aliases:"
-      awk '/^\[alias\]$/,/^\[/ {
-          if ($0 ~ /^[a-zA-Z]/ && $0 ~ /=/) {
-              gsub(/'\''/, "", $0)
-              split($0, parts, " = ")
-              alias_name = parts[1]
-              command = parts[2]
-              gsub(/.*--title /, "", command)
-              gsub(/\$\{@:-/, "", command)
-              gsub(/\}.*/, "", command)
-              gsub(/"/, "", command)
-              printf "  zk %-12s - %s\n", alias_name, command
-          }
-      }' "$ZK_NOTEBOOK_DIR/.zk/config.toml" 2>/dev/null || \
-      awk '/^\[alias\]$/,/^\[/ {
-          if ($0 ~ /^[a-zA-Z]/ && $0 ~ /=/) {
-              gsub(/'\''/, "", $0)
-              split($0, parts, " = ")
-              alias_name = parts[1]
-              command = parts[2]
-              gsub(/.*--title /, "", command)
-              gsub(/\$\{@:-/, "", command)
-              gsub(/\}.*/, "", command)
-              gsub(/"/, "", command)
-              printf "  zk %-12s - %s\n", alias_name, command
-          }
-      }' ~/.zk/config.toml
-
-
+# Load ZK (Zettelkasten) functionality
+source "$HOME/dotfiles/zsh/zk_functions.zsh"
+#
 # Alias for eza
 alias l="eza --icons"
 alias ls="eza --icons"
@@ -158,8 +126,6 @@ export PATH="/usr/local/bin/lua5.1:$PATH"
 export LUA_PATH="/usr/local/share/lua/5.1/?.lua;;"
 export LUA_CPATH="/usr/local/lib/lua/5.1/?.so;;"
 
-# Set the default notes directory for zk.
-export ZK_NOTEBOOK_DIR="$HOME/notebook"
 
 # Set neovim as the manpager
 export MANPAGER="nvim +Man!"
