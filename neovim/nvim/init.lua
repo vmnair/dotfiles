@@ -9,4 +9,6 @@ require("vinod.config.autocmds")
 require("vinod.config.aliases")
 -- require("vinod.config.mappings") Called from lazy.lua
 
+require("vinod.config.todo_commands")
+
 vim.opt.rtp:prepend(vim.fn.stdpath("config") .. "/dev-plugins/readwise.nvim")

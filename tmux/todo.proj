@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# tmux setup for Todo Project 
+
+
+if ! tmux has-session -t TodoProject
+then
+
+# Neovim 
+tmux new-session -s TodoProject -n Todo -d 
+tmux send-keys -t TodoProject 'cd ~/dotfiles/neovim/nvim/lua/vinod' C-m
+tmux send-keys -t TodoProject 'vim todo_manager.lua' C-m
+
+# Create horizontal split and start claude code
+tmux split-window -h -t TodoProject:1
+tmux send-keys -t TodoProject:1.2 'cd ~/dotfiles/neovim/nvim/lua/vinod' C-m
+tmux send-keys -t TodoProject:1.2 'claude code' C-m
+
+# Console Window
+tmux new-window -n Console -t TodoProject
+tmux send-keys -t TodoProject:2  'cd ~/dotfiles/neovim/nvim/lua/vinod' C-m
+tmux send-keys -t TodoProject:2  'clear' C-m
+
+# Lazygit
+tmux new-window -n Lazygit -t TodoProject
+tmux send-keys -t TodoProject:3  'cd ~/dotfiles/neovim/' C-m
+tmux send-keys -t TodoProject:3  'lg' C-m
+tmux send-keys -t TodoProject:2  'clear' C-m
+
+# Select the Neovim window
+tmux select-window -t TodoProject:1
+tmux select-pane -t TodoProject:1.1    
+fi
+
+# No running session, so start a new session 
+tmux attach -t TodoProject
+
+
+

@@ -9,13 +9,15 @@ This is a personal dotfiles repository containing configuration files for variou
 ## Development Commands
 
 ### Build and Development
+
 - **Go projects**: Use the Makefile for Go-based development
   - `make build` - Format, vet, and build Go code
-  - `make fmt` - Format Go code  
+  - `make fmt` - Format Go code
   - `make vet` - Run Go vet checks
   - `make clean` - Remove compiled files
 
 ### Neovim Development
+
 - **Plugin management**: Uses lazy.nvim for plugin management
 - **Custom plugin development**: Local plugins are stored in `neovim/nvim/dev-plugins/`
 - **Configuration reload**: Restart Neovim or use `:Lazy reload` after config changes
@@ -24,8 +26,10 @@ This is a personal dotfiles repository containing configuration files for variou
 ## Architecture and Structure
 
 ### Neovim Configuration
+
 - **Entry point**: `neovim/nvim/init.lua`
 - **Configuration modules**: Located in `neovim/nvim/lua/vinod/config/`
+
   - `lazy.lua` - Plugin manager setup (sets mapleader to `,` and localleader to `;`)
   - `options.lua` - Vim options and settings
   - `mappings.lua` - Key mappings (loaded after plugins)
@@ -34,43 +38,70 @@ This is a personal dotfiles repository containing configuration files for variou
   - `util.lua` - Utility functions
 
 - **Plugin configurations**: Located in `neovim/nvim/lua/vinod/plugins/`
+
   - Each plugin has its own configuration file
   - DAP (Debug Adapter Protocol) configs in `dap/` subdirectory
   - LuaSnip snippets in `luasnip/` subdirectory
 
 - **Development plugins**: `neovim/nvim/dev-plugins/readwise.nvim/` - Custom plugin for Readwise integration
 
+### Todo Manager System
+
+- **Main file**: `neovim/nvim/lua/vinod/todo_manager.lua` - Core todo management functionality
+- **Commands**: `neovim/nvim/lua/vinod/config/todo_commands.lua` - User commands and keybindings
+- **Data location**: `/Users/vinodnair/Library/CloudStorage/Dropbox/notebook/todo/`
+  - `active-todos.md` - Current active todos
+  - `completed-todos.md` - Completed todos archive
+- **Features**:
+  - Category-based todos (Medicine ❤️, OMS 💻, Personal 👤)
+  - Smart due date highlighting (red for overdue, yellow for future)
+  - Auto-refresh when adding/completing todos
+  - Filtering by category and due dates
+  - Streamlined format: `- [ ] [icon] Description [Due: date] #tags (added_date)`
+- **Key Commands**:
+  - `:TodoMed`, `:TodoOMS`, `:Todo` - Quick category additions with due date support
+  - `:TodoDue`, `:TodoPastDue` - Filter by due dates
+  - `:TodoOpen` - Open active todos file
+  - `<Space>` - Toggle completion in todo files
+  - `<leader>vd`, `<leader>vm`, `<leader>vo`, `<leader>vp` - Filter views
+
 ### Shell and Terminal Configuration
+
 - **Zsh**: Separate configs for Linux (`zshrc_linux`) and macOS (`zshrc_mac`)
 - **Tmux**: Configuration with project-specific session files (`.proj` files)
-- **Terminal emulators**: 
+- **Terminal emulators**:
   - Alacritty config in `alacritty/alacritty.toml`
   - Ghostty config in `ghostty/config`
   - WezTerm config in `wezterm/wezterm.lua`
 
 ### Window Management (Linux)
+
 - **i3 window manager**: Configuration in `i3/config`
 - **i3status**: Status bar configuration
 - **Resolution script**: `i3/set_default_resolution.sh` for display setup
 
 ### Additional Tools
+
 - **Starship prompt**: Configuration in `starship/starship.toml`
 - **NordVPN**: Toggle script in `nordvpn/nordvpn_toggle.sh`
 
 ## Platform-Specific Notes
 
 ### Linux (Debian-based)
+
 - Detailed installation checklist in main README.md
 - Hardware-specific fixes for MacBook Pro (WiFi, iSight camera, keyboard function keys)
 - Manual compilation required for some tools (Neovim, lazygit)
 
 ### macOS
+
 - Uses Homebrew for package management
 - zk cli installation: `brew install zk`
 
 ## Key Dependencies and Tools
 
 ### Essential Tools
+
 - **Neovim**: Built from source or package manager
 - **Git**: Version control
 - **Go**: For Go-based projects
@@ -78,6 +109,7 @@ This is a personal dotfiles repository containing configuration files for variou
 - **zk**: Note-taking tool (install with `brew install zk` on macOS)
 
 ### Neovim Plugin Ecosystem
+
 - **lazy.nvim**: Plugin manager
 - **Mason**: LSP/DAP/linter installer
 - **Treesitter**: Syntax highlighting
@@ -95,6 +127,7 @@ This is a personal dotfiles repository containing configuration files for variou
 5. **Terminal changes**: Update relevant terminal emulator config file
 
 ## Project Management (Tmux)
+
 - Project session files end with `.proj` extension
 - Located in `tmux/` directory
 - Examples: `c.proj`, `neovim.proj`, `lua.proj`, `readwise.proj`
