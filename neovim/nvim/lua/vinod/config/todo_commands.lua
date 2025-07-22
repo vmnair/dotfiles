@@ -374,17 +374,6 @@ end, {
     desc = 'Move any completed todos from active file to completed file'
 })
 
--- Emergency command to force clear all filter state and reload file
--- Usage: :TodoForceReload
--- Clears any stuck filter state and reloads the file from disk
-vim.api.nvim_create_user_command('TodoForceReload', function()
-    vim.b.todo_filter = nil
-    vim.b.todo_original_content = nil
-    vim.cmd('e!')  -- Force reload the file from disk
-    print("✓ Forced reload of todo file")
-end, {
-    desc = 'Force reload todo file and clear all filters'
-})
 
 -- Toggle completion status of todo on current line
 -- Usage: :TodoToggle (also mapped to spacebar in todo files)
@@ -476,49 +465,6 @@ vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
             silent = true 
         })
         
-        -- ========================
-        -- EMERGENCY KEYBINDINGS
-        -- ========================
-        
-        -- Emergency: clear all state and reload file
-        -- Use this if anything gets stuck (legacy from old filtering system)
-        vim.keymap.set('n', '<leader>vr', function()
-            -- Close any filter windows
-            vim.cmd('close')
-            -- Clear old filter state (from disabled system)
-            vim.b.todo_filter = nil
-            vim.b.todo_original_content = nil
-            vim.b.todo_statusline = nil
-            vim.g.todo_last_filter = nil
-            vim.fn.clearmatches()
-            vim.wo.conceallevel = 0
-            vim.wo.foldlevel = 99
-            vim.cmd('normal! zR')
-            vim.cmd('normal! zE')
-            vim.cmd('e!')
-            print("✓ All state cleared and file reloaded")
-        end, { 
-            buffer = true, 
-            desc = 'Emergency: clear all state and reload',
-            silent = true 
-        })
-        
-        -- Emergency: force close and reopen file
-        -- Last resort if file gets corrupted or stuck
-        vim.keymap.set('n', '<leader>vx', function()
-            vim.cmd('close') -- Close filter window first
-            vim.cmd('q!')
-            vim.cmd('TodoOpen')
-            print("✓ Force reopened todo file")
-        end, { 
-            buffer = true, 
-            desc = 'Emergency: force reopen file',
-            silent = true 
-        })
-        
-        -- Restore any existing filter state (currently minimal)
-        -- Part of the disabled filtering system
-        todo_manager.restore_filter_on_open()
         
         -- Setup syntax highlighting for better visual appearance
         todo_manager.setup_todo_syntax()
@@ -528,35 +474,6 @@ vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
     end
 })
 
--- Save filter state when leaving todo files
--- Part of the disabled filtering system - preserves last filter choice
-vim.api.nvim_create_autocmd({"BufLeave", "VimLeave"}, {
-    pattern = {"*/todo/*.md"},
-    callback = function()
-        -- Save current filter state to a global variable for this session
-        local filter = vim.b.todo_filter
-        if filter then
-            vim.g.todo_last_filter = filter.category
-        else
-            vim.g.todo_last_filter = nil
-        end
-    end
-})
-
--- Restore filter state when entering todo files (DISABLED)
--- This autocmd would automatically restore the last used filter
--- Currently disabled due to filtering issues
--- vim.api.nvim_create_autocmd({"BufEnter"}, {
---     pattern = {"*/todo/*.md"},
---     callback = function()
---         -- Restore filter from global variable if it exists
---         vim.defer_fn(function()
---             if vim.g.todo_last_filter and vim.g.todo_last_filter ~= "All" then
---                 todo_manager.filter_todos_by_category_in_buffer(vim.g.todo_last_filter)
---             end
---         end, 200)
---     end
--- })
 
 -- =============================
 -- OPTIONAL GLOBAL KEYBINDINGS
@@ -665,21 +582,6 @@ end, {
     desc = 'Update icon for an existing category'
 })
 
--- Migrate all existing todos to new clean format
--- Usage: :TodoMigrate
-vim.api.nvim_create_user_command('TodoMigrate', function()
-    todo_manager.migrate_todos_to_new_format()
-end, {
-    desc = 'Convert all existing todos from old pipe format to new clean format with icons'
-})
-
--- Clean HTML elements and migrate to clean format
--- Usage: :TodoCleanHTML
-vim.api.nvim_create_user_command('TodoCleanHTML', function()
-    todo_manager.cleanup_html_and_migrate()
-end, {
-    desc = 'Remove HTML span elements and convert to clean format with syntax highlighting'
-})
 
 -- Refresh syntax highlighting for current todo file
 -- Usage: :TodoSyntax
@@ -690,97 +592,15 @@ end, {
     desc = 'Refresh syntax highlighting for todo files'
 })
 
--- Manually highlight past due dates
--- Usage: :TodoHighlightPastDue
-vim.api.nvim_create_user_command('TodoHighlightPastDue', function()
-    todo_manager.highlight_past_due_dates()
-    print("✓ Past due dates highlighted")
+-- Refresh due date highlighting
+-- Usage: :TodoHighlight
+vim.api.nvim_create_user_command('TodoHighlight', function()
+    todo_manager.highlight_due_dates_with_colors()
+    print("✓ Due date highlighting refreshed")
 end, {
-    desc = 'Manually highlight past due dates in red'
+    desc = 'Refresh due date highlighting colors'
 })
 
--- Debug what highlight group is applied at cursor
--- Usage: :TodoDebugHighlight
-vim.api.nvim_create_user_command('TodoDebugHighlight', function()
-    local line, col = unpack(vim.api.nvim_win_get_cursor(0))
-    local result = vim.fn.synIDattr(vim.fn.synID(line, col + 1, 1), 'name')
-    print("Highlight group at cursor: " .. (result or "none"))
-    
-    -- Also show all matches in the buffer
-    local matches = vim.fn.getmatches()
-    print("Active matches: " .. #matches)
-    for i, match in ipairs(matches) do
-        print("  " .. i .. ": " .. match.group .. " -> " .. match.pattern)
-    end
-end, {
-    desc = 'Debug what highlight group is applied at cursor position'
-})
-
--- Debug the dynamic highlighting function
--- Usage: :TodoDebugDynamic
-vim.api.nvim_create_user_command('TodoDebugDynamic', function()
-    local total_lines = vim.api.nvim_buf_line_count(0)
-    print("Total lines: " .. total_lines)
-    
-    for line_num = 1, total_lines do
-        local line = vim.api.nvim_buf_get_lines(0, line_num - 1, line_num, false)[1]
-        if line then
-            local due_date = line:match("%[Due:%s*([^%]]+)%]")
-            if due_date then
-                print("Line " .. line_num .. ": Found due date '" .. due_date .. "'")
-                local cleaned = due_date:match("^%s*(.-)%s*$")
-                print("  Cleaned: '" .. cleaned .. "'")
-                
-                -- Test the is_past_due function
-                local is_past_due = function(date_str)
-                    if not date_str or date_str == "" then return false end
-                    local month, day, year = date_str:match("(%d+)-(%d+)-(%d+)")
-                    if not month or not day or not year then return false end
-                    local due_time = os.time({year = tonumber(year), month = tonumber(month), day = tonumber(day), hour = 23, min = 59, sec = 59})
-                    local current_time = os.time()
-                    return current_time > due_time
-                end
-                
-                print("  Is past due: " .. tostring(is_past_due(cleaned)))
-                print("  Pattern would be: \\[Due:\\s*" .. vim.pesc(cleaned) .. "\\]")
-            end
-        end
-    end
-end, {
-    desc = 'Debug the dynamic highlighting function'
-})
-
--- Apply working due date colors directly
--- Usage: :TodoFixColors
-vim.api.nvim_create_user_command('TodoFixColors', function()
-    vim.fn.clearmatches()
-    
-    -- Define strong colors
-    vim.cmd('highlight! DuePastRed ctermfg=red cterm=bold guifg=#FF0000 gui=bold')
-    vim.cmd('highlight! DueFutureYellow ctermfg=yellow cterm=bold guifg=#FFFF00 gui=bold')
-    
-    -- Hardcode the specific dates we know exist
-    vim.fn.matchadd('DuePastRed', '\\[Due: 06-12-2025\\]', 1000)      -- Past due (red)
-    vim.fn.matchadd('DueFutureYellow', '\\[Due: 07-21-2025\\]', 1000) -- Future (yellow)
-    
-    print("✓ Applied hardcoded due date colors")
-end, {
-    desc = 'Apply working due date colors directly'
-})
-
--- Test highlighting by adding a simple red highlight to entire due date blocks
--- Usage: :TodoTestHighlight  
-vim.api.nvim_create_user_command('TodoTestHighlight', function()
-    vim.fn.clearmatches()
-    vim.cmd('highlight TestRed ctermfg=red guifg=#FF0000')
-    vim.cmd('highlight TestYellow ctermfg=yellow guifg=#FFFF00')
-    
-    -- Test pattern for entire due date blocks
-    vim.fn.matchadd('TestRed', '\\[Due:[^\\]]*\\]', 100)
-    print("✓ Added test red highlight to entire due date blocks")
-end, {
-    desc = 'Test if highlighting works for entire due date blocks'
-})
 
 -- Confirm successful loading of the todo system
 print("✓ Vinod's Todo Manager loaded successfully!")
