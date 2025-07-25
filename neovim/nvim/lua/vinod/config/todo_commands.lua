@@ -12,9 +12,11 @@ local todo_manager = require('vinod.todo_manager')
 todo_manager.init_todo_files()
 
 -- Parse user input for the TodoAdd command
--- Handles the full syntax: "Description | Category: Medicine | Tags: #tag1 | Due: 07-20-2025"
--- Also handles calendar picker: "Description /cal" or "Description | Category: Medicine /cal"
--- Splits input by pipe character and extracts each metadata field
+-- Handles multiple syntaxes:
+-- 1. Pipe syntax: "Description | Category: Medicine | Tags: #tag1 | Due: 07-20-2025"
+-- 2. Direct hashtag: "Description #tag1 #tag2 | Category: Medicine | Due: 07-20-2025"
+-- 3. Mixed syntax: "Description #urgent | Tags: #pharmacy | Category: Medicine"
+-- Also handles calendar picker: "Description #tag /cal" or "Description | Category: Medicine /cal"
 -- Returns: description, category, tags array, due_date, use_calendar
 local function parse_add_todo_args(args)
     local description = ""
@@ -29,21 +31,38 @@ local function parse_add_todo_args(args)
         args = args:gsub("%s*/cal%s*$", "") -- Remove /cal suffix
     end
     
+    -- First, extract hashtags from anywhere in the input and collect them
+    local hashtag_pattern = "#(%w+)"
+    for tag in args:gmatch(hashtag_pattern) do
+        table.insert(tags, tag)
+    end
+    
     -- Split input by pipe character to separate description from metadata
-    -- Each part will be processed to extract specific field types
     local parts = vim.split(args, "|", { trimempty = true })
     
     for i, part in ipairs(parts) do
         part = vim.trim(part)
         
         if i == 1 then
-            description = part
+            -- This is the description part - remove hashtags from it
+            description = part:gsub("#%w+", ""):gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
         elseif part:match("^[Cc]ategory:") then
             category = part:match("^[Cc]ategory:%s*(.+)$")
         elseif part:match("^[Tt]ags:") then
+            -- Also support the old Tags: syntax and merge with hashtags
             local tag_str = part:match("^[Tt]ags:%s*(.+)$")
             for tag in tag_str:gmatch("#?(%w+)") do
-                table.insert(tags, tag)
+                -- Avoid duplicates
+                local found = false
+                for _, existing_tag in ipairs(tags) do
+                    if existing_tag == tag then
+                        found = true
+                        break
+                    end
+                end
+                if not found then
+                    table.insert(tags, tag)
+                end
             end
         elseif part:match("^[Dd]ue:") then
             due_date = part:match("^[Dd]ue:%s*(.+)$")
@@ -58,15 +77,20 @@ end
 -- ================
 
 -- Main command for adding todos with full metadata support
--- Usage: :TodoAdd Buy medicine | Category: Medicine | Tags: #urgent #pharmacy | Due: 07-20-2025
--- Calendar picker: :TodoAdd Buy medicine /cal
+-- Usage examples:
+--   :TodoAdd Buy medicine #urgent #pharmacy | Category: Medicine | Due: 07-20-2025
+--   :TodoAdd Buy medicine #urgent | Category: Medicine /cal
+--   :TodoAdd Meeting with doctor #important /cal
+-- Calendar picker: Use /cal suffix to select date with calendar
 -- All fields except description are optional
 -- Category defaults to "Personal" if not specified
 vim.api.nvim_create_user_command('TodoAdd', function(opts)
     local args = opts.args
     if args == "" then
-        print("Usage: :TodoAdd <description> [| Category: <category>] [| Tags: #tag1 #tag2] [| Due: mm-dd-yyyy]")
-        print("Calendar: :TodoAdd <description> /cal")
+        print("Usage: :TodoAdd <description> [#tag1 #tag2] [| Category: <category>] [| Due: mm-dd-yyyy]")
+        print("Examples: TodoAdd Buy medicine #urgent | Category: Medicine")
+        print("         TodoAdd Meeting prep #work /cal")
+        print("Calendar: Add /cal suffix to use date picker")
         print("Note: Category defaults to 'Personal' if not specified")
         return
     end
@@ -78,17 +102,21 @@ vim.api.nvim_create_user_command('TodoAdd', function(opts)
         return
     end
     
-    -- Handle calendar picker
+    -- Handle calendar picker - use today's date if no date selected
     if use_calendar then
         todo_manager.get_date_input(function(picked_date)
+            -- Use picked date or fallback to today's date
             if picked_date then
                 due_date = picked_date
+            else
+                due_date = os.date("%m-%d-%Y")  -- Today's date in mm-dd-yyyy format
+                print("No date selected, using today's date: " .. due_date)
             end
             
             local success = todo_manager.add_todo(description, category, tags, due_date)
             if success then
                 local cat_display = category and category ~= "" and category or "Personal"
-                local due_display = due_date and due_date ~= "" and " [Due: " .. due_date .. "]" or ""
+                local due_display = " [Due: " .. due_date .. "]"
                 print("✓ Todo added: " .. description .. " (" .. cat_display .. ")" .. due_display)
             else
                 print("✗ Failed to add todo")
@@ -106,18 +134,23 @@ vim.api.nvim_create_user_command('TodoAdd', function(opts)
     end
 end, {
     nargs = '*',
-    desc = 'Add a new todo with optional category, tags, and due date (use /cal for calendar picker)'
+    desc = 'Add a new todo with hashtag syntax support (use /cal for calendar picker)'
 })
 
 -- Quick command for adding Personal category todos (most common use case)
--- Usage: :Todo Buy groceries | Due: 07-25-2025 | Tags: #urgent
--- Calendar: :Todo Buy groceries /cal
--- Automatically sets category to "Personal", supports due dates and tags
+-- Usage examples:
+--   :Todo Buy groceries #urgent | Due: 07-25-2025
+--   :Todo Buy groceries #urgent /cal
+--   :Todo Meeting preparation #work
+-- Calendar: Use /cal suffix to select date with calendar
+-- Automatically sets category to "Personal", supports hashtag syntax and due dates
 vim.api.nvim_create_user_command('Todo', function(opts)
     local args = opts.args
     if args == "" then
-        print("Usage: :Todo <description> [| Due: mm-dd-yyyy] [| Tags: #tag1 #tag2]")
-        print("Calendar: :Todo <description> /cal")
+        print("Usage: :Todo <description> [#tag1 #tag2] [| Due: mm-dd-yyyy]")
+        print("Examples: Todo Buy groceries #urgent")
+        print("         Todo Call dentist #health /cal")
+        print("Calendar: Add /cal suffix to use date picker")
         print("Creates a Personal category todo")
         return
     end
@@ -129,16 +162,20 @@ vim.api.nvim_create_user_command('Todo', function(opts)
         return
     end
     
-    -- Handle calendar picker
+    -- Handle calendar picker - use today's date if no date selected
     if use_calendar then
         todo_manager.get_date_input(function(picked_date)
+            -- Use picked date or fallback to today's date
             if picked_date then
                 due_date = picked_date
+            else
+                due_date = os.date("%m-%d-%Y")  -- Today's date in mm-dd-yyyy format
+                print("No date selected, using today's date: " .. due_date)
             end
             
             local success = todo_manager.add_todo(description, "Personal", tags, due_date)
             if success then
-                local due_display = due_date and due_date ~= "" and " [Due: " .. due_date .. "]" or ""
+                local due_display = " [Due: " .. due_date .. "]"
                 print("✓ Personal todo added: " .. description .. due_display)
             else
                 print("✗ Failed to add todo")
@@ -155,18 +192,23 @@ vim.api.nvim_create_user_command('Todo', function(opts)
     end
 end, {
     nargs = '*',
-    desc = 'Quick add a Personal category todo with optional due date and tags (use /cal for calendar)'
+    desc = 'Quick add a Personal category todo with hashtag syntax (use /cal for calendar)'
 })
 
 -- Quick command for adding Medicine category todos
--- Usage: :TodoMed Take medication | Due: 07-25-2025 | Tags: #urgent
--- Calendar: :TodoMed Take medication /cal
--- Automatically sets category to "Medicine", supports due dates and tags
+-- Usage examples:
+--   :TodoMed Take medication #urgent | Due: 07-25-2025
+--   :TodoMed Take medication #urgent /cal
+--   :TodoMed Doctor appointment #followup
+-- Calendar: Use /cal suffix to select date with calendar
+-- Automatically sets category to "Medicine", supports hashtag syntax and due dates
 vim.api.nvim_create_user_command('TodoMed', function(opts)
     local args = opts.args
     if args == "" then
-        print("Usage: :TodoMed <description> [| Due: mm-dd-yyyy] [| Tags: #tag1 #tag2]")
-        print("Calendar: :TodoMed <description> /cal")
+        print("Usage: :TodoMed <description> [#tag1 #tag2] [| Due: mm-dd-yyyy]")
+        print("Examples: TodoMed Take medication #morning")
+        print("         TodoMed Doctor appointment #followup /cal")
+        print("Calendar: Add /cal suffix to use date picker")
         return
     end
     
@@ -177,16 +219,20 @@ vim.api.nvim_create_user_command('TodoMed', function(opts)
         return
     end
     
-    -- Handle calendar picker
+    -- Handle calendar picker - use today's date if no date selected
     if use_calendar then
         todo_manager.get_date_input(function(picked_date)
+            -- Use picked date or fallback to today's date
             if picked_date then
                 due_date = picked_date
+            else
+                due_date = os.date("%m-%d-%Y")  -- Today's date in mm-dd-yyyy format
+                print("No date selected, using today's date: " .. due_date)
             end
             
             local success = todo_manager.add_todo(description, "Medicine", tags, due_date)
             if success then
-                local due_display = due_date and due_date ~= "" and " [Due: " .. due_date .. "]" or ""
+                local due_display = " [Due: " .. due_date .. "]"
                 print("✓ Medicine todo added: " .. description .. due_display)
             else
                 print("✗ Failed to add todo")
@@ -203,18 +249,23 @@ vim.api.nvim_create_user_command('TodoMed', function(opts)
     end
 end, {
     nargs = '*',
-    desc = 'Quick add a Medicine category todo with optional due date and tags (use /cal for calendar)'
+    desc = 'Quick add a Medicine category todo with hashtag syntax (use /cal for calendar)'
 })
 
 -- Quick command for adding OMS category todos
--- Usage: :TodoOMS Review patient charts | Due: 07-25-2025 | Tags: #urgent
--- Calendar: :TodoOMS Review patient charts /cal
--- Automatically sets category to "OMS", supports due dates and tags
+-- Usage examples:
+--   :TodoOMS Review patient charts #urgent | Due: 07-25-2025
+--   :TodoOMS Review patient charts #urgent /cal
+--   :TodoOMS Update documentation #priority
+-- Calendar: Use /cal suffix to select date with calendar
+-- Automatically sets category to "OMS", supports hashtag syntax and due dates
 vim.api.nvim_create_user_command('TodoOMS', function(opts)
     local args = opts.args
     if args == "" then
-        print("Usage: :TodoOMS <description> [| Due: mm-dd-yyyy] [| Tags: #tag1 #tag2]")
-        print("Calendar: :TodoOMS <description> /cal")
+        print("Usage: :TodoOMS <description> [#tag1 #tag2] [| Due: mm-dd-yyyy]")
+        print("Examples: TodoOMS Review charts #urgent")
+        print("         TodoOMS Update system #maintenance /cal")
+        print("Calendar: Add /cal suffix to use date picker")
         return
     end
     
@@ -225,16 +276,20 @@ vim.api.nvim_create_user_command('TodoOMS', function(opts)
         return
     end
     
-    -- Handle calendar picker
+    -- Handle calendar picker - use today's date if no date selected
     if use_calendar then
         todo_manager.get_date_input(function(picked_date)
+            -- Use picked date or fallback to today's date
             if picked_date then
                 due_date = picked_date
+            else
+                due_date = os.date("%m-%d-%Y")  -- Today's date in mm-dd-yyyy format
+                print("No date selected, using today's date: " .. due_date)
             end
             
             local success = todo_manager.add_todo(description, "OMS", tags, due_date)
             if success then
-                local due_display = due_date and due_date ~= "" and " [Due: " .. due_date .. "]" or ""
+                local due_display = " [Due: " .. due_date .. "]"
                 print("✓ OMS todo added: " .. description .. due_display)
             else
                 print("✗ Failed to add todo")
@@ -251,7 +306,7 @@ vim.api.nvim_create_user_command('TodoOMS', function(opts)
     end
 end, {
     nargs = '*',
-    desc = 'Quick add an OMS category todo with optional due date and tags (use /cal for calendar)'
+    desc = 'Quick add an OMS category todo with hashtag syntax (use /cal for calendar)'
 })
 
 -- ================
@@ -295,62 +350,54 @@ end, {
     desc = 'Show both active and completed todos for a specific category'
 })
 
--- List all todos that have due dates
+-- List all todos that have due dates in interactive buffer
 -- Usage: :TodoDue
 vim.api.nvim_create_user_command('TodoDue', function()
-    todo_manager.list_due_todos()
+    -- First open the active todos file, then apply the filter
+    local file_path = todo_manager.config.todo_dir .. "/" .. todo_manager.config.active_file
+    vim.cmd('edit ' .. file_path)
+    -- Apply the due dates filter which creates an interactive buffer
+    todo_manager.filter_todos_by_due_dates()
 end, {
-    desc = 'List all active todos with due dates'
+    desc = 'Open interactive buffer showing todos with due dates'
 })
 
--- List all past due todos
+-- List all past due todos in interactive buffer
 -- Usage: :TodoPastDue
 vim.api.nvim_create_user_command('TodoPastDue', function()
-    todo_manager.list_past_due_todos()
+    -- First open the active todos file, then apply the filter
+    local file_path = todo_manager.config.todo_dir .. "/" .. todo_manager.config.active_file
+    vim.cmd('edit ' .. file_path)
+    -- Apply the past due filter which creates an interactive buffer
+    todo_manager.filter_todos_by_past_due()
 end, {
-    desc = 'List all active todos that are past due'
+    desc = 'Open interactive buffer showing past due todos'
 })
 
--- List all todos due today
+-- List all todos due today in interactive buffer
 -- Usage: :TodoToday
 vim.api.nvim_create_user_command('TodoToday', function()
-    todo_manager.list_today_todos()
+    -- First open the active todos file, then apply the filter
+    local file_path = todo_manager.config.todo_dir .. "/" .. todo_manager.config.active_file
+    vim.cmd('edit ' .. file_path)
+    -- Apply the today filter which creates an interactive buffer
+    todo_manager.filter_todos_by_today()
 end, {
-    desc = 'List all active todos due today'
+    desc = 'Open interactive buffer showing todos due today'
 })
 
--- List todos due today and past due
+-- List todos due today and past due in interactive buffer
 -- Usage: :TodoTodayAndPastDue
 vim.api.nvim_create_user_command('TodoTodayAndPastDue', function()
-    todo_manager.list_today_and_past_due_todos()
+    -- First open the active todos file, then apply the filter
+    local file_path = todo_manager.config.todo_dir .. "/" .. todo_manager.config.active_file
+    vim.cmd('edit ' .. file_path)
+    -- Apply the today and past due filter which creates an interactive buffer
+    todo_manager.filter_todos_by_today_and_past_due()
 end, {
-    desc = 'List all active todos due today or past due'
+    desc = 'Open interactive buffer showing todos due today or past due'
 })
 
--- ======================
--- CATEGORY VIEW COMMANDS
--- ======================
-
--- Quick command to view all Medicine todos (active and completed)
-vim.api.nvim_create_user_command('TodoMedicineView', function()
-    todo_manager.list_todos_by_category("Medicine")
-end, {
-    desc = 'Show all Medicine category todos (active and completed)'
-})
-
--- Quick command to view all Personal todos (active and completed)
-vim.api.nvim_create_user_command('TodoPersonalView', function()
-    todo_manager.list_todos_by_category("Personal")
-end, {
-    desc = 'Show all Personal category todos (active and completed)'
-})
-
--- Quick command to view all OMS todos (active and completed)
-vim.api.nvim_create_user_command('TodoOMSView', function()
-    todo_manager.list_todos_by_category("OMS")
-end, {
-    desc = 'Show all OMS category todos (active and completed)'
-})
 
 -- ===================
 -- MANAGEMENT COMMANDS
@@ -640,53 +687,6 @@ vim.api.nvim_create_autocmd("InsertLeave", {
 -- vim.keymap.set('n', '<leader>to', ':TodoOpen<CR>', { desc = 'Open active todos file' })
 -- vim.keymap.set('n', '<leader>ts', ':TodoStats<CR>', { desc = 'Show todo statistics' })
 
--- ===============================
--- FILTERING COMMANDS
--- ===============================
-
--- Command to filter todos by category
-vim.api.nvim_create_user_command('TodoFilter', function(opts)
-    local category = opts.args
-    if category == "" then
-        print("Usage: :TodoFilter <Medicine|OMS|Personal>")
-        return
-    end
-    todo_manager.filter_todos_by_category(category)
-end, {
-    nargs = 1,
-    complete = function()
-        return {"Medicine", "OMS", "Personal"}
-    end,
-    desc = 'Filter todos by category in custom window'
-})
-
--- Command to show all todos
-vim.api.nvim_create_user_command('TodoFilterAll', function()
-    todo_manager.show_all_todos()
-end, {
-    desc = 'Show all todos in custom window'
-})
-
--- Command to filter todos by due dates
-vim.api.nvim_create_user_command('TodoFilterDue', function()
-    todo_manager.filter_todos_by_due_dates()
-end, {
-    desc = 'Filter todos with due dates in custom window'
-})
-
--- Command to filter todos due today
-vim.api.nvim_create_user_command('TodoFilterToday', function()
-    todo_manager.filter_todos_by_today()
-end, {
-    desc = 'Filter todos due today in custom window'
-})
-
--- Command to filter todos due today and past due
-vim.api.nvim_create_user_command('TodoFilterTodayAndPastDue', function()
-    todo_manager.filter_todos_by_today_and_past_due()
-end, {
-    desc = 'Filter todos due today or past due in custom window'
-})
 
 -- ===============================
 -- CATEGORY MANAGEMENT COMMANDS
@@ -749,23 +749,6 @@ end, {
 })
 
 
--- Refresh syntax highlighting for current todo file
--- Usage: :TodoSyntax
-vim.api.nvim_create_user_command('TodoSyntax', function()
-    todo_manager.setup_todo_syntax()
-    print("✓ Todo syntax highlighting refreshed")
-end, {
-    desc = 'Refresh syntax highlighting for todo files'
-})
-
--- Refresh due date highlighting
--- Usage: :TodoHighlight
-vim.api.nvim_create_user_command('TodoHighlight', function()
-    todo_manager.highlight_due_dates_with_colors()
-    print("✓ Due date highlighting refreshed")
-end, {
-    desc = 'Refresh due date highlighting colors'
-})
 
 
 -- Confirm successful loading of the todo system
