@@ -510,168 +510,73 @@ vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
         })
         
         -- ========================
-        -- FILTERING KEYBINDINGS (ADAPTIVE)
+        -- FILTERING KEYBINDINGS (CUSTOM BUFFER)
         -- ========================
-        -- Uses fzf-lua if available and enabled, otherwise falls back to custom buffers
+        -- Custom buffer filtering system - clean display without quickfix clutter
+        -- Opens a scratch buffer showing filtered todos with navigation
         
-        -- Check if we should use fzf or custom buffer system
-        local use_fzf = todo_manager.should_use_fzf()
+        -- Medicine category filter
+        vim.keymap.set('n', '<leader>vm', function()
+            todo_manager.filter_todos_by_category("Medicine")
+        end, { 
+            buffer = true, 
+            desc = 'Filter Medicine todos',
+            silent = true 
+        })
         
-        if use_fzf then
-            -- ========================
-            -- FZF-LUA FILTERING KEYBINDINGS
-            -- ========================
-            local fzf_todo = require('vinod.fzf_todo')
-            
-            -- Medicine category filter
-            vim.keymap.set('n', '<leader>vm', function()
-                fzf_todo.filter_medicine()
-            end, { 
-                buffer = true, 
-                desc = 'Filter Medicine todos (fzf)',
-                silent = true 
-            })
-            
-            -- Personal category filter
-            vim.keymap.set('n', '<leader>vp', function()
-                fzf_todo.filter_personal()
-            end, { 
-                buffer = true, 
-                desc = 'Filter Personal todos (fzf)',
-                silent = true 
-            })
-            
-            -- OMS category filter
-            vim.keymap.set('n', '<leader>vo', function()
-                fzf_todo.filter_oms()
-            end, { 
-                buffer = true, 
-                desc = 'Filter OMS todos (fzf)',
-                silent = true 
-            })
-            
-            -- Show all todos (no filtering)
-            vim.keymap.set('n', '<leader>va', function()
-                fzf_todo.show_all()
-            end, { 
-                buffer = true, 
-                desc = 'Show all todos (fzf)',
-                silent = true 
-            })
-            
-            -- Filter by due dates
-            vim.keymap.set('n', '<leader>vd', function()
-                fzf_todo.filter_by_due_dates()
-            end, { 
-                buffer = true, 
-                desc = 'Filter todos with due dates (fzf)',
-                silent = true 
-            })
-            
-            -- Filter by today's due date
-            vim.keymap.set('n', '<leader>vt', function()
-                fzf_todo.filter_by_today()
-            end, { 
-                buffer = true, 
-                desc = 'Filter todos due today (fzf)',
-                silent = true 
-            })
-            
-            -- Filter by today and past due
-            vim.keymap.set('n', '<leader>vx', function()
-                fzf_todo.filter_by_today_and_past_due()
-            end, { 
-                buffer = true, 
-                desc = 'Filter todos due today or past due (fzf)',
-                silent = true 
-            })
-            
-            -- Interactive category picker
-            vim.keymap.set('n', '<leader>vc', function()
-                fzf_todo.pick_category()
-            end, { 
-                buffer = true, 
-                desc = 'Pick category to filter (fzf)',
-                silent = true 
-            })
-            
-            -- Enhanced todo creation
-            vim.keymap.set('n', '<leader>ta', function()
-                fzf_todo.quick_add()
-            end, { 
-                buffer = true, 
-                desc = 'Quick add todo with fzf assistance',
-                silent = true 
-            })
-            
-        else
-            -- ========================
-            -- CUSTOM BUFFER FILTERING KEYBINDINGS (FALLBACK)
-            -- ========================
-            
-            -- Medicine category filter
-            vim.keymap.set('n', '<leader>vm', function()
-                todo_manager.filter_todos_by_category("Medicine")
-            end, { 
-                buffer = true, 
-                desc = 'Filter Medicine todos (custom)',
-                silent = true 
-            })
-            
-            -- Personal category filter
-            vim.keymap.set('n', '<leader>vp', function()
-                todo_manager.filter_todos_by_category("Personal")
-            end, { 
-                buffer = true, 
-                desc = 'Filter Personal todos (custom)',
-                silent = true 
-            })
-            
-            -- OMS category filter
-            vim.keymap.set('n', '<leader>vo', function()
-                todo_manager.filter_todos_by_category("OMS")
-            end, { 
-                buffer = true, 
-                desc = 'Filter OMS todos (custom)',
-                silent = true 
-            })
-            
-            -- Show all todos (no filtering)
-            vim.keymap.set('n', '<leader>va', function()
-                todo_manager.show_all_todos()
-            end, { 
-                buffer = true, 
-                desc = 'Show all todos (custom)',
-                silent = true 
-            })
-            
-            -- Filter by due dates
-            vim.keymap.set('n', '<leader>vd', function()
-                todo_manager.filter_todos_by_due_dates()
-            end, { 
-                buffer = true, 
-                desc = 'Filter todos with due dates (custom)',
-                silent = true 
-            })
-            
-            -- Filter by today's due date
-            vim.keymap.set('n', '<leader>vt', function()
-                todo_manager.filter_todos_by_today()
-            end, { 
-                buffer = true, 
-                desc = 'Filter todos due today (custom)',
-                silent = true 
-            })
-            
-            -- Filter by today and past due
-            vim.keymap.set('n', '<leader>vx', function()
-                todo_manager.filter_todos_by_today_and_past_due()
-            end, { 
-                buffer = true, 
-                desc = 'Filter todos due today or past due (custom)',
-                silent = true 
-            })
-        end
+        -- Personal category filter
+        vim.keymap.set('n', '<leader>vp', function()
+            todo_manager.filter_todos_by_category("Personal")
+        end, { 
+            buffer = true, 
+            desc = 'Filter Personal todos',
+            silent = true 
+        })
+        
+        -- OMS category filter
+        vim.keymap.set('n', '<leader>vo', function()
+            todo_manager.filter_todos_by_category("OMS")
+        end, { 
+            buffer = true, 
+            desc = 'Filter OMS todos',
+            silent = true 
+        })
+        
+        -- Show all todos (no filtering)
+        vim.keymap.set('n', '<leader>va', function()
+            todo_manager.show_all_todos()
+        end, { 
+            buffer = true, 
+            desc = 'Show all todos',
+            silent = true 
+        })
+        
+        -- Filter by due dates
+        vim.keymap.set('n', '<leader>vd', function()
+            todo_manager.filter_todos_by_due_dates()
+        end, { 
+            buffer = true, 
+            desc = 'Filter todos with due dates',
+            silent = true 
+        })
+        
+        -- Filter by today's due date
+        vim.keymap.set('n', '<leader>vt', function()
+            todo_manager.filter_todos_by_today()
+        end, { 
+            buffer = true, 
+            desc = 'Filter todos due today',
+            silent = true 
+        })
+        
+        -- Filter by today and past due
+        vim.keymap.set('n', '<leader>vx', function()
+            todo_manager.filter_todos_by_today_and_past_due()
+        end, { 
+            buffer = true, 
+            desc = 'Filter todos due today or past due',
+            silent = true 
+        })
         
         -- Update due date on current line using calendar picker
         vim.keymap.set('n', '<leader>cd', function()
@@ -736,105 +641,51 @@ vim.api.nvim_create_autocmd("InsertLeave", {
 -- vim.keymap.set('n', '<leader>ts', ':TodoStats<CR>', { desc = 'Show todo statistics' })
 
 -- ===============================
--- FILTERING COMMANDS (ADAPTIVE)
+-- FILTERING COMMANDS
 -- ===============================
 
--- Command to filter todos by category (adaptive)
+-- Command to filter todos by category
 vim.api.nvim_create_user_command('TodoFilter', function(opts)
     local category = opts.args
     if category == "" then
         print("Usage: :TodoFilter <Medicine|OMS|Personal>")
         return
     end
-    
-    if todo_manager.should_use_fzf() then
-        local fzf_todo = require('vinod.fzf_todo')
-        fzf_todo.filter_by_category(category)
-    else
-        todo_manager.filter_todos_by_category(category)
-    end
+    todo_manager.filter_todos_by_category(category)
 end, {
     nargs = 1,
     complete = function()
         return {"Medicine", "OMS", "Personal"}
     end,
-    desc = 'Filter todos by category (adaptive: fzf or custom window)'
+    desc = 'Filter todos by category in custom window'
 })
 
--- Command to show all todos (adaptive)
+-- Command to show all todos
 vim.api.nvim_create_user_command('TodoFilterAll', function()
-    if todo_manager.should_use_fzf() then
-        local fzf_todo = require('vinod.fzf_todo')
-        fzf_todo.show_all()
-    else
-        todo_manager.show_all_todos()
-    end
+    todo_manager.show_all_todos()
 end, {
-    desc = 'Show all todos (adaptive: fzf or custom window)'
+    desc = 'Show all todos in custom window'
 })
 
--- Command to filter todos by due dates (adaptive)
+-- Command to filter todos by due dates
 vim.api.nvim_create_user_command('TodoFilterDue', function()
-    if todo_manager.should_use_fzf() then
-        local fzf_todo = require('vinod.fzf_todo')
-        fzf_todo.filter_by_due_dates()
-    else
-        todo_manager.filter_todos_by_due_dates()
-    end
+    todo_manager.filter_todos_by_due_dates()
 end, {
-    desc = 'Filter todos with due dates (adaptive: fzf or custom window)'
+    desc = 'Filter todos with due dates in custom window'
 })
 
--- Command to filter todos due today (adaptive)
+-- Command to filter todos due today
 vim.api.nvim_create_user_command('TodoFilterToday', function()
-    if todo_manager.should_use_fzf() then
-        local fzf_todo = require('vinod.fzf_todo')
-        fzf_todo.filter_by_today()
-    else
-        todo_manager.filter_todos_by_today()
-    end
+    todo_manager.filter_todos_by_today()
 end, {
-    desc = 'Filter todos due today (adaptive: fzf or custom window)'
+    desc = 'Filter todos due today in custom window'
 })
 
--- Command to filter todos due today and past due (adaptive)
+-- Command to filter todos due today and past due
 vim.api.nvim_create_user_command('TodoFilterTodayAndPastDue', function()
-    if todo_manager.should_use_fzf() then
-        local fzf_todo = require('vinod.fzf_todo')
-        fzf_todo.filter_by_today_and_past_due()
-    else
-        todo_manager.filter_todos_by_today_and_past_due()
-    end
+    todo_manager.filter_todos_by_today_and_past_due()
 end, {
-    desc = 'Filter todos due today or past due (adaptive: fzf or custom window)'
-})
-
--- ===============================
--- NEW FZF-SPECIFIC COMMANDS
--- ===============================
-
--- Interactive category picker command
-vim.api.nvim_create_user_command('TodoPickCategory', function()
-    if todo_manager.should_use_fzf() then
-        local fzf_todo = require('vinod.fzf_todo')
-        fzf_todo.pick_category()
-    else
-        print("fzf-lua not available. Use :TodoFilter <category> instead.")
-    end
-end, {
-    desc = 'Interactive category picker using fzf-lua'
-})
-
--- Enhanced todo creation command
-vim.api.nvim_create_user_command('TodoQuickAdd', function()
-    if todo_manager.should_use_fzf() then
-        local fzf_todo = require('vinod.fzf_todo')
-        fzf_todo.quick_add()
-    else
-        print("fzf-lua not available. Use :TodoAdd instead.")
-    end
-end, {
-    desc = 'Quick add todo with fzf-lua assistance'
+    desc = 'Filter todos due today or past due in custom window'
 })
 
 -- ===============================

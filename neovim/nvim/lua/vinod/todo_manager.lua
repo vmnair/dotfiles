@@ -19,9 +19,6 @@ M.config = {
     OMS = "🛠️",
     Personal = "🏡",
   },
-  -- Toggle between fzf-lua and custom buffer filtering
-  -- Set to false to revert to original custom buffer system
-  use_fzf = true,
 }
 
 -- Get current date in the configured format (mm-dd-yyyy)
@@ -1989,49 +1986,6 @@ end
 -- Legacy function for compatibility
 function M.highlight_past_due_dates()
   M.highlight_due_dates_with_colors()
-end
-
--- ========================================
--- HELPER FUNCTIONS FOR FZF INTEGRATION
--- ========================================
-
--- Expose internal date checking functions for fzf module
-M.is_past_due = is_past_due
-M.is_due_today = is_due_today
-
--- Check if fzf-lua is available and should be used
-function M.should_use_fzf()
-  if not M.config.use_fzf then
-    return false
-  end
-  
-  local has_fzf = pcall(require, 'fzf-lua')
-  return has_fzf
-end
-
--- Get formatted todo data for external consumption (fzf, etc.)
--- Returns array of todos with metadata from current buffer
-function M.get_todos_from_buffer(buf)
-  buf = buf or 0 -- Current buffer by default
-  local todos = {}
-  local total_lines = vim.api.nvim_buf_line_count(buf)
-  
-  for line_num = 1, total_lines do
-    local line = vim.api.nvim_buf_get_lines(buf, line_num - 1, line_num, false)[1]
-    if line then
-      local todo = M.parse_todo_line(line)
-      if todo then
-        table.insert(todos, {
-          todo = todo,
-          line_num = line_num,
-          original_line = line,
-          file_path = vim.api.nvim_buf_get_name(buf)
-        })
-      end
-    end
-  end
-  
-  return todos
 end
 
 return M
