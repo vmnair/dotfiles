@@ -536,6 +536,137 @@ end, {
     desc = 'Toggle completion status of todo on current line'
 })
 
+-- Create zk note from todo on current line
+-- Usage: :TodoNote
+-- Creates a note using the todo description as title and prompts for directory
+vim.api.nvim_create_user_command('TodoNote', function()
+    todo_manager.create_note_from_todo()
+end, {
+    desc = 'Create zk note from todo on current line'
+})
+
+-- Display all todo manager keymaps in a floating window
+-- Usage: :TodoHelp
+vim.api.nvim_create_user_command('TodoHelp', function()
+    local keymaps = {
+        ["Commands"] = {
+            [":TodoAdd <desc> [#tags] [| Category: <cat>] [| Due: mm-dd-yyyy]"] = "Add new todo with full metadata",
+            [":Todo <desc> [#tags] [| Due: mm-dd-yyyy]"] = "Quick add Personal category todo",
+            [":TodoMed <desc> [#tags] [| Due: mm-dd-yyyy]"] = "Quick add Medicine category todo", 
+            [":TodoOMS <desc> [#tags] [| Due: mm-dd-yyyy]"] = "Quick add OMS category todo",
+            [":TodoList [category]"] = "List active todos",
+            [":TodoCompleted [category]"] = "List completed todos",
+            [":TodoCategory <category>"] = "Show category overview",
+            [":TodoDue"] = "Show todos with due dates",
+            [":TodoPastDue"] = "Show past due todos", 
+            [":TodoToday"] = "Show todos due today",
+            [":TodoOpen"] = "Open active todos file",
+            [":TodoNote"] = "Create zk note from current todo",
+            [":TodoToggle"] = "Toggle todo completion",
+            [":TodoStats"] = "Show todo statistics",
+            [":TodoHelp"] = "Show this help window"
+        },
+        ["Keybindings (in todo files)"] = {
+            ["tt"] = "Toggle todo completion",
+            ["<leader>cn"] = "Create zk note from todo",
+            ["<leader>cd"] = "Update due date with calendar",
+            ["<leader>vm"] = "Filter Medicine todos",
+            ["<leader>vo"] = "Filter OMS todos", 
+            ["<leader>vp"] = "Filter Personal todos",
+            ["<leader>va"] = "Show all todos",
+            ["<leader>vd"] = "Filter todos with due dates",
+            ["<leader>vt"] = "Filter todos due today",
+            ["<leader>vx"] = "Filter urgent todos (today + past due)",
+            ["<leader>vq"] = "Close filter window"
+        },
+        ["Calendar Picker"] = {
+            ["h/l"] = "Previous/Next month",
+            ["j/k"] = "Previous/Next day", 
+            ["H/L"] = "Previous/Next year",
+            ["Enter"] = "Select date",
+            ["q/ESC"] = "Cancel"
+        }
+    }
+    
+    -- Create floating window
+    local width = 80
+    local height = 25
+    local buf = vim.api.nvim_create_buf(false, true)
+    
+    local lines = {}
+    table.insert(lines, "🔹 Todo Manager Help")
+    table.insert(lines, string.rep("═", width - 4))
+    table.insert(lines, "")
+    
+    for section, items in pairs(keymaps) do
+        table.insert(lines, "▶ " .. section)
+        table.insert(lines, string.rep("─", #section + 2))
+        table.insert(lines, "")
+        
+        for key, desc in pairs(items) do
+            local line = string.format("  %-35s %s", key, desc)
+            if #line > width - 4 then
+                -- Wrap long lines
+                local key_part = string.format("  %-35s", key)
+                table.insert(lines, key_part)
+                table.insert(lines, string.format("  %35s %s", "", desc))
+            else
+                table.insert(lines, line)
+            end
+        end
+        table.insert(lines, "")
+    end
+    
+    table.insert(lines, string.rep("═", width - 4))
+    table.insert(lines, "Press 'q' or ESC to close")
+    
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+    vim.api.nvim_buf_set_option(buf, "modifiable", false)
+    vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
+    vim.api.nvim_buf_set_option(buf, "filetype", "todohelp")
+    
+    -- Center the window
+    local win_opts = {
+        relative = "editor",
+        width = width,
+        height = height,
+        col = (vim.o.columns - width) / 2,
+        row = (vim.o.lines - height) / 2,
+        anchor = "NW",
+        style = "minimal",
+        border = "rounded",
+        title = " 📚 Todo Manager Help ",
+        title_pos = "center"
+    }
+    
+    local win = vim.api.nvim_open_win(buf, true, win_opts)
+    
+    -- Set up syntax highlighting
+    vim.cmd("syntax match TodoHelpTitle /^🔹.*$/")
+    vim.cmd("syntax match TodoHelpSection /^▶.*$/")
+    vim.cmd("syntax match TodoHelpSeparator /^[═─].*$/")
+    vim.cmd("syntax match TodoHelpKey /^  [^[:space:]].*$/")
+    vim.cmd("syntax match TodoHelpFooter /^Press.*$/")
+    
+    vim.cmd("highlight TodoHelpTitle ctermfg=14 guifg=#00D7D7 cterm=bold gui=bold")
+    vim.cmd("highlight TodoHelpSection ctermfg=11 guifg=#FFD700 cterm=bold gui=bold")
+    vim.cmd("highlight TodoHelpSeparator ctermfg=8 guifg=#666666")
+    vim.cmd("highlight TodoHelpKey ctermfg=10 guifg=#90EE90")
+    vim.cmd("highlight TodoHelpFooter ctermfg=8 guifg=#666666 cterm=italic gui=italic")
+    
+    -- Set up close keymaps
+    vim.keymap.set("n", "q", function()
+        vim.api.nvim_win_close(win, true)
+    end, { buffer = buf, silent = true })
+    
+    vim.keymap.set("n", "<ESC>", function()
+        vim.api.nvim_win_close(win, true)
+    end, { buffer = buf, silent = true })
+    
+end, {
+    desc = 'Show todo manager help with all commands and keybindings'
+})
+
 -- ========================
 -- AUTO-COMMANDS AND KEYBINDINGS
 -- ========================
@@ -546,9 +677,9 @@ end, {
 vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
     pattern = {"*/todo/*.md"},
     callback = function()
-        -- Map spacebar to toggle todo completion (primary interaction)
-        -- Works on any line containing a todo item
-        vim.keymap.set('n', '<Space>', function()
+        -- Map tt to toggle todo completion (primary interaction)
+        -- Works on any line containing a todo item (normal mode only)
+        vim.keymap.set('n', 'tt', function()
             todo_manager.toggle_todo_on_line()
         end, { 
             buffer = true, 
@@ -631,6 +762,15 @@ vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
         end, { 
             buffer = true, 
             desc = 'Update due date with calendar picker',
+            silent = true 
+        })
+        
+        -- Create zk note from todo on current line
+        vim.keymap.set('n', '<leader>cn', function()
+            todo_manager.create_note_from_todo()
+        end, { 
+            buffer = true, 
+            desc = 'Create zk note from todo',
             silent = true 
         })
         
