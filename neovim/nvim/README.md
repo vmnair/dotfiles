@@ -28,9 +28,7 @@
   ```bash
   brew install zk
   ```
-
-````
-
+- [-] todo_manager
 
 5. Miscellenous
 
@@ -38,8 +36,11 @@
 
   ```bash
    export MANPAGER="nvim +Man!"
+  ```
+
 ````
 
 ```
 
 ```
+````

@@ -103,6 +103,7 @@ alias dot="nvim ~/dotfiles"
 alias nv=" cd ~/dotfiles/neovim/nvim && nvim . "
 alias gc="cd  ~/.config/ghostty && nvim config"
 alias update="brew update && brew upgrade && brew cleanup"
+alias todo="nvim -c ':TodoOpen'"
 # Load ZK (Zettelkasten) functionality
 source "$HOME/dotfiles/zsh/zk_functions.zsh"
 #

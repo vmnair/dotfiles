@@ -32,11 +32,11 @@ return {
     -- picker configuration
     picker = {
       sources = {
-        -- files = {
-        --   hidden = true, -- show hidden files
-        --   follow = true, -- follow symlinks
-        --   format = "file",
-        -- },
+        files = {
+          hidden = true, -- show hidden files
+          follow = true, -- follow symlinks
+          format = "file",
+        },
         -- grep = {
         --   format = "file",
         -- },
@@ -79,9 +79,9 @@ return {
 
     },
     -- terminal configuration
-    terminal = {
-      enabled = true,
-    },
+    -- terminal = {
+    --   enabled = true,
+    -- },
 
 
     -- notifier configuration
@@ -123,7 +123,7 @@ return {
   keys = {
     { "<leader>e",  function() require("snacks").explorer() end, desc = "File Explorer" },
     { "<leader>zd", function() require("snacks").dim() end,      desc = "Toggle dim" },
-    { "<leader>t",  function() require("snacks").terminal() end, desc = "Toggle terminal" },
-  } -- keymaps for snacks.nvim
+    -- { "<leader>t",  function() require("snacks").terminal() end, desc = "Toggle terminal" },
 
+  } -- keymaps for snacks.nvim
 }
