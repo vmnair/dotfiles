@@ -761,7 +761,7 @@ end
 local function get_notebook_directories()
   local notebook_path = M.config.notebook_dir
   local directories = {}
-  
+
   -- Use find command to get all directories up to 3 levels deep
   local cmd = string.format('find "%s" -maxdepth 3 -type d -not -path "*/.*" | sort', notebook_path)
   local handle = io.popen(cmd)
@@ -776,7 +776,7 @@ local function get_notebook_directories()
     end
     handle:close()
   end
-  
+
   return directories
 end
 
@@ -784,10 +784,10 @@ end
 local function suggest_directory_for_category(category)
   local category_mapping = {
     Medicine = "healthcare/cardiology", -- Default to cardiology for medicine
-    OMS = "oms/admin/discussions", 
-    Personal = "journal"
+    OMS = "oms/admin/discussions",
+    Personal = "journal",
   }
-  
+
   return category_mapping[category] or "research" -- default to research
 end
 
@@ -809,7 +809,7 @@ function M.create_note_from_todo()
     print("Todo description is empty")
     return false
   end
-  
+
   -- Add current date to the title using configured format
   local current_date = os.date(M.config.date_format)
   local note_title = description .. " (" .. current_date .. ")"
@@ -820,13 +820,13 @@ function M.create_note_from_todo()
     print("No directories found in notebook")
     return false
   end
-  
+
   -- Suggest directory based on category
   local suggested_dir = suggest_directory_for_category(todo.category)
-  
+
   -- Add root option and sort with suggestion first
   table.insert(directories, 1, "") -- Root directory
-  
+
   -- Move suggested directory to top if it exists
   for i, dir in ipairs(directories) do
     if dir == suggested_dir then
@@ -835,7 +835,7 @@ function M.create_note_from_todo()
       break
     end
   end
-  
+
   -- Create display options
   local display_options = {}
   for _, dir in ipairs(directories) do
@@ -856,26 +856,27 @@ function M.create_note_from_todo()
       print("Note creation cancelled")
       return
     end
-    
+
     local selected_dir = directories[idx]
     local dir_arg = selected_dir == "" and "" or selected_dir
-    
+
     -- Build zk command using working directory option
-    local zk_cmd = string.format('zk new --working-dir "%s" --title "%s" --print-path', M.config.notebook_dir, note_title)
+    local zk_cmd =
+        string.format('zk new --working-dir "%s" --title "%s" --print-path', M.config.notebook_dir, note_title)
     if dir_arg ~= "" then
       zk_cmd = zk_cmd .. " " .. vim.fn.shellescape(dir_arg)
     end
-    
+
     -- Execute zk command
     local handle = io.popen(zk_cmd .. " 2>&1")
     if not handle then
       print("Failed to execute zk command")
       return
     end
-    
+
     local result = handle:read("*a")
     local exit_code = handle:close()
-    
+
     if not exit_code then
       print("Error creating note: " .. result)
       return
@@ -883,12 +884,12 @@ function M.create_note_from_todo()
 
     -- Clean up the result - remove all newlines and extra whitespace
     result = result:gsub("[\r\n]", ""):gsub("^%s+", ""):gsub("%s+$", "")
-    
+
     local note_filename = result:match("([^/]+)$")
     print("✓ Created note: " .. (note_filename or result))
-    
+
     -- Ask if user wants to open the note
-    vim.ui.select({"Yes", "No"}, {
+    vim.ui.select({ "Yes", "No" }, {
       prompt = "Open the note?",
     }, function(open_choice)
       if open_choice == "Yes" then
@@ -1074,7 +1075,7 @@ function M.filter_todos_by_due_dates()
         -- Use vim.schedule to defer the navigation to avoid timing issues
         vim.schedule(function()
           -- Navigate to file and line
-          vim.cmd.edit(vim.fn.fnameescape(file))
+          vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
           vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
         end)
       else
@@ -1093,7 +1094,7 @@ function M.filter_todos_by_due_dates()
       local todo = todos[line]
       -- Jump to original file and toggle
       vim.schedule(function()
-        vim.cmd.edit(vim.fn.fnameescape(file))
+        vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
         vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
         M.toggle_todo_on_line()
         -- Return to filter and refresh
@@ -1218,7 +1219,7 @@ function M.filter_todos_by_category(category)
         -- Use vim.schedule to defer the navigation to avoid timing issues
         vim.schedule(function()
           -- Navigate to file and line
-          vim.cmd.edit(vim.fn.fnameescape(file))
+          vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
           vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
         end)
       else
@@ -1238,7 +1239,7 @@ function M.filter_todos_by_category(category)
       local todo = todos[line]
       -- Jump to original file and toggle
       vim.schedule(function()
-        vim.cmd.edit(vim.fn.fnameescape(file))
+        vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
         vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
         M.toggle_todo_on_line()
         -- Return to filter and refresh
@@ -1340,7 +1341,7 @@ function M.show_all_todos()
 
         -- Use vim.schedule to defer the navigation
         vim.schedule(function()
-          vim.cmd.edit(vim.fn.fnameescape(file))
+          vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
           vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
         end)
       else
@@ -1359,7 +1360,7 @@ function M.show_all_todos()
       local todo = todos[line]
       -- Jump to original file and toggle
       vim.schedule(function()
-        vim.cmd.edit(vim.fn.fnameescape(file))
+        vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
         vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
         M.toggle_todo_on_line()
         -- Return to filter and refresh
@@ -1461,7 +1462,7 @@ function M.filter_todos_by_today()
       if todo and todo.line_num and type(todo.line_num) == "number" then
         vim.cmd("close")
         vim.schedule(function()
-          vim.cmd.edit(vim.fn.fnameescape(file))
+          vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
           vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
         end)
       end
@@ -1475,7 +1476,7 @@ function M.filter_todos_by_today()
     if line >= 1 and line <= #todos and file then
       local todo = todos[line]
       vim.schedule(function()
-        vim.cmd.edit(vim.fn.fnameescape(file))
+        vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
         vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
         M.toggle_todo_on_line()
         vim.defer_fn(function()
@@ -1574,7 +1575,7 @@ function M.filter_todos_by_past_due()
       if todo and todo.line_num and type(todo.line_num) == "number" then
         vim.cmd("close")
         vim.schedule(function()
-          vim.cmd.edit(vim.fn.fnameescape(file))
+          vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
           vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
         end)
       end
@@ -1588,7 +1589,7 @@ function M.filter_todos_by_past_due()
     if line >= 1 and line <= #todos and file then
       local todo = todos[line]
       vim.schedule(function()
-        vim.cmd.edit(vim.fn.fnameescape(file))
+        vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
         vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
         M.toggle_todo_on_line()
         vim.defer_fn(function()
@@ -1694,7 +1695,7 @@ function M.filter_todos_by_today_and_past_due()
       if todo and todo.line_num and type(todo.line_num) == "number" then
         vim.cmd("close")
         vim.schedule(function()
-          vim.cmd.edit(vim.fn.fnameescape(file))
+          vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
           vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
         end)
       end
@@ -1708,7 +1709,7 @@ function M.filter_todos_by_today_and_past_due()
     if line >= 1 and line <= #todos and file then
       local todo = todos[line]
       vim.schedule(function()
-        vim.cmd.edit(vim.fn.fnameescape(file))
+        vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
         vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
         M.toggle_todo_on_line()
         vim.defer_fn(function()
