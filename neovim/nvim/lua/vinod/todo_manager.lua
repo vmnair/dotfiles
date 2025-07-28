@@ -903,6 +903,15 @@ function M.open_filtered_active_view()
 		desc = 'Toggle todo completion in filtered view',
 		silent = true 
 	})
+	
+	-- Set up <leader>cn keymap for creating notes in filtered view
+	vim.keymap.set('n', '<leader>cn', function()
+		M.create_note_from_todo()
+	end, { 
+		buffer = buf, 
+		desc = 'Create zk note from todo',
+		silent = true 
+	})
 end
 
 --- Toggle todo completion in filtered view and sync back to storage

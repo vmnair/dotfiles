@@ -228,22 +228,16 @@ vim.api.nvim_create_user_command('TodoAdd', function(opts)
     
     -- Handle calendar pickers for show and due dates
     if use_show_calendar or use_due_calendar then
-        -- Sequential calendar picker logic
-        local function handle_show_date_picker()
-            if use_show_calendar then
-                todo_manager.get_date_input(function(picked_show_date)
-                    if picked_show_date then
-                        show_date = picked_show_date
-                    else
-                        show_date = os.date("%m-%d-%Y")  -- Today's date in mm-dd-yyyy format
-                        print("No show date selected, using today's date: " .. show_date)
-                    end
-                    
-                    -- Now handle due date picker
-                    handle_due_date_picker()
-                end)
+        -- Define all functions first to avoid forward reference issues
+        local function add_todo_with_dates()
+            local success = todo_manager.add_todo(description, category, tags, due_date, show_date)
+            if success then
+                local cat_display = category and category ~= "" and category or "Personal"
+                local show_display = show_date and show_date ~= "" and " [Show: " .. show_date .. "]" or ""
+                local due_display = due_date and due_date ~= "" and " [Due: " .. due_date .. "]" or ""
+                print("✓ Todo added: " .. description .. " (" .. cat_display .. ")" .. show_display .. due_display)
             else
-                handle_due_date_picker()
+                print("✗ Failed to add todo")
             end
         end
         
@@ -265,15 +259,21 @@ vim.api.nvim_create_user_command('TodoAdd', function(opts)
             end
         end
         
-        local function add_todo_with_dates()
-            local success = todo_manager.add_todo(description, category, tags, due_date, show_date)
-            if success then
-                local cat_display = category and category ~= "" and category or "Personal"
-                local show_display = show_date and show_date ~= "" and " [Show: " .. show_date .. "]" or ""
-                local due_display = due_date and due_date ~= "" and " [Due: " .. due_date .. "]" or ""
-                print("✓ Todo added: " .. description .. " (" .. cat_display .. ")" .. show_display .. due_display)
+        local function handle_show_date_picker()
+            if use_show_calendar then
+                todo_manager.get_date_input(function(picked_show_date)
+                    if picked_show_date then
+                        show_date = picked_show_date
+                    else
+                        show_date = os.date("%m-%d-%Y")  -- Today's date in mm-dd-yyyy format
+                        print("No show date selected, using today's date: " .. show_date)
+                    end
+                    
+                    -- Now handle due date picker
+                    handle_due_date_picker()
+                end)
             else
-                print("✗ Failed to add todo")
+                handle_due_date_picker()
             end
         end
         
