@@ -13,22 +13,33 @@ todo_manager.init_todo_files()
 
 -- Parse user input for the TodoAdd command
 -- Handles multiple syntaxes:
--- 1. Pipe syntax: "Description | Category: Medicine | Tags: #tag1 | Due: 07-20-2025"
+-- 1. Pipe syntax: "Description | Category: Medicine | Tags: #tag1 | Due: 07-20-2025 | Show: 07-18-2025"
 -- 2. Direct hashtag: "Description #tag1 #tag2 | Category: Medicine | Due: 07-20-2025"
 -- 3. Mixed syntax: "Description #urgent | Tags: #pharmacy | Category: Medicine"
--- Also handles calendar picker: "Description #tag /cal" or "Description | Category: Medicine /cal"
--- Returns: description, category, tags array, due_date, use_calendar
+-- Also handles calendar pickers: "Description #tag /show /due" or "Description | Category: Medicine /show"
+-- Returns: description, category, tags array, due_date, show_date, use_show_calendar, use_due_calendar
 local function parse_add_todo_args(args)
     local description = ""
     local category = ""
     local tags = {}
     local due_date = ""
-    local use_calendar = false
+    local show_date = ""
+    local use_show_calendar = false
+    local use_due_calendar = false
     
-    -- Check for /cal suffix
-    if args:match("%s*/cal%s*$") then
-        use_calendar = true
-        args = args:gsub("%s*/cal%s*$", "") -- Remove /cal suffix
+    -- Check for /show and /due calendar flags
+    if args:match("%s*/show%s*") then
+        use_show_calendar = true
+        args = args:gsub("%s*/show%s*", "") -- Remove /show flag
+    end
+    if args:match("%s*/due%s*") then
+        use_due_calendar = true
+        args = args:gsub("%s*/due%s*", "") -- Remove /due flag
+    end
+    -- Backward compatibility: /cal defaults to /due behavior
+    if args:match("%s*/cal%s*") then
+        use_due_calendar = true
+        args = args:gsub("%s*/cal%s*", "") -- Remove /cal flag
     end
     
     -- First, extract hashtags from anywhere in the input and collect them
@@ -66,15 +77,128 @@ local function parse_add_todo_args(args)
             end
         elseif part:match("^[Dd]ue:") then
             due_date = part:match("^[Dd]ue:%s*(.+)$")
+        elseif part:match("^[Ss]how:") then
+            show_date = part:match("^[Ss]how:%s*(.+)$")
         end
     end
     
-    return description, category, tags, due_date, use_calendar
+    return description, category, tags, due_date, show_date, use_show_calendar, use_due_calendar
 end
 
 -- ================
 -- ADDING COMMANDS
 -- ================
+
+-- Interactive todo builder command 
+-- Usage: :TodoBuild to start interactive todo building process
+vim.api.nvim_create_user_command('TodoBuild', function()
+    local description = ""
+    local category = ""
+    local tags = {}
+    local due_date = ""
+    local show_date = ""
+    
+    -- Step 1: Get description
+    vim.ui.input({prompt = "Description: "}, function(input_desc)
+        if not input_desc or input_desc == "" then
+            print("Todo building cancelled")
+            return
+        end
+        description = input_desc
+        
+        -- Step 2: Get category
+        vim.ui.select({"Personal", "Medicine", "OMS", "Skip"}, {
+            prompt = "Category:"
+        }, function(choice)
+            if choice == "Skip" or not choice then
+                category = "Personal"
+            elseif choice ~= "Skip" then
+                category = choice
+            end
+            
+            -- Step 3: Get show date
+            vim.ui.select({"Pick show date", "Skip"}, {
+                prompt = "Show date (when todo appears):"
+            }, function(show_choice)
+                if show_choice == "Pick show date" then
+                    todo_manager.get_date_input(function(picked_show)
+                        if picked_show then
+                            show_date = picked_show
+                        end
+                        
+                        -- Step 4: Get due date
+                        vim.ui.select({"Pick due date", "Skip"}, {
+                            prompt = "Due date:"
+                        }, function(due_choice)
+                            if due_choice == "Pick due date" then
+                                todo_manager.get_date_input(function(picked_due)
+                                    if picked_due then
+                                        due_date = picked_due
+                                    end
+                                    
+                                    -- Final step: Add the todo
+                                    local success = todo_manager.add_todo(description, category, tags, due_date, show_date)
+                                    if success then
+                                        local cat_display = category and category ~= "" and category or "Personal"
+                                        local show_display = show_date and show_date ~= "" and " [Show: " .. show_date .. "]" or ""
+                                        local due_display = due_date and due_date ~= "" and " [Due: " .. due_date .. "]" or ""
+                                        print("✓ Todo added: " .. description .. " (" .. cat_display .. ")" .. show_display .. due_display)
+                                    else
+                                        print("✗ Failed to add todo")
+                                    end
+                                end)
+                            else
+                                -- Add todo without due date
+                                local success = todo_manager.add_todo(description, category, tags, due_date, show_date)
+                                if success then
+                                    local cat_display = category and category ~= "" and category or "Personal"
+                                    local show_display = show_date and show_date ~= "" and " [Show: " .. show_date .. "]" or ""
+                                    print("✓ Todo added: " .. description .. " (" .. cat_display .. ")" .. show_display)
+                                else
+                                    print("✗ Failed to add todo")
+                                end
+                            end
+                        end)
+                    end)
+                else
+                    -- No show date, get due date
+                    vim.ui.select({"Pick due date", "Skip"}, {
+                        prompt = "Due date:"
+                    }, function(due_choice)
+                        if due_choice == "Pick due date" then
+                            todo_manager.get_date_input(function(picked_due)
+                                if picked_due then
+                                    due_date = picked_due
+                                end
+                                
+                                -- Add the todo
+                                local success = todo_manager.add_todo(description, category, tags, due_date, show_date)
+                                if success then
+                                    local cat_display = category and category ~= "" and category or "Personal"
+                                    local due_display = due_date and due_date ~= "" and " [Due: " .. due_date .. "]" or ""
+                                    print("✓ Todo added: " .. description .. " (" .. cat_display .. ")" .. due_display)
+                                else
+                                    print("✗ Failed to add todo")
+                                end
+                            end)
+                        else
+                            -- Add todo without any dates
+                            local success = todo_manager.add_todo(description, category, tags, due_date, show_date)
+                            if success then
+                                local cat_display = category and category ~= "" and category or "Personal"
+                                print("✓ Todo added: " .. description .. " (" .. cat_display .. ")")
+                            else
+                                print("✗ Failed to add todo")
+                            end
+                        end
+                    end)
+                end
+            end)
+        end)
+    end)
+end, {
+    desc = 'Interactive todo builder with calendar picker'
+})
 
 -- Main command for adding todos with full metadata support
 -- Usage examples:
@@ -87,54 +211,89 @@ end
 vim.api.nvim_create_user_command('TodoAdd', function(opts)
     local args = opts.args
     if args == "" then
-        print("Usage: :TodoAdd <description> [#tag1 #tag2] [| Category: <category>] [| Due: mm-dd-yyyy]")
+        print("Usage: :TodoAdd <description> [#tag1 #tag2] [| Category: <category>] [| Due: mm-dd-yyyy] [| Show: mm-dd-yyyy]")
         print("Examples: TodoAdd Buy medicine #urgent | Category: Medicine")
-        print("         TodoAdd Meeting prep #work /cal")
-        print("Calendar: Add /cal suffix to use date picker")
+        print("         TodoAdd Meeting prep #work /show /due")
+        print("Calendar: Use /show or /due suffix to use date picker")
         print("Note: Category defaults to 'Personal' if not specified")
         return
     end
     
-    local description, category, tags, due_date, use_calendar = parse_add_todo_args(args)
+    local description, category, tags, due_date, show_date, use_show_calendar, use_due_calendar = parse_add_todo_args(args)
     
     if description == "" then
         print("Error: Description is required")
         return
     end
     
-    -- Handle calendar picker - use today's date if no date selected
-    if use_calendar then
-        todo_manager.get_date_input(function(picked_date)
-            -- Use picked date or fallback to today's date
-            if picked_date then
-                due_date = picked_date
+    -- Handle calendar pickers for show and due dates
+    if use_show_calendar or use_due_calendar then
+        -- Sequential calendar picker logic
+        local function handle_show_date_picker()
+            if use_show_calendar then
+                todo_manager.get_date_input(function(picked_show_date)
+                    if picked_show_date then
+                        show_date = picked_show_date
+                    else
+                        show_date = os.date("%m-%d-%Y")  -- Today's date in mm-dd-yyyy format
+                        print("No show date selected, using today's date: " .. show_date)
+                    end
+                    
+                    -- Now handle due date picker
+                    handle_due_date_picker()
+                end)
             else
-                due_date = os.date("%m-%d-%Y")  -- Today's date in mm-dd-yyyy format
-                print("No date selected, using today's date: " .. due_date)
+                handle_due_date_picker()
             end
-            
-            local success = todo_manager.add_todo(description, category, tags, due_date)
+        end
+        
+        local function handle_due_date_picker()
+            if use_due_calendar then
+                todo_manager.get_date_input(function(picked_due_date)
+                    if picked_due_date then
+                        due_date = picked_due_date
+                    else
+                        due_date = os.date("%m-%d-%Y")  -- Today's date in mm-dd-yyyy format
+                        print("No due date selected, using today's date: " .. due_date)
+                    end
+                    
+                    -- Now add the todo with both dates
+                    add_todo_with_dates()
+                end)
+            else
+                add_todo_with_dates()
+            end
+        end
+        
+        local function add_todo_with_dates()
+            local success = todo_manager.add_todo(description, category, tags, due_date, show_date)
             if success then
                 local cat_display = category and category ~= "" and category or "Personal"
-                local due_display = " [Due: " .. due_date .. "]"
-                print("✓ Todo added: " .. description .. " (" .. cat_display .. ")" .. due_display)
+                local show_display = show_date and show_date ~= "" and " [Show: " .. show_date .. "]" or ""
+                local due_display = due_date and due_date ~= "" and " [Due: " .. due_date .. "]" or ""
+                print("✓ Todo added: " .. description .. " (" .. cat_display .. ")" .. show_display .. due_display)
             else
                 print("✗ Failed to add todo")
             end
-        end)
+        end
+        
+        -- Start the sequential picker process
+        handle_show_date_picker()
     else
-        local success = todo_manager.add_todo(description, category, tags, due_date)
+        -- No calendar pickers, add todo directly
+        local success = todo_manager.add_todo(description, category, tags, due_date, show_date)
         if success then
             local cat_display = category and category ~= "" and category or "Personal"
+            local show_display = show_date and show_date ~= "" and " [Show: " .. show_date .. "]" or ""
             local due_display = due_date and due_date ~= "" and " [Due: " .. due_date .. "]" or ""
-            print("✓ Todo added: " .. description .. " (" .. cat_display .. ")" .. due_display)
+            print("✓ Todo added: " .. description .. " (" .. cat_display .. ")" .. show_display .. due_display)
         else
             print("✗ Failed to add todo")
         end
     end
 end, {
     nargs = '*',
-    desc = 'Add a new todo with hashtag syntax support (use /cal for calendar picker)'
+    desc = 'Add a new todo with hashtag syntax support (use /show or /due for calendar picker)'
 })
 
 -- Quick command for adding Personal category todos (most common use case)
@@ -147,45 +306,31 @@ end, {
 vim.api.nvim_create_user_command('Todo', function(opts)
     local args = opts.args
     if args == "" then
-        print("Usage: :Todo <description> [#tag1 #tag2] [| Due: mm-dd-yyyy]")
+        print("Usage: :Todo <description> [#tag1 #tag2] [| Due: mm-dd-yyyy] [| Show: mm-dd-yyyy]")
         print("Examples: Todo Buy groceries #urgent")
-        print("         Todo Call dentist #health /cal")
-        print("Calendar: Add /cal suffix to use date picker")
+        print("         Todo Call dentist #health /show /due")
+        print("Calendar: Add /show or /due suffix to use date picker")
         print("Creates a Personal category todo")
         return
     end
     
-    local description, _, tags, due_date, use_calendar = parse_add_todo_args(args)
+    local description, _, tags, due_date, show_date, use_show_calendar, use_due_calendar = parse_add_todo_args(args)
     
     if description == "" then
         print("Error: Description is required")
         return
     end
     
-    -- Handle calendar picker - use today's date if no date selected
-    if use_calendar then
-        todo_manager.get_date_input(function(picked_date)
-            -- Use picked date or fallback to today's date
-            if picked_date then
-                due_date = picked_date
-            else
-                due_date = os.date("%m-%d-%Y")  -- Today's date in mm-dd-yyyy format
-                print("No date selected, using today's date: " .. due_date)
-            end
-            
-            local success = todo_manager.add_todo(description, "Personal", tags, due_date)
-            if success then
-                local due_display = " [Due: " .. due_date .. "]"
-                print("✓ Personal todo added: " .. description .. due_display)
-            else
-                print("✗ Failed to add todo")
-            end
-        end)
-    else
-        local success = todo_manager.add_todo(description, "Personal", tags, due_date)
+    -- Handle command continuation workflow
+    local handled = todo_manager.handle_command_continuation(description, "Personal", tags, due_date, show_date, use_show_calendar, use_due_calendar, ":Todo")
+    
+    if not handled then
+        -- No calendar pickers, add todo directly
+        local success = todo_manager.add_todo(description, "Personal", tags, due_date, show_date)
         if success then
+            local show_display = show_date and show_date ~= "" and " [Show: " .. show_date .. "]" or ""
             local due_display = due_date and due_date ~= "" and " [Due: " .. due_date .. "]" or ""
-            print("✓ Personal todo added: " .. description .. due_display)
+            print("✓ Personal todo added: " .. description .. show_display .. due_display)
         else
             print("✗ Failed to add todo")
         end
@@ -205,44 +350,30 @@ end, {
 vim.api.nvim_create_user_command('TodoMed', function(opts)
     local args = opts.args
     if args == "" then
-        print("Usage: :TodoMed <description> [#tag1 #tag2] [| Due: mm-dd-yyyy]")
+        print("Usage: :TodoMed <description> [#tag1 #tag2] [| Due: mm-dd-yyyy] [| Show: mm-dd-yyyy]")
         print("Examples: TodoMed Take medication #morning")
-        print("         TodoMed Doctor appointment #followup /cal")
-        print("Calendar: Add /cal suffix to use date picker")
+        print("         TodoMed Doctor appointment #followup /show /due")
+        print("Calendar: Add /show or /due suffix to use date picker")
         return
     end
     
-    local description, _, tags, due_date, use_calendar = parse_add_todo_args(args)
+    local description, _, tags, due_date, show_date, use_show_calendar, use_due_calendar = parse_add_todo_args(args)
     
     if description == "" then
         print("Error: Description is required")
         return
     end
     
-    -- Handle calendar picker - use today's date if no date selected
-    if use_calendar then
-        todo_manager.get_date_input(function(picked_date)
-            -- Use picked date or fallback to today's date
-            if picked_date then
-                due_date = picked_date
-            else
-                due_date = os.date("%m-%d-%Y")  -- Today's date in mm-dd-yyyy format
-                print("No date selected, using today's date: " .. due_date)
-            end
-            
-            local success = todo_manager.add_todo(description, "Medicine", tags, due_date)
-            if success then
-                local due_display = " [Due: " .. due_date .. "]"
-                print("✓ Medicine todo added: " .. description .. due_display)
-            else
-                print("✗ Failed to add todo")
-            end
-        end)
-    else
-        local success = todo_manager.add_todo(description, "Medicine", tags, due_date)
+    -- Handle command continuation workflow
+    local handled = todo_manager.handle_command_continuation(description, "Medicine", tags, due_date, show_date, use_show_calendar, use_due_calendar, ":TodoMed")
+    
+    if not handled then
+        -- No calendar pickers, add todo directly
+        local success = todo_manager.add_todo(description, "Medicine", tags, due_date, show_date)
         if success then
+            local show_display = show_date and show_date ~= "" and " [Show: " .. show_date .. "]" or ""
             local due_display = due_date and due_date ~= "" and " [Due: " .. due_date .. "]" or ""
-            print("✓ Medicine todo added: " .. description .. due_display)
+            print("✓ Medicine todo added: " .. description .. show_display .. due_display)
         else
             print("✗ Failed to add todo")
         end
@@ -262,44 +393,30 @@ end, {
 vim.api.nvim_create_user_command('TodoOMS', function(opts)
     local args = opts.args
     if args == "" then
-        print("Usage: :TodoOMS <description> [#tag1 #tag2] [| Due: mm-dd-yyyy]")
+        print("Usage: :TodoOMS <description> [#tag1 #tag2] [| Due: mm-dd-yyyy] [| Show: mm-dd-yyyy]")
         print("Examples: TodoOMS Review charts #urgent")
-        print("         TodoOMS Update system #maintenance /cal")
-        print("Calendar: Add /cal suffix to use date picker")
+        print("         TodoOMS Update system #maintenance /show /due")
+        print("Calendar: Add /show or /due suffix to use date picker")
         return
     end
     
-    local description, _, tags, due_date, use_calendar = parse_add_todo_args(args)
+    local description, _, tags, due_date, show_date, use_show_calendar, use_due_calendar = parse_add_todo_args(args)
     
     if description == "" then
         print("Error: Description is required")
         return
     end
     
-    -- Handle calendar picker - use today's date if no date selected
-    if use_calendar then
-        todo_manager.get_date_input(function(picked_date)
-            -- Use picked date or fallback to today's date
-            if picked_date then
-                due_date = picked_date
-            else
-                due_date = os.date("%m-%d-%Y")  -- Today's date in mm-dd-yyyy format
-                print("No date selected, using today's date: " .. due_date)
-            end
-            
-            local success = todo_manager.add_todo(description, "OMS", tags, due_date)
-            if success then
-                local due_display = " [Due: " .. due_date .. "]"
-                print("✓ OMS todo added: " .. description .. due_display)
-            else
-                print("✗ Failed to add todo")
-            end
-        end)
-    else
-        local success = todo_manager.add_todo(description, "OMS", tags, due_date)
+    -- Handle command continuation workflow  
+    local handled = todo_manager.handle_command_continuation(description, "OMS", tags, due_date, show_date, use_show_calendar, use_due_calendar, ":TodoOMS")
+    
+    if not handled then
+        -- No calendar pickers, add todo directly
+        local success = todo_manager.add_todo(description, "OMS", tags, due_date, show_date)
         if success then
+            local show_display = show_date and show_date ~= "" and " [Show: " .. show_date .. "]" or ""
             local due_display = due_date and due_date ~= "" and " [Due: " .. due_date .. "]" or ""
-            print("✓ OMS todo added: " .. description .. due_display)
+            print("✓ OMS todo added: " .. description .. show_display .. due_display)
         else
             print("✗ Failed to add todo")
         end
@@ -398,6 +515,26 @@ end, {
     desc = 'Open interactive buffer showing todos due today or past due'
 })
 
+-- List all scheduled (future) todos
+-- Usage: :TodoScheduled
+vim.api.nvim_create_user_command('TodoScheduled', function()
+    local scheduled_todos = todo_manager.get_scheduled_todos()
+    todo_manager.display_todos(scheduled_todos, "Scheduled (Future) Todos")
+end, {
+    desc = 'List all scheduled todos with future show dates'
+})
+
+-- List upcoming todos (next 7 days)
+-- Usage: :TodoUpcoming [days]
+vim.api.nvim_create_user_command('TodoUpcoming', function(opts)
+    local days = tonumber(opts.args) or 7
+    local upcoming_todos = todo_manager.get_upcoming_todos(days)
+    todo_manager.display_todos(upcoming_todos, "Upcoming Todos (Next " .. days .. " Days)")
+end, {
+    nargs = '?',
+    desc = 'List todos scheduled for the next N days (default 7)'
+})
+
 
 -- ===================
 -- MANAGEMENT COMMANDS
@@ -454,10 +591,17 @@ end, {
 -- Open the active todos file for editing
 -- Opens active-todos.md in current window
 vim.api.nvim_create_user_command('TodoOpen', function()
+    todo_manager.open_filtered_active_view()
+end, {
+    desc = 'Open filtered view of active todos (only shows todos whose show date has arrived)'
+})
+
+-- Open the raw active todos file for editing (includes scheduled todos)
+vim.api.nvim_create_user_command('TodoOpenRaw', function()
     local file_path = todo_manager.config.todo_dir .. "/" .. todo_manager.config.active_file
     vim.cmd('edit ' .. file_path)
 end, {
-    desc = 'Open the active todos file for editing'
+    desc = 'Open raw active todos file for editing (includes scheduled todos)'
 })
 
 -- Open the completed todos file for viewing
@@ -550,24 +694,32 @@ end, {
 vim.api.nvim_create_user_command('TodoHelp', function()
     local keymaps = {
         ["Commands"] = {
-            [":TodoAdd <desc> [#tags] [| Category: <cat>] [| Due: mm-dd-yyyy]"] = "Add new todo with full metadata",
-            [":Todo <desc> [#tags] [| Due: mm-dd-yyyy]"] = "Quick add Personal category todo",
-            [":TodoMed <desc> [#tags] [| Due: mm-dd-yyyy]"] = "Quick add Medicine category todo", 
-            [":TodoOMS <desc> [#tags] [| Due: mm-dd-yyyy]"] = "Quick add OMS category todo",
-            [":TodoList [category]"] = "List active todos",
+            [":TodoAdd <desc> [#tags] [| Category: <cat>] [| Due: mm-dd-yyyy] [| Show: mm-dd-yyyy]"] = "Add new todo with full metadata",
+            [":TodoAdd <desc> /show /due"] = "Sequential calendar pickers for show and due dates",
+            [":TodoBuild"] = "Interactive todo builder with calendar picker",
+            [":Todo <desc> [#tags] /due"] = "Quick add Personal todo, command-line continuation for /show",
+            [":Todo <desc> [#tags] /show"] = "Quick add Personal todo with show date (due=show)",
+            [":Todo <desc> [#tags] /show /due"] = "Quick add Personal todo with both dates",
+            [":TodoMed <desc> [#tags] /due"] = "Quick add Medicine todo, command-line continuation", 
+            [":TodoOMS <desc> [#tags] /due"] = "Quick add OMS todo, command-line continuation",
+            [":TodoList [category]"] = "List currently active (visible) todos",
             [":TodoCompleted [category]"] = "List completed todos",
-            [":TodoCategory <category>"] = "Show category overview",
-            [":TodoDue"] = "Show todos with due dates",
-            [":TodoPastDue"] = "Show past due todos", 
-            [":TodoToday"] = "Show todos due today",
-            [":TodoOpen"] = "Open active todos file",
-            [":TodoNote"] = "Create zk note from current todo",
-            [":TodoToggle"] = "Toggle todo completion",
-            [":TodoStats"] = "Show todo statistics",
+            [":TodoCategory <category>"] = "Show category overview (active + completed)",
+            [":TodoDue"] = "Interactive filter: todos with due dates",
+            [":TodoPastDue"] = "Interactive filter: past due todos", 
+            [":TodoToday"] = "Interactive filter: todos due today",
+            [":TodoScheduled"] = "List all scheduled (future) todos with show dates",
+            [":TodoUpcoming [days]"] = "List todos scheduled for next N days (default 7)",
+            [":TodoOpen"] = "Open filtered view of active todos (only current)",
+            [":TodoOpenRaw"] = "Open raw todos file for editing (includes scheduled)",
+            [":TodoOpenCompleted"] = "Open completed todos file for viewing/editing",
+            [":TodoNote"] = "Create zk note from current todo line",
+            [":TodoToggle"] = "Toggle todo completion on current line",
+            [":TodoStats"] = "Show comprehensive todo statistics",
             [":TodoHelp"] = "Show this help window"
         },
         ["Keybindings (in todo files)"] = {
-            ["tt"] = "Toggle todo completion",
+            ["tt"] = "Toggle todo completion (works in filtered view & raw files)",
             ["<leader>cn"] = "Create zk note from todo",
             ["<leader>cd"] = "Update due date with calendar",
             ["<leader>vm"] = "Filter Medicine todos",
@@ -579,6 +731,37 @@ vim.api.nvim_create_user_command('TodoHelp', function()
             ["<leader>vx"] = "Filter urgent todos (today + past due)",
             ["<leader>vq"] = "Close filter window"
         },
+        ["Command-Line Continuation (/due workflow)"] = {
+            [":Todo task /due → pick date → command line shows:"] = "':Todo task [Due: date] '",
+            ["Press Enter"] = "Add todo with show_date = due_date",
+            ["Type '/show' → pick date"] = "Add todo with both show and due dates",
+            ["Type anything else"] = "Cancel todo creation"
+        },
+        ["Show Date System"] = {
+            ["Active list (:TodoList)"] = "Hides show dates (clean display)",
+            ["Scheduled list (:TodoScheduled)"] = "Shows show dates for future todos",
+            ["/show with future date"] = "Todo scheduled (not in active list until show date)",
+            ["/show only"] = "Auto-sets due_date = show_date",
+            ["/due only"] = "Auto-sets show_date = due_date"
+        },
+        ["File Views"] = {
+            [":TodoOpen"] = "Filtered view - only active todos (daily use)",
+            [":TodoOpenRaw"] = "Raw file - all todos including scheduled (admin)",
+            [":TodoOpenCompleted"] = "Completed todos file",
+            ["Auto-refresh"] = "Filtered view updates immediately when todos change"
+        },
+        ["Reactivating Completed Todos"] = {
+            [":TodoOpenCompleted"] = "Open completed todos file",
+            ["tt on completed todo line"] = "Toggle back to incomplete (moves to active)",
+            [":TodoCompleted"] = "List completed todos for reference"
+        },
+        ["Daily Workflow"] = {
+            ["Morning"] = ":TodoOpen (filtered view for current todos)",
+            ["Add todos"] = ":Todo task /show date /due date",
+            ["Complete"] = "tt on any todo line",
+            ["Check upcoming"] = ":TodoScheduled or :TodoUpcoming",
+            ["Reactivate"] = ":TodoOpenCompleted then tt"
+        },
         ["Calendar Picker"] = {
             ["h/l"] = "Previous/Next month",
             ["j/k"] = "Previous/Next day", 
@@ -589,8 +772,8 @@ vim.api.nvim_create_user_command('TodoHelp', function()
     }
     
     -- Create floating window
-    local width = 80
-    local height = 25
+    local width = 90
+    local height = 35
     local buf = vim.api.nvim_create_buf(false, true)
     
     local lines = {}

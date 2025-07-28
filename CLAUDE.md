@@ -50,20 +50,57 @@ This is a personal dotfiles repository containing configuration files for variou
 - **Main file**: `neovim/nvim/lua/vinod/todo_manager.lua` - Core todo management functionality
 - **Commands**: `neovim/nvim/lua/vinod/config/todo_commands.lua` - User commands and keybindings
 - **Data location**: `/Users/vinodnair/Library/CloudStorage/Dropbox/notebook/todo/`
-  - `active-todos.md` - Current active todos
+  - `active-todos.md` - Current active todos (includes both visible and scheduled)
   - `completed-todos.md` - Completed todos archive
-- **Features**:
-  - Category-based todos (Medicine ❤️, OMS 💻, Personal 👤)
-  - Smart due date highlighting (red for overdue, yellow for future)
-  - Auto-refresh when adding/completing todos
-  - Filtering by category and due dates
-  - Streamlined format: `- [ ] [icon] Description [Due: date] #tags (added_date)`
-- **Key Commands**:
-  - `:TodoMed`, `:TodoOMS`, `:Todo` - Quick category additions with due date support
-  - `:TodoDue`, `:TodoPastDue` - Filter by due dates
-  - `:TodoOpen` - Open active todos file
-  - `<Space>` - Toggle completion in todo files
+
+#### **Future Reminders Feature** (Added 2025-01-27)
+- **Show Date System**: Todos can be scheduled for future dates and only appear in active list when their show date arrives
+- **Smart Defaults**: If only show date provided, due date auto-sets to same value
+- **File Format**: `- [ ] [icon] Description [Show: mm-dd-yyyy] [Due: mm-dd-yyyy] #tags`
+- **Display Logic**: 
+  - Active list: Hides show dates (clean display)
+  - Scheduled list: Shows both show and due dates
+- **Core Functions**:
+  - `get_active_todos()` - Only shows todos whose show date has arrived
+  - `get_scheduled_todos()` - Shows future todos not yet active
+  - `get_upcoming_todos(days)` - Shows todos scheduled for next N days
+
+#### **Key Commands**:
+- **Adding Todos**:
+  - `:TodoAdd <desc> | Show: mm-dd-yyyy | Due: mm-dd-yyyy` - Full syntax with show/due dates
+  - `:TodoAdd <desc> /show /due` - Sequential calendar pickers
+  - `:TodoBuild` - Interactive step-by-step todo creation with calendar pickers
+  - `:TodoMed`, `:TodoOMS`, `:Todo` - Quick category additions with show/due date support
+- **Viewing Todos**:
+  - `:TodoList` - List currently active (visible) todos
+  - `:TodoScheduled` - List all scheduled (future) todos with show dates
+  - `:TodoUpcoming [days]` - List todos scheduled for next N days (default 7)
+  - `:TodoDue`, `:TodoPastDue`, `:TodoToday` - Filter by due dates
+- **File Operations**:
+  - `:TodoOpen` - Open filtered view of active todos (only current, not scheduled)
+  - `:TodoOpenRaw` - Open raw todos file for editing (includes scheduled todos)
+  - `:TodoOpenCompleted` - Open completed todos file for viewing/editing
+  - `tt` - Toggle completion in todo files (works in filtered view and raw files)
   - `<leader>vd`, `<leader>vm`, `<leader>vo`, `<leader>vp` - Filter views
+
+#### **Features**:
+- Category-based todos (Medicine 💊, OMS 🛠️, Personal 🏡)
+- Future reminders: Schedule todos to appear on specific dates
+- Smart due date highlighting (red for overdue, green for today, gray for future)
+- Auto-refresh when adding/completing todos (filtered view updates immediately)
+- Filtering by category, due dates, and show dates
+- Syntax highlighting: Show dates in cyan/teal, due dates with color-coded urgency
+- Index-based operations work correctly with filtered views
+- Toggle functionality: `tt` works in both filtered and raw views with full sync
+- Completed todo reactivation: Use `tt` in completed todos file to bring back to active
+
+#### **Daily Workflow**:
+1. **Morning Review**: `:TodoOpen` - See only current active todos (filtered view)
+2. **Add New Todos**: `:Todo description /show mm-dd-yyyy /due mm-dd-yyyy` 
+3. **Complete Todos**: Press `tt` on any todo line (works in filtered view)
+4. **Check Upcoming**: `:TodoScheduled` or `:TodoUpcoming [days]`
+5. **Reactivate Completed**: `:TodoOpenCompleted` then `tt` on completed todo
+6. **View All (Admin)**: `:TodoOpenRaw` - See all todos including scheduled
 
 ### Shell and Terminal Configuration
 
