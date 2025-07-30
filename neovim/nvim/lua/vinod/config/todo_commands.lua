@@ -467,53 +467,9 @@ end, {
     desc = 'Show both active and completed todos for a specific category'
 })
 
--- List all todos that have due dates in interactive buffer
--- Usage: :TodoDue
-vim.api.nvim_create_user_command('TodoDue', function()
-    -- First open the active todos file, then apply the filter
-    local file_path = todo_manager.config.todo_dir .. "/" .. todo_manager.config.active_file
-    vim.cmd('edit ' .. file_path)
-    -- Apply the due dates filter which creates an interactive buffer
-    todo_manager.filter_todos_by_due_dates()
-end, {
-    desc = 'Open interactive buffer showing todos with due dates'
-})
 
--- List all past due todos in interactive buffer
--- Usage: :TodoPastDue
-vim.api.nvim_create_user_command('TodoPastDue', function()
-    -- First open the active todos file, then apply the filter
-    local file_path = todo_manager.config.todo_dir .. "/" .. todo_manager.config.active_file
-    vim.cmd('edit ' .. file_path)
-    -- Apply the past due filter which creates an interactive buffer
-    todo_manager.filter_todos_by_past_due()
-end, {
-    desc = 'Open interactive buffer showing past due todos'
-})
 
--- List all todos due today in interactive buffer
--- Usage: :TodoToday
-vim.api.nvim_create_user_command('TodoToday', function()
-    -- First open the active todos file, then apply the filter
-    local file_path = todo_manager.config.todo_dir .. "/" .. todo_manager.config.active_file
-    vim.cmd('edit ' .. file_path)
-    -- Apply the today filter which creates an interactive buffer
-    todo_manager.filter_todos_by_today()
-end, {
-    desc = 'Open interactive buffer showing todos due today'
-})
 
--- List todos due today and past due in interactive buffer
--- Usage: :TodoTodayAndPastDue
-vim.api.nvim_create_user_command('TodoTodayAndPastDue', function()
-    -- First open the active todos file, then apply the filter
-    local file_path = todo_manager.config.todo_dir .. "/" .. todo_manager.config.active_file
-    vim.cmd('edit ' .. file_path)
-    -- Apply the today and past due filter which creates an interactive buffer
-    todo_manager.filter_todos_by_today_and_past_due()
-end, {
-    desc = 'Open interactive buffer showing todos due today or past due'
-})
 
 -- List all scheduled (future) todos
 -- Usage: :TodoScheduled
@@ -540,49 +496,7 @@ end, {
 -- MANAGEMENT COMMANDS
 -- ===================
 
--- Complete a todo by its index number
--- Usage: :TodoComplete 1
--- Moves the todo from active to completed file with completion date
-vim.api.nvim_create_user_command('TodoComplete', function(opts)
-    local index = tonumber(opts.args)
-    if not index then
-        print("Usage: :TodoComplete <index>")
-        print("Use :TodoList to see todo indices")
-        return
-    end
-    
-    local success = todo_manager.complete_todo(index)
-    if success then
-        print("✓ Todo completed!")
-    else
-        print("✗ Failed to complete todo. Check the index with :TodoList")
-    end
-end, {
-    nargs = 1,
-    desc = 'Complete a todo by its index number'
-})
 
--- Permanently delete a todo by its index number
--- Usage: :TodoDelete 1
--- Removes the todo completely (does not move to completed)
-vim.api.nvim_create_user_command('TodoDelete', function(opts)
-    local index = tonumber(opts.args)
-    if not index then
-        print("Usage: :TodoDelete <index>")
-        print("Use :TodoList to see todo indices")
-        return
-    end
-    
-    local success = todo_manager.delete_todo(index)
-    if success then
-        print("✓ Todo deleted!")
-    else
-        print("✗ Failed to delete todo. Check the index with :TodoList")
-    end
-end, {
-    nargs = 1,
-    desc = 'Delete a todo by its index number'
-})
 
 -- =====================
 -- FILE ACCESS COMMANDS
@@ -596,22 +510,7 @@ end, {
     desc = 'Open filtered view of active todos (only shows todos whose show date has arrived)'
 })
 
--- Open the raw active todos file for editing (includes scheduled todos)
-vim.api.nvim_create_user_command('TodoOpenRaw', function()
-    local file_path = todo_manager.config.todo_dir .. "/" .. todo_manager.config.active_file
-    vim.cmd('edit ' .. file_path)
-end, {
-    desc = 'Open raw active todos file for editing (includes scheduled todos)'
-})
 
--- Open the completed todos file for viewing
--- Opens completed-todos.md in current window
-vim.api.nvim_create_user_command('TodoOpenCompleted', function()
-    local file_path = todo_manager.config.todo_dir .. "/" .. todo_manager.config.completed_file
-    vim.cmd('edit ' .. file_path)
-end, {
-    desc = 'Open the completed todos file for viewing'
-})
 
 -- ====================
 -- INFORMATION COMMANDS
@@ -661,75 +560,49 @@ end, {
 -- MAINTENANCE COMMANDS
 -- ===================
 
--- Clean up any completed todos that may be in active file
--- Moves completed todos from active file to completed file
-vim.api.nvim_create_user_command('TodoCleanup', function()
-    todo_manager.cleanup_completed_todos()
-    print("✓ Cleaned up completed todos!")
-end, {
-    desc = 'Move any completed todos from active file to completed file'
-})
 
 
--- Toggle completion status of todo on current line
--- Usage: :TodoToggle (also mapped to spacebar in todo files)
--- Handles moving todos between files when appropriate
-vim.api.nvim_create_user_command('TodoToggle', function()
-    todo_manager.toggle_todo_on_line()
-end, {
-    desc = 'Toggle completion status of todo on current line'
-})
 
--- Create zk note from todo on current line
--- Usage: :TodoNote
--- Creates a note using the todo description as title and prompts for directory
-vim.api.nvim_create_user_command('TodoNote', function()
-    todo_manager.create_note_from_todo()
-end, {
-    desc = 'Create zk note from todo on current line'
-})
 
 -- Display all todo manager keymaps in a floating window
 -- Usage: :TodoHelp
 vim.api.nvim_create_user_command('TodoHelp', function()
     local keymaps = {
-        ["Commands"] = {
+        ["Essential Commands"] = {
             [":TodoAdd <desc> [#tags] [| Category: <cat>] [| Due: mm-dd-yyyy] [| Show: mm-dd-yyyy]"] = "Add new todo with full metadata",
             [":TodoAdd <desc> /show /due"] = "Sequential calendar pickers for show and due dates",
-            [":TodoBuild"] = "Interactive todo builder with calendar picker",
-            [":Todo <desc> [#tags] /due"] = "Quick add Personal todo, command-line continuation for /show",
-            [":Todo <desc> [#tags] /show"] = "Quick add Personal todo with show date (due=show)",
             [":Todo <desc> [#tags] /show /due"] = "Quick add Personal todo with both dates",
-            [":TodoMed <desc> [#tags] /due"] = "Quick add Medicine todo, command-line continuation", 
-            [":TodoOMS <desc> [#tags] /due"] = "Quick add OMS todo, command-line continuation",
+            [":TodoMed <desc> [#tags] /due"] = "Quick add Medicine todo", 
+            [":TodoOMS <desc> [#tags] /due"] = "Quick add OMS todo",
             [":TodoList [category]"] = "List currently active (visible) todos",
-            [":TodoCompleted [category]"] = "List completed todos",
-            [":TodoCategory <category>"] = "Show category overview (active + completed)",
-            [":TodoDue"] = "Interactive filter: todos with due dates",
-            [":TodoPastDue"] = "Interactive filter: past due todos", 
-            [":TodoToday"] = "Interactive filter: todos due today",
             [":TodoScheduled"] = "List all scheduled (future) todos with show dates",
             [":TodoUpcoming [days]"] = "List todos scheduled for next N days (default 7)",
-            [":TodoOpen"] = "Open filtered view of active todos (only current)",
-            [":TodoOpenRaw"] = "Open raw todos file for editing (includes scheduled)",
-            [":TodoOpenCompleted"] = "Open completed todos file for viewing/editing",
-            [":TodoNote"] = "Create zk note from current todo line",
-            [":TodoToggle"] = "Toggle todo completion on current line",
-            [":TodoStats"] = "Show comprehensive todo statistics",
-            [":TodoHelp"] = "Show this help window"
+            [":TodoStats"] = "Show comprehensive todo statistics"
         },
-        ["Keybindings (in todo files)"] = {
+        ["Global Keybindings (work anywhere)"] = {
+            ["<leader>ta"] = "Quick add todo (opens :TodoAdd prompt)",
+            ["<leader>tl"] = "List active todos",
+            ["<leader>to"] = "Open filtered view of active todos (main workflow)",
+            ["<leader>ts"] = "Show todo statistics",
+            ["<leader>tb"] = "Interactive todo builder with calendar picker",
+            ["<leader>th"] = "Show this help window",
+            ["<leader>tr"] = "Open raw todos file (includes scheduled todos)",
+            ["<leader>tcc"] = "Open completed todos file"
+        },
+        ["File-Specific Keybindings (in todo files only)"] = {
             ["tt"] = "Toggle todo completion (works in filtered view & raw files)",
-            ["<leader>cn"] = "Create zk note from todo",
-            ["<leader>cd"] = "Update due date with calendar",
-            ["<leader>vm"] = "Filter Medicine todos",
-            ["<leader>vo"] = "Filter OMS todos", 
-            ["<leader>vp"] = "Filter Personal todos",
-            ["<leader>va"] = "Show all todos",
-            ["<leader>vd"] = "Filter todos with due dates",
-            ["<leader>vt"] = "Filter todos due today",
-            ["<leader>vx"] = "Filter urgent todos (today + past due)",
-            ["<leader>vq"] = "Close filter window"
+            ["<leader>tc"] = "Create zk note from todo",
+            ["<leader>td"] = "Update due date with calendar picker"
+        },
+        ["View/Filter Keybindings (in todo files only)"] = {
+            ["<leader>tvm"] = "Filter Medicine todos",
+            ["<leader>tvo"] = "Filter OMS todos", 
+            ["<leader>tvp"] = "Filter Personal todos",
+            ["<leader>tva"] = "Show all todos (remove filters)",
+            ["<leader>tvd"] = "Filter todos with due dates",
+            ["<leader>tvt"] = "Filter todos due today",
+            ["<leader>tvx"] = "Filter urgent todos (today + past due)",
+            ["<leader>tvq"] = "Close filter window"
         },
         ["Command-Line Continuation (/due workflow)"] = {
             [":Todo task /due → pick date → command line shows:"] = "':Todo task [Due: date] '",
@@ -756,11 +629,12 @@ vim.api.nvim_create_user_command('TodoHelp', function()
             [":TodoCompleted"] = "List completed todos for reference"
         },
         ["Daily Workflow"] = {
-            ["Morning"] = ":TodoOpen (filtered view for current todos)",
-            ["Add todos"] = ":Todo task /show date /due date",
+            ["Morning"] = "<leader>to (filtered view for current todos)",
+            ["Add todos"] = "<leader>ta or :Todo task /show date /due date",
             ["Complete"] = "tt on any todo line",
             ["Check upcoming"] = ":TodoScheduled or :TodoUpcoming",
-            ["Reactivate"] = ":TodoOpenCompleted then tt"
+            ["Reactivate"] = "<leader>tcc then tt",
+            ["Quick help"] = "<leader>th (show this help)"
         },
         ["Calendar Picker"] = {
             ["h/l"] = "Previous/Next month",
@@ -876,9 +750,10 @@ vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
         -- Custom buffer filtering system - clean display without quickfix clutter
         -- Opens a scratch buffer showing filtered todos with navigation
         
+        -- Todo View/Filter Submenu - consistent <leader>tv* pattern
         -- Medicine category filter
-        vim.keymap.set('n', '<leader>vm', function()
-            todo_manager.filter_todos_by_category("Medicine")
+        vim.keymap.set('n', '<leader>tvm', function()
+            todo_manager.filter_buffer_by_category("Medicine")
         end, { 
             buffer = true, 
             desc = 'Filter Medicine todos',
@@ -886,8 +761,8 @@ vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
         })
         
         -- Personal category filter
-        vim.keymap.set('n', '<leader>vp', function()
-            todo_manager.filter_todos_by_category("Personal")
+        vim.keymap.set('n', '<leader>tvp', function()
+            todo_manager.filter_buffer_by_category("Personal")
         end, { 
             buffer = true, 
             desc = 'Filter Personal todos',
@@ -895,8 +770,8 @@ vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
         })
         
         -- OMS category filter
-        vim.keymap.set('n', '<leader>vo', function()
-            todo_manager.filter_todos_by_category("OMS")
+        vim.keymap.set('n', '<leader>tvo', function()
+            todo_manager.filter_buffer_by_category("OMS")
         end, { 
             buffer = true, 
             desc = 'Filter OMS todos',
@@ -904,7 +779,7 @@ vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
         })
         
         -- Show all todos (no filtering)
-        vim.keymap.set('n', '<leader>va', function()
+        vim.keymap.set('n', '<leader>tva', function()
             todo_manager.show_all_todos()
         end, { 
             buffer = true, 
@@ -913,8 +788,8 @@ vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
         })
         
         -- Filter by due dates
-        vim.keymap.set('n', '<leader>vd', function()
-            todo_manager.filter_todos_by_due_dates()
+        vim.keymap.set('n', '<leader>tvd', function()
+            todo_manager.filter_buffer_by_due_dates()
         end, { 
             buffer = true, 
             desc = 'Filter todos with due dates',
@@ -922,8 +797,8 @@ vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
         })
         
         -- Filter by today's due date
-        vim.keymap.set('n', '<leader>vt', function()
-            todo_manager.filter_todos_by_today()
+        vim.keymap.set('n', '<leader>tvt', function()
+            todo_manager.filter_buffer_by_today()
         end, { 
             buffer = true, 
             desc = 'Filter todos due today',
@@ -931,16 +806,27 @@ vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
         })
         
         -- Filter by today and past due
-        vim.keymap.set('n', '<leader>vx', function()
-            todo_manager.filter_todos_by_today_and_past_due()
+        vim.keymap.set('n', '<leader>tvx', function()
+            todo_manager.filter_buffer_by_today_and_past_due()
         end, { 
             buffer = true, 
-            desc = 'Filter todos due today or past due',
+            desc = 'Filter urgent todos (today + past due)',
             silent = true 
         })
         
+        -- Close filter window
+        vim.keymap.set('n', '<leader>tvq', function()
+            vim.cmd('close')
+            print("✓ Filter window closed")
+        end, { 
+            buffer = true, 
+            desc = 'Close filter window',
+            silent = true 
+        })
+        
+        -- Todo Actions - consistent <leader>t* pattern
         -- Update due date on current line using calendar picker
-        vim.keymap.set('n', '<leader>cd', function()
+        vim.keymap.set('n', '<leader>td', function()
             todo_manager.update_todo_date_on_line()
         end, { 
             buffer = true, 
@@ -949,21 +835,11 @@ vim.api.nvim_create_autocmd({"BufEnter", "BufWinEnter"}, {
         })
         
         -- Create zk note from todo on current line
-        vim.keymap.set('n', '<leader>cn', function()
+        vim.keymap.set('n', '<leader>tc', function()
             todo_manager.create_note_from_todo()
         end, { 
             buffer = true, 
             desc = 'Create zk note from todo',
-            silent = true 
-        })
-        
-        -- Close filter window
-        vim.keymap.set('n', '<leader>vq', function()
-            vim.cmd('close')
-            print("✓ Filter window closed")
-        end, { 
-            buffer = true, 
-            desc = 'Close filter window',
             silent = true 
         })
         
@@ -998,17 +874,55 @@ vim.api.nvim_create_autocmd("InsertLeave", {
 
 
 -- =============================
--- OPTIONAL GLOBAL KEYBINDINGS
+-- GLOBAL KEYBINDINGS - Consistent <leader>t* Pattern
 -- =============================
--- These are optional keybindings for quick access to todo commands
--- Currently commented out - uncomment the ones you want to use
--- You can customize the leader key combinations as needed
+-- Quick access to todo commands from anywhere in Neovim
+-- All keybindings follow consistent two-letter pattern under <leader>t
 
--- vim.keymap.set('n', '<leader>ta', ':TodoAdd ', { desc = 'Add new todo' })
--- vim.keymap.set('n', '<leader>tl', ':TodoList<CR>', { desc = 'List active todos' })
--- vim.keymap.set('n', '<leader>tc', ':TodoCompleted<CR>', { desc = 'List completed todos' })
--- vim.keymap.set('n', '<leader>to', ':TodoOpen<CR>', { desc = 'Open active todos file' })
--- vim.keymap.set('n', '<leader>ts', ':TodoStats<CR>', { desc = 'Show todo statistics' })
+-- Quick add todo with prompt
+vim.keymap.set('n', '<leader>ta', ':TodoAdd ', { desc = 'Add new todo' })
+
+-- List active todos
+vim.keymap.set('n', '<leader>tl', ':TodoList<CR>', { desc = 'List active todos' })
+
+-- Open filtered view of active todos (main daily workflow)
+vim.keymap.set('n', '<leader>to', ':TodoOpen<CR>', { desc = 'Open filtered active todos' })
+
+-- Show todo statistics
+vim.keymap.set('n', '<leader>ts', ':TodoStats<CR>', { desc = 'Show todo statistics' })
+
+-- Interactive todo builder
+vim.keymap.set('n', '<leader>tb', ':TodoBuild<CR>', { desc = 'Interactive todo builder' })
+
+-- Show todo help
+vim.keymap.set('n', '<leader>th', ':TodoHelp<CR>', { desc = 'Show todo help' })
+
+-- Additional file access keybindings - these need supporting commands
+vim.keymap.set('n', '<leader>tr', ':TodoOpenRaw<CR>', { desc = 'Open raw todos file (with scheduled)' })
+
+-- For completed todos, we'll use a different pattern to avoid conflict with create note
+vim.keymap.set('n', '<leader>tcc', ':TodoOpenCompleted<CR>', { desc = 'Open completed todos file' })
+
+-- ===============================
+-- SUPPORTING COMMANDS FOR KEYBINDINGS
+-- ===============================
+-- These commands support the keybindings but are not meant for direct use
+
+-- Open the raw active todos file for editing (includes scheduled todos)
+vim.api.nvim_create_user_command('TodoOpenRaw', function()
+    local file_path = todo_manager.config.todo_dir .. "/" .. todo_manager.config.active_file
+    vim.cmd('edit ' .. file_path)
+end, {
+    desc = 'Open raw active todos file for editing (includes scheduled todos)'
+})
+
+-- Open the completed todos file for viewing
+vim.api.nvim_create_user_command('TodoOpenCompleted', function()
+    local file_path = todo_manager.config.todo_dir .. "/" .. todo_manager.config.completed_file
+    vim.cmd('edit ' .. file_path)
+end, {
+    desc = 'Open the completed todos file for viewing'
+})
 
 
 -- ===============================

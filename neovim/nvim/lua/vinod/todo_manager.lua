@@ -904,12 +904,21 @@ function M.open_filtered_active_view()
 		silent = true 
 	})
 	
-	-- Set up <leader>cn keymap for creating notes in filtered view
-	vim.keymap.set('n', '<leader>cn', function()
+	-- Set up <leader>tc keymap for creating notes in filtered view (consistent with new scheme)
+	vim.keymap.set('n', '<leader>tc', function()
 		M.create_note_from_todo()
 	end, { 
 		buffer = buf, 
 		desc = 'Create zk note from todo',
+		silent = true 
+	})
+	
+	-- Set up <leader>td keymap for updating due dates in filtered view
+	vim.keymap.set('n', '<leader>td', function()
+		M.update_todo_date_on_line()
+	end, { 
+		buffer = buf, 
+		desc = 'Update due date with calendar picker',
 		silent = true 
 	})
 end
@@ -1450,7 +1459,7 @@ end
 -- Buffer filtering functions for interactive todo views
 
 -- Filter todos by due dates in scratch buffer
-function M.filter_todos_by_due_dates()
+function M.filter_buffer_by_due_dates()
 	local source_file = vim.api.nvim_buf_get_name(0)
 	local todos = {}
 	local total_lines = vim.api.nvim_buf_line_count(0)
@@ -1578,7 +1587,7 @@ function M.filter_todos_by_due_dates()
 end
 
 -- Filter todos by category in scratch buffer
-function M.filter_todos_by_category(category)
+function M.filter_buffer_by_category(category)
 	if not category then
 		print("Error: No category provided")
 		return
@@ -1844,7 +1853,7 @@ function M.show_all_todos()
 end
 
 -- Filter today's todos in scratch buffer
-function M.filter_todos_by_today()
+function M.filter_buffer_by_today()
 	local source_file = vim.api.nvim_buf_get_name(0)
 	local todos = {}
 	local total_lines = vim.api.nvim_buf_line_count(0)
@@ -1957,7 +1966,7 @@ function M.filter_todos_by_today()
 end
 
 -- Filter past due todos in scratch buffer
-function M.filter_todos_by_past_due()
+function M.filter_buffer_by_past_due()
 	local source_file = vim.api.nvim_buf_get_name(0)
 	local todos = {}
 	local total_lines = vim.api.nvim_buf_line_count(0)
@@ -2070,7 +2079,7 @@ function M.filter_todos_by_past_due()
 end
 
 -- Filter urgent todos in scratch buffer
-function M.filter_todos_by_today_and_past_due()
+function M.filter_buffer_by_today_and_past_due()
 	local source_file = vim.api.nvim_buf_get_name(0)
 	local todos = {}
 	local total_lines = vim.api.nvim_buf_line_count(0)
@@ -2697,8 +2706,28 @@ function M.update_todo_date_on_line()
 		-- Format the new line
 		local new_line = M.format_todo_line(todo)
 
+		-- Check if buffer is modifiable and make it temporarily modifiable if needed
+		local buf = vim.api.nvim_get_current_buf()
+		local was_modifiable = vim.api.nvim_buf_get_option(buf, 'modifiable')
+		
+		if not was_modifiable then
+			vim.api.nvim_buf_set_option(buf, 'modifiable', true)
+		end
+
 		-- Replace the current line
 		vim.api.nvim_buf_set_lines(0, line_num - 1, line_num, false, { new_line })
+
+		-- Restore original modifiable state
+		if not was_modifiable then
+			vim.api.nvim_buf_set_option(buf, 'modifiable', false)
+		end
+
+		-- If this is a filtered view, also update the original file
+		local bufname = vim.api.nvim_buf_get_name(buf)
+		if bufname and bufname:match("Todo Filter") then
+			-- Update the actual todo file
+			M.update_todo_in_file(todo.description, new_date, "due")
+		end
 
 		-- Refresh syntax highlighting
 		M.highlight_due_dates_with_colors()

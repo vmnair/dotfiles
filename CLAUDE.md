@@ -65,23 +65,41 @@ This is a personal dotfiles repository containing configuration files for variou
   - `get_scheduled_todos()` - Shows future todos not yet active
   - `get_upcoming_todos(days)` - Shows todos scheduled for next N days
 
-#### **Key Commands**:
-- **Adding Todos**:
-  - `:TodoAdd <desc> | Show: mm-dd-yyyy | Due: mm-dd-yyyy` - Full syntax with show/due dates
-  - `:TodoAdd <desc> /show /due` - Sequential calendar pickers
-  - `:TodoBuild` - Interactive step-by-step todo creation with calendar pickers
-  - `:TodoMed`, `:TodoOMS`, `:Todo` - Quick category additions with show/due date support
-- **Viewing Todos**:
-  - `:TodoList` - List currently active (visible) todos
-  - `:TodoScheduled` - List all scheduled (future) todos with show dates
-  - `:TodoUpcoming [days]` - List todos scheduled for next N days (default 7)
-  - `:TodoDue`, `:TodoPastDue`, `:TodoToday` - Filter by due dates
-- **File Operations**:
-  - `:TodoOpen` - Open filtered view of active todos (only current, not scheduled)
-  - `:TodoOpenRaw` - Open raw todos file for editing (includes scheduled todos)
-  - `:TodoOpenCompleted` - Open completed todos file for viewing/editing
-  - `tt` - Toggle completion in todo files (works in filtered view and raw files)
-  - `<leader>vd`, `<leader>vm`, `<leader>vo`, `<leader>vp` - Filter views
+#### **Key Commands & Keybindings** (Updated 2025-07-29):
+
+**Essential Commands**:
+- `:TodoAdd <desc> | Show: mm-dd-yyyy | Due: mm-dd-yyyy` - Full syntax with show/due dates
+- `:TodoAdd <desc> /show /due` - Sequential calendar pickers  
+- `:TodoMed`, `:TodoOMS`, `:Todo` - Quick category additions with show/due date support
+- `:TodoList` - List currently active (visible) todos
+- `:TodoScheduled` - List all scheduled (future) todos with show dates
+- `:TodoUpcoming [days]` - List todos scheduled for next N days (default 7)
+- `:TodoStats` - Show comprehensive todo statistics
+
+**Global Keybindings (work anywhere)** - **NEW CONSISTENT SCHEME**:
+- `<leader>ta` - Quick add todo (opens :TodoAdd prompt)
+- `<leader>tl` - List active todos  
+- `<leader>to` - Open filtered view of active todos (main daily workflow)
+- `<leader>ts` - Show todo statistics
+- `<leader>tb` - Interactive todo builder with calendar picker
+- `<leader>th` - Show todo help window
+- `<leader>tr` - Open raw todos file (includes scheduled todos)
+- `<leader>tcc` - Open completed todos file
+
+**File-Specific Keybindings (in todo files only)**:
+- `tt` - Toggle completion in todo files (works in filtered view and raw files)
+- `<leader>tc` - Create zk note from todo
+- `<leader>td` - Update due date with calendar picker
+
+**View/Filter Keybindings (in todo files only)**:
+- `<leader>tvm` - Filter Medicine todos
+- `<leader>tvo` - Filter OMS todos  
+- `<leader>tvp` - Filter Personal todos
+- `<leader>tva` - Show all todos (remove filters)
+- `<leader>tvd` - Filter todos with due dates
+- `<leader>tvt` - Filter todos due today
+- `<leader>tvx` - Filter urgent todos (today + past due)
+- `<leader>tvq` - Close filter window
 
 #### **Features**:
 - Category-based todos (Medicine 💊, OMS 🛠️, Personal 🏡)
@@ -94,13 +112,14 @@ This is a personal dotfiles repository containing configuration files for variou
 - Toggle functionality: `tt` works in both filtered and raw views with full sync
 - Completed todo reactivation: Use `tt` in completed todos file to bring back to active
 
-#### **Daily Workflow**:
-1. **Morning Review**: `:TodoOpen` - See only current active todos (filtered view)
-2. **Add New Todos**: `:Todo description /show mm-dd-yyyy /due mm-dd-yyyy` 
+#### **Daily Workflow** (Updated with new keybindings):
+1. **Morning Review**: `<leader>to` - See only current active todos (filtered view)
+2. **Add New Todos**: `<leader>ta` or `:Todo description /show mm-dd-yyyy /due mm-dd-yyyy` 
 3. **Complete Todos**: Press `tt` on any todo line (works in filtered view)
 4. **Check Upcoming**: `:TodoScheduled` or `:TodoUpcoming [days]`
-5. **Reactivate Completed**: `:TodoOpenCompleted` then `tt` on completed todo
-6. **View All (Admin)**: `:TodoOpenRaw` - See all todos including scheduled
+5. **Reactivate Completed**: `<leader>tcc` then `tt` on completed todo
+6. **View All (Admin)**: `<leader>tr` - See all todos including scheduled
+7. **Quick Help**: `<leader>th` - Show comprehensive help window
 
 ### Shell and Terminal Configuration
 
@@ -168,3 +187,82 @@ This is a personal dotfiles repository containing configuration files for variou
 - Project session files end with `.proj` extension
 - Located in `tmux/` directory
 - Examples: `c.proj`, `neovim.proj`, `lua.proj`, `readwise.proj`
+
+## Recent Changes
+
+### Todo Manager Keybinding Optimization (2025-07-29)
+
+**Summary**: Implemented consistent keybinding scheme and reduced command namespace pollution.
+
+**Changes Made**:
+1. **Consistent Keybinding Prefix**: All todo keybindings now use `<leader>t*` pattern
+   - **Global keybindings**: `<leader>ta` (add), `<leader>tl` (list), `<leader>to` (open), `<leader>ts` (stats), `<leader>tb` (build), `<leader>th` (help)
+   - **File-specific actions**: `<leader>tc` (create note), `<leader>td` (update due date)
+   - **View/Filter submenu**: `<leader>tv*` pattern (tvm, tvp, tvo, tva, tvd, tvt, tvx, tvq)
+
+2. **Resolved Keybinding Conflicts**: 
+   - `<leader>cd` → `<leader>td` (update due date - no conflict with "change directory")
+   - `<leader>cn` → `<leader>tc` (create note - follows consistent pattern)
+   - All filtering moved from `<leader>v*` to `<leader>tv*` (organized submenu)
+
+3. **Command Namespace Cleanup**: Reduced from 22 to 8 essential commands
+   - **Removed redundant commands**: TodoDue, TodoPastDue, TodoToday, TodoTodayAndPastDue, TodoComplete, TodoDelete, TodoCleanup, TodoToggle, TodoNote, and others
+   - **Kept essential commands**: TodoAdd, Todo, TodoMed, TodoOMS, TodoList, TodoOpen, TodoHelp, TodoStats
+   - **Replaced with keybindings**: All filtering and file operations now use consistent keybindings
+
+4. **Updated Documentation**: 
+   - TodoHelp command reflects new keybinding scheme
+   - CLAUDE.md updated with comprehensive keybinding documentation
+   - Daily workflow updated to use new keybindings
+
+**Benefits**:
+- Consistent two-letter keybinding patterns (`ta`, `tl`, `to`, etc.)
+- Logical grouping of all todo operations under `<leader>t` prefix
+- No conflicts with existing plugin keybindings
+- Reduced command namespace pollution (14 fewer commands)
+- Better discoverability through organized submenu approach (`<leader>tv*` for filtering)
+- Improved help system with clear categorization
+
+**Migration Notes**: 
+- Old keybindings like `<leader>vm`, `<leader>vp` are now `<leader>tvm`, `<leader>tvp`
+- Commands like `:TodoDue`, `:TodoToday` are replaced by keybindings `<leader>tvd`, `<leader>tvt`
+- All functionality remains accessible, just through more consistent patterns
+
+### Todo Manager Buffer Modifiability Fix (2025-07-29)
+
+**Issue**: When using `<leader>td` to update due dates via calendar picker, users encountered error `E5108: Buffer is not 'modifiable'` when working in filtered todo views.
+
+**Root Cause**: The `update_todo_date_on_line()` function attempted to modify filtered view buffers that were set as non-modifiable, causing the operation to fail.
+
+**Solution**: Enhanced the function with buffer modifiability management:
+- **Temporary Modifiability**: Checks buffer's modifiable state and temporarily enables modification if needed
+- **State Restoration**: Restores original modifiable state after update
+- **Dual Update Logic**: When working in filtered views, also updates the actual todo file to maintain data consistency
+- **Location**: `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/todo_manager.lua:2685-2739`
+
+**Technical Details**:
+```lua
+-- Check if buffer is modifiable and make it temporarily modifiable if needed
+local buf = vim.api.nvim_get_current_buf()
+local was_modifiable = vim.api.nvim_buf_get_option(buf, 'modifiable')
+
+if not was_modifiable then
+    vim.api.nvim_buf_set_option(buf, 'modifiable', true)
+end
+
+-- Replace the current line
+vim.api.nvim_buf_set_lines(0, line_num - 1, line_num, false, { new_line })
+
+-- Restore original modifiable state
+if not was_modifiable then
+    vim.api.nvim_buf_set_option(buf, 'modifiable', false)
+end
+```
+
+**Impact**: Users can now successfully update due dates using `<leader>td` from both raw todo files and filtered views without encountering buffer modification errors.
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
