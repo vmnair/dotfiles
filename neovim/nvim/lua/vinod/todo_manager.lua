@@ -441,6 +441,131 @@ function M.get_upcoming_todos(days)
 end
 
 -- ========================================
+-- DATE SHORTCUT UTILITIES
+-- ========================================
+
+-- Number word mapping for 1-12
+local number_words = {
+	["one"] = 1, ["two"] = 2, ["three"] = 3, ["four"] = 4,
+	["five"] = 5, ["six"] = 6, ["seven"] = 7, ["eight"] = 8,
+	["nine"] = 9, ["ten"] = 10, ["eleven"] = 11, ["twelve"] = 12
+}
+
+-- Time unit multipliers (in days)
+local time_multipliers = {
+	["day"] = 1, ["days"] = 1,
+	["week"] = 7, ["weeks"] = 7,
+	["month"] = 30, ["months"] = 30,
+	["year"] = 365, ["years"] = 365
+}
+
+-- Dynamic date calculator - replaces all hardcoded date functions
+-- Calculate future date based on amount and time unit
+local function calculate_future_date(amount, unit)
+	if not amount or not unit then
+		return nil
+	end
+	
+	-- Validate amount (1-12)
+	if amount < 1 or amount > 12 then
+		return nil
+	end
+	
+	-- Get multiplier for the time unit
+	local multiplier = time_multipliers[string.lower(unit)]
+	if not multiplier then
+		return nil
+	end
+	
+	-- Calculate the future date
+	local days_to_add = amount * multiplier
+	local future_time = os.time() + (days_to_add * 24 * 60 * 60)
+	return os.date(M.config.date_format, future_time)
+end
+
+-- Parse number from string (supports both numeric and word forms)
+local function parse_number(number_str)
+	local lower_str = string.lower(number_str)
+	
+	-- Try numeric first
+	local num = tonumber(number_str)
+	if num then
+		return num
+	end
+	
+	-- Try word form
+	return number_words[lower_str]
+end
+
+-- Get today's date (special case)
+local function get_today_date()
+	return os.date(M.config.date_format)
+end
+
+-- Get tomorrow's date (special case)
+local function get_tomorrow_date()
+	return calculate_future_date(1, "day")
+end
+
+-- Get this weekend date (special case - coming Saturday, or today if already Saturday)
+local function get_this_weekend_date()
+	local today = os.date("*t")
+	local current_weekday = today.wday -- 1=Sunday, 2=Monday, ..., 7=Saturday
+	
+	-- If today is Saturday (7), return today
+	if current_weekday == 7 then
+		return os.date(M.config.date_format)
+	end
+	
+	-- Calculate days until Saturday
+	local days_until_saturday = 7 - current_weekday -- Days to add to reach Saturday
+	local saturday_time = os.time() + (days_until_saturday * 24 * 60 * 60)
+	return os.date(M.config.date_format, saturday_time)
+end
+
+-- Resolve date shortcut keyword to actual date
+-- Returns the date string if keyword is recognized, nil otherwise
+local function resolve_date_shortcut(keyword)
+	if not keyword or keyword == "" then
+		return nil
+	end
+	
+	-- Convert to lowercase for case-insensitive matching
+	local lower_keyword = string.lower(vim.trim(keyword))
+	
+	-- Handle special cases first
+	local special_cases = {
+		["today"] = get_today_date,
+		["tomorrow"] = get_tomorrow_date,
+		["this weekend"] = get_this_weekend_date,
+		-- Common aliases for backward compatibility
+		["next week"] = function() return calculate_future_date(1, "week") end,
+	}
+	
+	local special_func = special_cases[lower_keyword]
+	if special_func then
+		return special_func()
+	end
+	
+	-- Parse dynamic patterns: "number unit" (e.g., "5 days", "two weeks", "1 month")
+	local number_str, unit_str = lower_keyword:match("^(%w+)%s+(%w+)$")
+	
+	if number_str and unit_str then
+		-- Parse the number (numeric or word form)
+		local amount = parse_number(number_str)
+		if amount then
+			-- Calculate the date using the dynamic function
+			return calculate_future_date(amount, unit_str)
+		end
+	end
+	
+	return nil -- Keyword not recognized
+end
+
+-- Make resolve_date_shortcut available to the module
+M.resolve_date_shortcut = resolve_date_shortcut
+
+-- ========================================
 -- TODO MANAGEMENT
 -- ========================================
 

@@ -27,15 +27,80 @@ local function parse_add_todo_args(args)
     local use_show_calendar = false
     local use_due_calendar = false
     
-    -- Check for /show and /due calendar flags
-    if args:match("%s*/show%s*") then
+    -- Check for /show and /due with optional keywords
+    -- Pattern: /show [keyword] or /due [keyword]
+    -- First check for /show with keywords
+    local show_match = args:match("%s*/show%s+([^/|]+)")
+    if show_match then
+        local keyword = vim.trim(show_match)
+        local resolved_date = todo_manager.resolve_date_shortcut(keyword)
+        if resolved_date then
+            show_date = resolved_date
+            -- Remove the /show keyword from args
+            args = args:gsub("%s*/show%s+[^/|]+", "")
+        else
+            -- Provide specific error feedback
+            local number_str, unit_str = keyword:match("^(%w+)%s+(%w+)$")
+            if number_str and unit_str then
+                local number_words = {one=1, two=2, three=3, four=4, five=5, six=6, seven=7, eight=8, nine=9, ten=10, eleven=11, twelve=12}
+                local amount = tonumber(number_str) or number_words[string.lower(number_str)]
+                if not amount then
+                    print("Error: Invalid number '" .. number_str .. "'. Use 1-12 or one-twelve")
+                elseif amount < 1 or amount > 12 then
+                    print("Error: Number out of range '" .. amount .. "'. Use 1-12 only")
+                else
+                    print("Error: Invalid time unit '" .. unit_str .. "'. Use days/weeks/months/years")
+                end
+            else
+                print("Error: Unrecognized date shortcut '" .. keyword .. "'")
+                print("Available patterns: [1-12 or one-twelve] [days/weeks/months/years]")
+                print("Special shortcuts: today, tomorrow, next week, this weekend")
+                print("Examples: 5 days, two weeks, 1 month, twelve years")
+            end
+            return "", "", {}, "", "", false, false
+        end
+    elseif args:match("%s*/show%s*$") or args:match("%s*/show%s*[|]") then
+        -- /show without keyword - use calendar picker
         use_show_calendar = true
         args = args:gsub("%s*/show%s*", "") -- Remove /show flag
     end
-    if args:match("%s*/due%s*") then
+    
+    -- Check for /due with keywords
+    local due_match = args:match("%s*/due%s+([^/|]+)")
+    if due_match then
+        local keyword = vim.trim(due_match)
+        local resolved_date = todo_manager.resolve_date_shortcut(keyword)
+        if resolved_date then
+            due_date = resolved_date
+            -- Remove the /due keyword from args
+            args = args:gsub("%s*/due%s+[^/|]+", "")
+        else
+            -- Provide specific error feedback
+            local number_str, unit_str = keyword:match("^(%w+)%s+(%w+)$")
+            if number_str and unit_str then
+                local number_words = {one=1, two=2, three=3, four=4, five=5, six=6, seven=7, eight=8, nine=9, ten=10, eleven=11, twelve=12}
+                local amount = tonumber(number_str) or number_words[string.lower(number_str)]
+                if not amount then
+                    print("Error: Invalid number '" .. number_str .. "'. Use 1-12 or one-twelve")
+                elseif amount < 1 or amount > 12 then
+                    print("Error: Number out of range '" .. amount .. "'. Use 1-12 only")
+                else
+                    print("Error: Invalid time unit '" .. unit_str .. "'. Use days/weeks/months/years")
+                end
+            else
+                print("Error: Unrecognized date shortcut '" .. keyword .. "'")
+                print("Available patterns: [1-12 or one-twelve] [days/weeks/months/years]")
+                print("Special shortcuts: today, tomorrow, next week, this weekend")
+                print("Examples: 5 days, two weeks, 1 month, twelve years")
+            end
+            return "", "", {}, "", "", false, false
+        end
+    elseif args:match("%s*/due%s*$") or args:match("%s*/due%s*[|]") then
+        -- /due without keyword - use calendar picker
         use_due_calendar = true
         args = args:gsub("%s*/due%s*", "") -- Remove /due flag
     end
+    
     -- Backward compatibility: /cal defaults to /due behavior
     if args:match("%s*/cal%s*") then
         use_due_calendar = true
@@ -212,9 +277,18 @@ vim.api.nvim_create_user_command('TodoAdd', function(opts)
     local args = opts.args
     if args == "" then
         print("Usage: :TodoAdd <description> [#tag1 #tag2] [| Category: <category>] [| Due: mm-dd-yyyy] [| Show: mm-dd-yyyy]")
+        print("Date shortcuts: Use /show [keyword] or /due [keyword] with:")
+        print("  Pattern: [1-12 or one-twelve] [days/weeks/months/years]")
+        print("  Special: today, tomorrow, next week, this weekend")
         print("Examples: TodoAdd Buy medicine #urgent | Category: Medicine")
         print("         TodoAdd Meeting prep #work /show /due")
-        print("Calendar: Use /show or /due suffix to use date picker")
+        print("         TodoAdd Buy groceries /show tomorrow")
+        print("         TodoAdd Doctor visit /due next week")
+        print("         TodoAdd Project deadline /show this weekend /due 1 month")
+        print("         TodoAdd Call dentist /show 3 days")
+        print("         TodoAdd Review /due five weeks")
+        print("         TodoAdd Annual checkup /show 1 year")
+        print("Calendar: Use /show or /due alone to open date picker")
         print("Note: Category defaults to 'Personal' if not specified")
         return
     end
@@ -571,13 +645,27 @@ vim.api.nvim_create_user_command('TodoHelp', function()
         ["Essential Commands"] = {
             [":TodoAdd <desc> [#tags] [| Category: <cat>] [| Due: mm-dd-yyyy] [| Show: mm-dd-yyyy]"] = "Add new todo with full metadata",
             [":TodoAdd <desc> /show /due"] = "Sequential calendar pickers for show and due dates",
+            [":TodoAdd <desc> /show tomorrow"] = "Add todo with date shortcut (see shortcuts below)",
             [":Todo <desc> [#tags] /show /due"] = "Quick add Personal todo with both dates",
-            [":TodoMed <desc> [#tags] /due"] = "Quick add Medicine todo", 
-            [":TodoOMS <desc> [#tags] /due"] = "Quick add OMS todo",
+            [":TodoMed <desc> [#tags] /due next week"] = "Quick add Medicine todo with date shortcut", 
+            [":TodoOMS <desc> [#tags] /due this weekend"] = "Quick add OMS todo with date shortcut",
             [":TodoList [category]"] = "List currently active (visible) todos",
             [":TodoScheduled"] = "List all scheduled (future) todos with show dates",
             [":TodoUpcoming [days]"] = "List todos scheduled for next N days (default 7)",
             [":TodoStats"] = "Show comprehensive todo statistics"
+        },
+        ["Date Shortcuts"] = {
+            ["Pattern: [1-12] [unit]"] = "Use numbers 1-12 with days/weeks/months/years",
+            ["Pattern: [word] [unit]"] = "Use one-twelve with days/weeks/months/years",
+            ["/show 5 days"] = "Show todo in 5 days",
+            ["/due two weeks"] = "Due in 2 weeks (14 days)",
+            ["/show 1 month"] = "Show todo in 30 days",
+            ["/due twelve years"] = "Due in 12 years (4380 days)",
+            ["/show today"] = "Show todo today (special case)",
+            ["/due tomorrow"] = "Due tomorrow (special case)",
+            ["/show next week"] = "Show todo in 1 week (alias)",
+            ["/due this weekend"] = "Due this Saturday (special case)",
+            ["/show (no keyword)"] = "Opens calendar picker for manual date selection"
         },
         ["Global Keybindings (work anywhere)"] = {
             ["<leader>ta"] = "Quick add todo (opens :TodoAdd prompt)",
