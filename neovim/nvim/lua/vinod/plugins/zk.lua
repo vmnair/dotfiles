@@ -224,12 +224,223 @@ return {
       desc = "Add selected text as hashtag to last line",
     })
 
-    -- Show ZK aliases
+    -- Function to create todo from current line in zk note
+    local function create_todo_from_zk_line()
+      local line = vim.api.nvim_get_current_line()
+      
+      -- Clean up the line text for todo description
+      local description = line:gsub("^%s*", ""):gsub("%s*$", "")
+      
+      if description == "" then
+        print("Current line is empty")
+        return
+      end
+      
+      -- Import todo_manager to access dynamic categories and functions
+      local todo_manager = require('vinod.todo_manager')
+      
+      -- Get dynamic categories from todo_manager
+      local categories = {}
+      for _, cat in ipairs(todo_manager.config.categories) do
+        table.insert(categories, cat)
+      end
+      
+      -- Step 1: Category selection
+      vim.ui.select(categories, {
+        prompt = "Select category for todo:"
+      }, function(selected_category)
+        if not selected_category then
+          print("Todo creation cancelled")
+          return
+        end
+        
+        -- Step 2: Show date selection
+        vim.ui.select({"Pick show date", "Skip"}, {
+          prompt = "Show date (when todo appears):"
+        }, function(show_choice)
+          local show_date = ""
+          
+          local function handle_due_date()
+            -- Step 3: Due date selection
+            vim.ui.select({"Pick due date", "Skip"}, {
+              prompt = "Due date:"
+            }, function(due_choice)
+              local due_date = ""
+              
+              local function create_final_todo()
+                -- Create the todo
+                local success = todo_manager.add_todo(description, selected_category, {}, due_date, show_date)
+                if success then
+                  local show_display = show_date and show_date ~= "" and " [Show: " .. show_date .. "]" or ""
+                  local due_display = due_date and due_date ~= "" and " [Due: " .. due_date .. "]" or ""
+                  print("✓ Todo created: " .. description .. " (" .. selected_category .. ")" .. show_display .. due_display)
+                else
+                  print("✗ Failed to create todo")
+                end
+              end
+              
+              if due_choice == "Pick due date" then
+                todo_manager.get_date_input(function(picked_due)
+                  if picked_due then
+                    due_date = picked_due
+                  end
+                  create_final_todo()
+                end)
+              else
+                create_final_todo()
+              end
+            end)
+          end
+          
+          if show_choice == "Pick show date" then
+            todo_manager.get_date_input(function(picked_show)
+              if picked_show then
+                show_date = picked_show
+              end
+              handle_due_date()
+            end)
+          else
+            handle_due_date()
+          end
+        end)
+      end)
+    end
+
+    -- Create todo from current line
+    vim.api.nvim_set_keymap("n", "<leader>zT", "", {
+      noremap = true,
+      silent = true,
+      callback = create_todo_from_zk_line,
+      desc = "Create todo from current line",
+    })
+
+    -- Function to show comprehensive ZK help
+    local function show_zk_help()
+      local keymaps = {
+        ["Core ZK Commands"] = {
+          ["<leader>zn"] = "Create new note with title prompt",
+          ["<leader>zo"] = "Open notes (sorted by modified date)",
+          ["<leader>zt"] = "Browse notes by tags",
+          ["<leader>zf"] = "Search notes by query (normal mode)",
+          ["<leader>zf"] = "Search notes matching visual selection (visual mode)"
+        },
+        ["ZK Aliases & Shortcuts"] = {
+          ["<leader>zh"] = "Show this comprehensive help window"
+        },
+        ["Text & Todo Integration"] = {
+          ["<leader>za"] = "Add selected text as hashtag to last line (visual mode)",
+          ["<leader>zT"] = "Create todo from current line (with category/date picker)"
+        },
+        ["Built-in ZK Commands (via :Zk...)"] = {
+          [":ZkNew"] = "Create new note",
+          [":ZkNotes"] = "List/search notes",
+          [":ZkTags"] = "Browse by tags",
+          [":ZkMatch"] = "Search in visual selection",
+          [":ZkCd"] = "Change to zk notebook directory",
+          [":ZkIndex"] = "Index the notebook"
+        },
+        ["Common ZK Aliases (from config.toml)"] = {
+          ["daily"] = "zk daily - Create daily journal entry",
+          ["oms"] = "zk oms - Create OMS note",
+          ["practice"] = "zk practice - Create practice note",
+          ["research"] = "zk research - Create research note",
+          ["card"] = "zk card - Create cardiology note",
+          ["ls"] = "zk ls - List recent notes",
+          ["search"] = "zk search - Search by tags",
+          ["editlast"] = "zk editlast - Edit last modified note",
+          ["config"] = "zk config - Edit zk configuration"
+        },
+        ["Workflow Tips"] = {
+          ["Quick note"] = "<leader>zn then type title",
+          ["Browse recent"] = "<leader>zo to see recent notes",
+          ["Find by tag"] = "<leader>zt to browse tags",
+          ["Search content"] = "<leader>zf then type search term",
+          ["Add hashtag"] = "Select text, then <leader>za",
+          ["Line to todo"] = "Place cursor on line, then <leader>zT",
+          ["Quick aliases"] = "<leader>zh for template shortcuts"
+        }
+      }
+      
+      -- Create floating window
+      local width = 85
+      local height = 30
+      local buf = vim.api.nvim_create_buf(false, true)
+      
+      local lines = {}
+      table.insert(lines, "📝 ZK (Zettelkasten) Help")
+      table.insert(lines, string.rep("═", width - 4))
+      table.insert(lines, "")
+      
+      for section, items in pairs(keymaps) do
+        table.insert(lines, "▶ " .. section)
+        table.insert(lines, string.rep("─", #section + 2))
+        table.insert(lines, "")
+        
+        for key, desc in pairs(items) do
+          local line = string.format("  %-25s %s", key, desc)
+          if #line > width - 4 then
+            -- Wrap long lines
+            local key_part = string.format("  %-25s", key)
+            table.insert(lines, key_part)
+            table.insert(lines, string.format("  %25s %s", "", desc))
+          else
+            table.insert(lines, line)
+          end
+        end
+        table.insert(lines, "")
+      end
+      
+      table.insert(lines, string.rep("═", width - 4))
+      table.insert(lines, "Notebook location: ~/Library/CloudStorage/Dropbox/notebook/")
+      table.insert(lines, "Press 'q' or ESC to close")
+      
+      vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+      vim.api.nvim_buf_set_option(buf, "modifiable", false)
+      vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
+      vim.api.nvim_buf_set_option(buf, "filetype", "zkhelp")
+      
+      -- Center the window
+      local win_opts = {
+        relative = "editor",
+        width = width,
+        height = height,
+        col = (vim.o.columns - width) / 2,
+        row = (vim.o.lines - height) / 2,
+        anchor = "NW",
+        style = "minimal",
+        border = "rounded",
+        title = " 📚 ZK Help ",
+        title_pos = "center"
+      }
+      
+      local win = vim.api.nvim_open_win(buf, true, win_opts)
+      
+      -- Set up syntax highlighting
+      vim.cmd("syntax match ZkHelpTitle /^📝.*$/")
+      vim.cmd("syntax match ZkHelpSection /^▶.*$/")
+      vim.cmd("syntax match ZkHelpSeparator /^[═─].*$/")
+      vim.cmd("syntax match ZkHelpKey /^  [^[:space:]].*$/")
+      vim.cmd("syntax match ZkHelpFooter /^Press.*$/")
+      vim.cmd("syntax match ZkHelpLocation /^Notebook.*$/")
+      
+      vim.cmd("highlight ZkHelpTitle ctermfg=14 guifg=#00D7D7 cterm=bold gui=bold")
+      vim.cmd("highlight ZkHelpSection ctermfg=11 guifg=#FFD700 cterm=bold gui=bold")
+      vim.cmd("highlight ZkHelpSeparator ctermfg=8 guifg=#666666")
+      vim.cmd("highlight ZkHelpKey ctermfg=10 guifg=#90EE90")
+      vim.cmd("highlight ZkHelpFooter ctermfg=8 guifg=#888888")
+      vim.cmd("highlight ZkHelpLocation ctermfg=12 guifg=#87CEEB")
+      
+      -- Close window on 'q' or ESC
+      vim.api.nvim_buf_set_keymap(buf, 'n', 'q', '<cmd>close<CR>', { noremap = true, silent = true })
+      vim.api.nvim_buf_set_keymap(buf, 'n', '<ESC>', '<cmd>close<CR>', { noremap = true, silent = true })
+    end
+
+    -- Show comprehensive ZK help
     vim.api.nvim_set_keymap("n", "<leader>zh", "", {
       noremap = true,
       silent = true,
-      callback = show_zk_aliases,
-      desc = "Show ZK aliases",
+      callback = show_zk_help,
+      desc = "Show ZK help",
     })
   end,
 }
