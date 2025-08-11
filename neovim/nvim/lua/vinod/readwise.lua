@@ -68,4 +68,13 @@ function M.setup(opts)
   end
 end
 
+-- API Functions
+function M.get_highlights()
+  --
+  -- TODO: Add error handling and authentication
+  local cmd = { "curl", "-s", M.config.base_url .. "export/" }
+  local response = vim.fn.system(cmd)
+  return vim.json.decode(response)
+end
+
 return M

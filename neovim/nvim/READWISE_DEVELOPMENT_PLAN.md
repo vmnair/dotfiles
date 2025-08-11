@@ -529,10 +529,14 @@ end
 - Cache duration strategies for API rate limiting
 
 **Development Method Established:**
-- Manual code entry by user (better learning)
-- Claude explains concepts first, then user types code
-- Claude verifies with headless testing
-- Documentation updated as we modify plans
+- **IMPORTANT**: Manual code entry by user (better learning)
+- **Claude's Role**: Explain concepts, provide instructions, verify user's code
+- **User's Role**: Write all code manually unless specifically asking Claude to implement
+- **Process**: Claude explains → User codes → Claude verifies
+- **Testing**: Claude verifies with headless testing after user writes code
+- **Documentation**: Updated as we modify plans
+
+**⚠️ REMINDER FOR CLAUDE**: Do NOT write code for the user unless explicitly asked. Always give instructions and let user implement.
 
 **Manual Refresh Feature Added:**
 - Discussed need for `:ReadwiseRefresh` commands for active reading sessions
@@ -556,3 +560,141 @@ end
 4. **Test frequently** - Use headless mode debugging for reliable testing
 
 **Current Status**: Day 1 complete, ready to start Day 2 API implementation.
+
+---
+
+## 📋 **Readwise API Research & Analysis** 
+**Date**: 2025-08-10
+**Status**: Research completed, ready for implementation design
+
+### API Discovery Summary
+
+**Authentication**:
+- Token-based: `Authorization: Token YOUR_TOKEN_HERE`
+- Get token from: https://readwise.io/access_token
+- Test endpoint: `GET /api/v2/auth/` (returns 204 if valid)
+
+**Key Endpoints**:
+1. **`GET /api/v2/export/`** - ⭐ **PRIMARY ENDPOINT** (Bulk export)
+   - Gets all highlights with pagination via `pageCursor`
+   - Supports date filtering, book filtering  
+   - Uses general 240 req/min rate limit (better than list endpoints)
+   - Most efficient for caching strategy
+
+2. **`GET /api/v2/books/`** - Books list (⚠️ 20 req/min limit)
+3. **`GET /api/v2/highlights/`** - Individual highlights (⚠️ 20 req/min limit)  
+4. **`POST /api/v2/highlights/`** - Create highlights (240 req/min)
+
+**Rate Limits**:
+- **General**: 240 requests/minute
+- **LIST endpoints** (books, highlights): ⚠️ **20 requests/minute only**
+- **Export endpoint**: Uses general 240 limit (much better!)
+- **429 responses**: Check `Retry-After` header for wait time
+
+### Recommended Implementation Strategy
+
+**1. Primary Data Strategy**: 
+- Use `/api/v2/export/` as main endpoint
+- Implement pagination with `pageCursor` 
+- Support date filtering for incremental updates
+
+**2. Authentication Approach**:
+```lua
+-- Secure token storage options:
+local token = os.getenv('READWISE_TOKEN') or vim.fn.input('Readwise Token: ')
+```
+
+**3. HTTP Client Options**:
+- Option A: `curl` command via `vim.fn.system()` (no dependencies)
+- Option B: Check for `plenary.nvim` HTTP client (cleaner API)
+
+**4. Caching Strategy**:
+- Full export on first run
+- Incremental updates using date filtering
+- Store in Dropbox directory following existing patterns
+
+### Outstanding Questions for Day 2 Implementation
+
+1. **Token Storage**: Environment variable vs encrypted config file?
+2. **HTTP Client**: `curl` vs `plenary.nvim` dependency? 
+3. **Response Format**: Need to test API to see actual JSON structure
+4. **Error Handling**: Retry strategy for rate limits and network failures?
+5. **Incremental Updates**: How often to refresh vs use cache?
+
+---
+
+## ✅ **COMPLETED: TDD Framework Setup** 
+**Date Completed**: 2025-08-11
+
+### What We Built:
+
+**1. Complete Test Framework Setup**
+- ✅ `tests/minimal_init.lua` - Minimal Neovim test environment
+- ✅ `tests/readwise_spec.lua` - Comprehensive test suite
+- ✅ plenary.nvim testing integration working perfectly
+- ✅ Mock system established for API testing
+
+**2. TDD Implementation Achievement**
+- ✅ **Full TDD Cycle Completed**: Red → Green → Verification
+- ✅ **Configuration Tests**: Default config and option merging (2 tests passing)
+- ✅ **API Function Tests**: Mocked `get_highlights()` with error handling (2 tests passing) 
+- ✅ **Total**: 4/4 tests passing successfully
+
+**3. Core Functions Implemented**
+- ✅ `M.setup()` - Configuration merging and validation
+- ✅ `M.get_highlights()` - Basic API client function (minimal implementation)
+- ✅ Mock framework for HTTP requests without network dependencies
+
+### Key Learning Accomplished:
+
+**TDD Concepts Mastered**:
+- Red-Green-Refactor cycle in practice
+- Writing tests before implementing functions
+- Mock functions to replace real API calls
+- Test isolation with setup/teardown patterns
+
+**Lua/Neovim Skills Gained**:
+- plenary.nvim test framework (`describe`, `it`, assertions)
+- Function mocking and restoration techniques
+- JSON encoding/decoding with `vim.json`
+- Module reloading in test environments
+- `vim.fn.system()` for system commands
+
+**Testing Patterns Learned**:
+- Configuration testing strategies
+- API client testing with mocks
+- Error handling verification with `pcall()`
+- Test organization and cleanup best practices
+
+### Current Status:
+- ✅ **TDD Framework**: Fully operational
+- ✅ **Test Coverage**: Configuration and basic API functions
+- ✅ **Development Method**: TDD approach established
+- ✅ **Foundation**: Ready for API implementation with test coverage
+
+### 🔄 **NEXT SESSION: Test Runner + Continue Day 2**
+**Ready to implement:**
+
+**Immediate Next Steps (5 minutes)**:
+1. Create test runner script for easy testing
+2. Update development plan with TDD integration
+
+**Day 2 API Implementation (with TDD)**:
+1. **Authentication handling** (write tests first, then implement)
+2. **Error handling and retry logic** (test-driven approach)
+3. **JSON parsing and data transformation** (mock real API responses)
+4. **Caching strategy implementation** (test file I/O operations)
+
+**Testing Strategy for Day 2**:
+- Write failing tests for each API function before implementing
+- Use mocks for HTTP requests and file operations
+- Test error scenarios (network failures, invalid JSON, rate limits)
+- Maintain 100% test coverage for all new functions
+
+### Development Method Reminder:
+- **IMPORTANT**: Manual code entry by user (better learning)
+- **Process**: Claude explains → User codes → Claude verifies with tests
+- **TDD Cycle**: Red (failing test) → Green (minimal code) → Refactor (improve)
+- **Testing**: All new code should have tests written first
+
+**Current Status**: TDD framework complete. Ready to continue Day 2 API implementation with test-driven approach.
