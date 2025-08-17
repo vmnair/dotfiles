@@ -13,7 +13,7 @@ tmux send-keys -t NeovimConf 'vim .' C-m
 
 tmux split-window -h -t NeovimConf:1
 tmux send-keys -t NeovimConf:1.2 'cd ~/dotfiles/neovim/nvim' C-m
-tmux send-keys -t NeovimConf:1.2 'claude code' C-m
+tmux send-keys -t NeovimConf:1.2 'claude' C-m
 
 
 # Console Window

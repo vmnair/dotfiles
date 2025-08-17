@@ -155,5 +155,11 @@ export NVM_DIR="$HOME/.nvm"
   [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"  # This loads nvm
   [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
 
+
+# Clear CopilotChat History
+
+alias copilotchat_clean="rm ~/.local/share/nvim/copilotchat_history/*.json"
+
+# Ollama API base_URL
 export OLLAMA_API_BASE=http://127.0.0.1:11434
 
