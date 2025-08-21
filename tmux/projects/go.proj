@@ -1,0 +1,34 @@
+
+#!/bin/bash
+
+# tmux setup for learning go 
+
+   tmux has-session -t LearnGo 2>/dev/null
+
+   if [ $? != 0 ]; then
+       # Neovim
+       tmux new-session -s LearnGo -n Neovim -d 
+       tmux send-keys -t LearnGo 'cd ~/Projects/Learn/go' C-m
+       tmux send-keys -t LearnGo 'vim .' C-m
+
+       # Console Window
+       tmux new-window -n Console -t LearnGo
+       tmux send-keys -t LearnGo:2 'cd ~/Projects/Learn/go' C-m
+       tmux send-keys -t LearnGo:2 'clear' C-m
+
+       # Lazygit
+       tmux new-window -n Lazygit -t LearnGo
+       tmux send-keys -t LearnGo:3 'cd ~/Projects/Learn/go' C-m
+       tmux send-keys -t LearnGo:3 'lazygit' C-m
+       tmux send-keys -t LearnGo:2 'clear' C-m
+
+       # Select the Neovim window
+       tmux select-window -t LearnGo:1
+       tmux select-pane -t LearnGo:1.1
+   fi
+
+   # Attach to the session
+   tmux attach -t LearnGo
+
+   # Change the directory to learn go  
+   cd ~/Projects/Learn/go

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# tmux setup for leaning go 
+# tmux setup Neovim configurationa  
 
 
 if ! tmux has-session -t NeovimConf
@@ -8,26 +8,27 @@ then
 
 # Neovim 
 tmux new-session -s NeovimConf -n Neovim -d 
-tmux send-keys -t NeovimConf 'cd ~/dotfiles/neovim/nvim' C-m
-tmux send-keys -t NeovimConf 'vim .' C-m
+tmux send-keys -t NeovimConf:1 'cd ~/dotfiles/neovim/nvim' C-m
+tmux send-keys -t NeovimConf:1 'vim .' C-m
 
+# Create horizontal split and start claude code
 tmux split-window -h -t NeovimConf:1
-tmux send-keys -t NeovimConf:1.2 'cd ~/dotfiles/neovim/nvim' C-m
+tmux send-keys -t NeovimConf:1.2 'cd ~/dotfiles/neovim/nvim/' C-m
 tmux send-keys -t NeovimConf:1.2 'claude' C-m
 
 
 # Console Window
 tmux new-window -n Console -t NeovimConf
-tmux send-keys -t NeovimConf:2  'cd ~/Projects/Learn/Neovim' C-m
-tmux send-keys -t NeovimConf:2  'nv' C-m
-# tmux send-keys -t NeovimConf:2  'clear' C-m
+tmux send-keys -t NeovimConf:2  'cd ~/dotfiles/neovim/nvim' C-m
+# tmux send-keys -t NeovimConf:2  'nv' C-m
+tmux send-keys -t NeovimConf:2  'clear' C-m
 
 
 # Lazygit
 tmux new-window -n Lazygit -t NeovimConf
-tmux send-keys -t NeovimConf:3  'cd ~/Projects/Learn/Neovim' C-m
+tmux send-keys -t NeovimConf:3  'cd ~/dotfiles/neovim/nvim' C-m
 tmux send-keys -t NeovimConf:3  'lg' C-m
-tmux send-keys -t NeovimConf:2  'clear' C-m
+# tmux send-keys -t NeovimConf:2  'clear' C-m
 
 # Select the Neovim window
 tmux select-window -t NeovimConf:1

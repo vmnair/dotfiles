@@ -20,3 +20,4 @@ keybind = cmd+l=goto_split:right
 
 fullscreen = true
 
+keybind = shift+enter=text:\n
