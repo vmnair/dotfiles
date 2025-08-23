@@ -10,6 +10,7 @@ require("vinod.config.aliases")
 -- require("vinod.config.mappings") Called from lazy.lua
 
 require("vinod.config.todo_commands")
+require("vinod.config.ollama_commands")
 require("fzf-lua").register_ui_select()
 
 vim.opt.rtp:prepend(vim.fn.stdpath("config") .. "/dev-plugins/readwise.nvim")

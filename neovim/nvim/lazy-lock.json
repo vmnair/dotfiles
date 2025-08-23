@@ -10,8 +10,7 @@
   "cmp_luasnip": { "branch": "master", "commit": "98d9cb5c2c38532bd9bdb481067b20fea8f32e90" },
   "copilot.lua": { "branch": "master", "commit": "f0c0d981de2737abc50bd7b5bb034ae440826827" },
   "fzf": { "branch": "master", "commit": "9a53d84b9cce3a0be12fb98e313726ecc806f034" },
-  "fzf-lua": { "branch": "main", "commit": "519f765d7c1782d70652b3187bf466b773b8e86b" },
-  "gen.nvim": { "branch": "main", "commit": "c8e1f574d4a3a839dde73a87bdc319a62ee1e559" },
+  "fzf-lua": { "branch": "main", "commit": "7d66cd81cf485fb17c22d82021cc166ce332a14c" },
   "gitsigns.nvim": { "branch": "main", "commit": "6e3c66548035e50db7bd8e360a29aec6620c3641" },
   "harpoon": { "branch": "harpoon2", "commit": "ed1f853847ffd04b2b61c314865665e1dadf22c7" },
   "inc-rename.nvim": { "branch": "main", "commit": "8ae25b35ae16ca4bd5de3d3c472eec3b574018d4" },
@@ -44,7 +43,7 @@
   "todo-comments.nvim": { "branch": "main", "commit": "304a8d204ee787d2544d8bc23cd38d2f929e7cc5" },
   "tokyonight.nvim": { "branch": "main", "commit": "057ef5d260c1931f1dffd0f052c685dcd14100a3" },
   "vim-tmux-navigator": { "branch": "master", "commit": "c45243dc1f32ac6bcf6068e5300f3b2b237e576a" },
-  "vimtex": { "branch": "master", "commit": "c74d9927d9ac2fd24f965634ab56fc5d3c0a60a7" },
+  "vimtex": { "branch": "master", "commit": "dc90feacb86f7b85b0b791d8073eefc769a23725" },
   "which-key.nvim": { "branch": "main", "commit": "370ec46f710e058c9c1646273e6b225acf47cbed" },
   "zk-nvim": { "branch": "main", "commit": "b18782530b23ad118d578c0fa0e4d0b8d386db4c" }
 }

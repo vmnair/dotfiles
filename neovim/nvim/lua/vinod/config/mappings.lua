@@ -37,8 +37,8 @@ map("n", "x", '"_x', { desc = "Delete the char under cursor to void in normal mo
 map("v", "x", '"_x', { desc = "Delete the char cursor to void in visual mode" })
 -- Format pasted line
 map("n", "p", "p==", { desc = "Auto formats / indents the pasted text" })
--- Save file
-map("n", "<C-s>", "<Cmd>w<CR>", { desc = "Saves current buffer" })
+-- Save file (changed from <C-s> to avoid conflict with tmux sessionizer)
+map("n", "<leader>w", "<Cmd>w<CR>", { desc = "Saves current buffer" })
 -- Close Neovim
 map("n", "<C-q>", "<Cmd>q<CR>", { desc = "Exit Neovim" })
 -- Vertical split

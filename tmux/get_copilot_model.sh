@@ -17,11 +17,11 @@ if [ -f "$NVIM_CONFIG_PATH" ] && [ -r "$NVIM_CONFIG_PATH" ]; then
     model=$(grep -E '^\s*model\s*=' "$NVIM_CONFIG_PATH" 2>/dev/null | sed -E 's/.*model[[:space:]]*=[[:space:]]*"([^"]*)".*$/\1/' 2>/dev/null)
     
     if [ -n "$model" ]; then
-        echo "[$model]"
+        echo "[Copilot: $model]"
     else
-        echo "[Unknown]"
+        echo "[Copilot: Unknown]"
     fi
 else
     # Config file not found or not readable, but we're in tmux, so show placeholder
-    echo "[No Config]"
+    echo "[Copilot: No Config]"
 fi

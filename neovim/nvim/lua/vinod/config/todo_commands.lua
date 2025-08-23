@@ -1076,5 +1076,4 @@ end, {
 
 
 
--- Confirm successful loading of the todo system
-print("✓ Vinod's Todo Manager loaded successfully!")
+-- Confirm successful loading of the todo system (silent load)
