@@ -4,11 +4,6 @@
 
 A comprehensive ollama chat integration system for Neovim that provides seamless AI assistance within the development workflow. The system supports model management, persistent conversations, and unified behavior across tmux and terminal environments.
 
-### Documentation
-
-Please note that this documentation need to be updated with each logic changes.
-Just need to be succint and clean as changes are made and need to be kept
-uptodate.
 
 ## System Architecture
 
@@ -101,92 +96,32 @@ uptodate.
 - **Split Management**: Unified 50% split behavior across environments
 - **Process Lifecycle**: Natural cleanup when tmux sessions close
 
-## User Flows
+## Usage Workflows
 
-### First-Time Setup
+**First-Time Setup**: `<leader>oo` → auto-prompt for model selection → save and start chat
 
-1. User presses `<leader>oo` with no config
-2. Auto-prompt: "No default model set. Please select one:"
-3. Show model picker (context-aware UI)
-4. Save selection and proceed with chat
+**Daily Usage**: `<leader>oo` (start) → `<leader>ot` (toggle) → `<leader>os` (save conversations)
 
-### Daily Usage
+**Model Switching**: `<leader>om` → select model → graceful process restart
 
-1. `<leader>oo` - Start chat with default model
-2. Work with AI assistance
-3. `<leader>ot` - Hide chat when focusing on code
-4. `<leader>ot` - Show chat when need assistance again
-5. `<leader>os session-name` - Save important conversations
+## Error Handling
 
-### Model Switching
+- Model validation with fallback selection
+- Service down detection with retry guidance  
+- Pane recovery on external kills
+- Independent Neovim instances
+- Progress feedback and silent loading
 
-1. `<leader>om` - Select new model
-2. Current ollama process killed gracefully
-3. New model starts with progress indication
-4. Continue conversation with new model
+## Implementation Status: **COMPLETE** ✅
 
-## Error Handling & Edge Cases
+All core functionality implemented including model management, session persistence, tmux integration, and comprehensive keybindings.
 
-- **Model Unavailable**: Show available models, prompt for selection
-- **Ollama Service Down**: Clear error message with retry guidance
-- **Pane Killed Externally**: Detect and recreate on next toggle
-- **Multiple Instances**: Each Neovim session operates independently
-- **Progress Indication**: Loading messages during model startup
-- **Silent Operation**: System loads without verbose startup messages for clean UX
+## Recent Changes
 
-## Implementation Status
+### ✅ Tmux Integration Improvements (2025-08-23)
 
-### Phase 1: Core Infrastructure ✅
-
-- [x] Create core ollama manager module
-- [x] Implement model discovery and validation
-- [x] Build configuration system with Lua config files
-- [x] Add basic chat startup functionality
-
-### Phase 2: Keybinding Implementation ✅
-
-- [x] Primary operations (od, oo, om, ot, oc)
-- [x] Layout control (oh, ov) with persistence
-- [x] Context-aware model selection UI (tmux popup vs fzf-lua vs fallback)
-
-### Phase 3: Session Management ✅
-
-- [x] Chat saving with buffer dump approach
-- [x] Loading saved chats as separate buffers
-- [x] Session management keybindings (os, ol, ox)
-- [x] Auto-cleanup system (30-day retention)
-
-### Phase 4: Polish & Integration ✅
-
-- [x] Comprehensive error handling and edge cases
-- [x] Progress feedback system with vim.notify()
-- [x] Integration with existing Neovim configuration
-- [x] Silent loading without verbose startup messages
-- [x] Comprehensive help system with floating window dialog
-
-## Outstanding Issues 🔧
-
-### ✅ RESOLVED: Tmux Statusbar Not Updating When Switching Ollama Models
-
-**Issue**: When using `<leader>om` to switch ollama models in Neovim, the tmux statusbar continued to show the old model name instead of updating to the new model.
-
-**Root Cause**: The `switch_model()` function was not properly updating the persistent config file that the tmux statusbar script reads from.
-
-**Solution Applied**: ✅ **RESOLVED**
-- **File**: `ollama_chat.lua` (lines 229-231)  
-- **Fix**: Added proper config loading/saving in `switch_model()` function:
-  ```lua
-  -- Update the persistent configuration with new model
-  local config = ollama_manager.load_config() or {}
-  config.default_model = selected_model
-  ollama_manager.save_config(config)
-  ```
-
-**Status**: ✅ **CONFIRMED WORKING** - Tmux statusbar now updates correctly when switching models
-
-### ✅ RESOLVED: "not a terminal" Error
-
-**Status**: ✅ **RESOLVED** - C-s workflow working correctly
+- **Statusbar Model Updates**: Fixed model switching to properly update tmux statusbar
+- **Window Dots Alignment**: Changed from center to left-alignment next to session name for consistent positioning
 
 ## Files Created
 
@@ -245,6 +180,3 @@ uptodate.
 ---
 
 _Last Updated: 2025-08-23_
-_Implementation Status: **COMPLETE** ✅_
-
-All planned functionality has been implemented and integrated into your Neovim configuration. The system is ready for use!
