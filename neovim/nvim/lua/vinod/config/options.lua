@@ -69,6 +69,11 @@ opt.timeoutlen = 300
 opt.mouse = ""
 
 opt.winborder = "single"
+
+-- Cursor shape configuration
+-- Block cursor in normal mode, line cursor in insert mode
+opt.guicursor = "n-v-c:block,i-ci-ve:ver25,r-cr:hor20,o:hor50"
+
 -- Set spell check
 -- opt.spell = true
 -- opt.spelllang = { "en" }

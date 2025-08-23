@@ -1,6 +1,9 @@
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 
+# Disable software flow control to allow Ctrl+S for tmux sessionizer
+stty -ixon
+
 # Path to your oh-my-zsh installation.
 # export ZSH="$HOME/.oh-my-zsh"
 
@@ -162,4 +165,18 @@ alias copilotchat_clean="rm ~/.local/share/nvim/copilotchat_history/*.json"
 
 # Ollama API base_URL
 export OLLAMA_API_BASE=http://127.0.0.1:11434
+
+# Tmux configuration
+tmux_sessionizer() {
+  zle push-input
+  BUFFER="$HOME/dotfiles/tmux/smart-sessionizer.sh"
+  zle accept-line
+}
+
+zle -N tmux_sessionizer # register above function as a zle widget
+bindkey '^S' tmux_sessionizer # bind the widget to Ctrl+S
+
+
+
+
 

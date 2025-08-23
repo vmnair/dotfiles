@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
-# Tmux session picker with fzf
-# Usage: Run from within tmux to fuzzy find and switch sessions
+# Smart tmux session picker that works in both terminal and tmux contexts
+# Usage: 
+#   - From terminal (C-s): Run with fzf directly 
+#   - From tmux (C-a s): Run in popup (handled by tmux config)
 
 # Get list of existing sessions
 sessions=$(tmux list-sessions -F "#{session_name}" 2>/dev/null)
@@ -12,6 +14,7 @@ project_dirs=""
 if [[ -d "$HOME/dotfiles/tmux/projects" ]]; then
     project_files=$(find "$HOME/dotfiles/tmux/projects" -mindepth 1 -maxdepth 1 -type f -name "*.proj")
 fi
+
 # Combine sessions and project directories
 all_options=""
 if [[ -n "$sessions" ]]; then
@@ -29,13 +32,26 @@ if [[ -n "$project_files" ]]; then
     fi
 fi
 
+# Add kill server option at the end
+if [[ -n "$all_options" ]]; then
+    all_options="$all_options"$'\n'"[KILL] Kill tmux server"
+else
+    all_options="[KILL] Kill tmux server"
+fi
+
 if [[ -z "$all_options" ]]; then
     echo "No sessions or project directories found"
     exit 1
 fi
 
-# Use fzf to select
-selected=$(echo "$all_options" | fzf --prompt="Select tmux session: " --height=40% --layout=reverse --border)
+# Detect context and use appropriate fzf
+if [[ -n "$TMUX" ]]; then
+    # Inside tmux - use fzf directly (popup handled by tmux config)
+    selected=$(echo "$all_options" | fzf --prompt="Select tmux session: " --height=40% --layout=reverse --border)
+else
+    # Outside tmux - use fzf in full terminal
+    selected=$(echo "$all_options" | fzf --prompt="Select tmux session: " --height=50% --layout=reverse --border)
+fi
 
 if [[ -z "$selected" ]]; then
     exit 0
@@ -44,63 +60,51 @@ fi
 # Extract the actual name
 session_name=$(echo "$selected" | sed 's/^\[.*\] //')
 
-# Check if it's an existing session or new project
-if [[ "$selected" == "[ACTIVE]"* ]]; then
-    # Switch to existing session
+# Handle session switching logic
+if [[ "$selected" == "[KILL]"* ]]; then
+    # Kill tmux server with confirmation
     if [[ -n "$TMUX" ]]; then
-        # We're already in tmux, ask what to do
-        action=$(printf "switch\nkill-current\ndetach" | fzf --prompt="Action for current session: " --height=20% --layout=reverse --border)
-        case "$action" in
-            "switch")
-                tmux switch-client -t "$session_name"
-                ;;
-            "kill-current")
-                current_session=$(tmux display-message -p '#S')
-                tmux switch-client -t "$session_name"
-                tmux kill-session -t "$current_session"
-                ;;
-            "detach")
-                tmux detach-client
-                tmux attach-session -t "$session_name"
-                ;;
-            *)
-                exit 0
-                ;;
-        esac
+        # Inside tmux - use fzf for confirmation in popup
+        confirm=$(printf "Yes\nNo" | fzf --prompt="Kill tmux server? " --height=20% --layout=reverse --border)
     else
+        # Outside tmux - use fzf in terminal
+        confirm=$(printf "Yes\nNo" | fzf --prompt="Kill tmux server? " --height=20% --layout=reverse --border)
+    fi
+    
+    if [[ "$confirm" == "Yes" ]]; then
+        tmux kill-server
+        echo "Tmux server killed"
+    fi
+    exit 0
+elif [[ "$selected" == "[ACTIVE]"* ]]; then
+    # Switching to existing session
+    if [[ -n "$TMUX" ]]; then
+        # Inside tmux - check if already in selected session
+        current_session=$(tmux display-message -p '#S')
+        if [[ "$current_session" == "$session_name" ]]; then
+            # Already in selected session, just exit
+            exit 0
+        fi
+        # Different session - detach current and switch
+        tmux switch-client -t "$session_name"
+    else
+        # Outside tmux - just attach
         tmux attach-session -t "$session_name"
     fi
 else
-    # Execute project file
+    # Creating new session from project file
     project_file="$HOME/dotfiles/tmux/projects/${session_name}.proj"
     
     if [[ -f "$project_file" ]]; then
         # Make sure the project file is executable
         chmod +x "$project_file"
         
-        # If we're in tmux, ask what to do with current session
         if [[ -n "$TMUX" ]]; then
-            action=$(printf "switch\nkill-current\ndetach" | fzf --prompt="Action for current session: " --height=20% --layout=reverse --border)
-            case "$action" in
-                "switch")
-                    # Execute the project file (it will create and attach)
-                    "$project_file"
-                    ;;
-                "kill-current")
-                    current_session=$(tmux display-message -p '#S')
-                    "$project_file"
-                    tmux kill-session -t "$current_session" 2>/dev/null || true
-                    ;;
-                "detach")
-                    tmux detach-client
-                    "$project_file"
-                    ;;
-                *)
-                    exit 0
-                    ;;
-            esac
+            # Inside tmux - detach and run project
+            tmux detach-client
+            "$project_file"
         else
-            # Execute the project file
+            # Outside tmux - just run project
             "$project_file"
         fi
     else
