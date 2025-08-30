@@ -3,6 +3,6 @@
 
 return {
     default_model = "gpt-oss:20b",
-    split_preference = "horizontal",
-    last_updated = "2025-08-23"
+    split_preference = "vertical",
+    last_updated = "2025-08-28"
 }

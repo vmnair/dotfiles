@@ -58,6 +58,8 @@ vim.api.nvim_create_user_command('OllamaChats', function()
     ollama_session.show_chat_info()
 end, { desc = 'Show saved chat information' })
 
+
+
 -- Keybindings
 local opts = { noremap = true, silent = true }
 
@@ -109,14 +111,15 @@ vim.keymap.set('n', '<leader>oi', function()
     ollama_ui.show_model_info()
 end, vim.tbl_extend('force', opts, { desc = 'Show Ollama info' }))
 
--- Buffer context commands
+-- Buffer context commands (API-only approach)
 vim.keymap.set('n', '<leader>ob', function()
     ollama_chat.send_buffer_context()
-end, vim.tbl_extend('force', opts, { desc = 'Send buffer to Ollama' }))
+end, vim.tbl_extend('force', opts, { desc = 'Send buffer to Ollama via API' }))
 
 vim.keymap.set('v', '<leader>os', function()
     ollama_chat.send_visual_selection()
-end, vim.tbl_extend('force', opts, { desc = 'Send selection to Ollama' }))
+end, vim.tbl_extend('force', opts, { desc = 'Send selection to Ollama via API' }))
+
 
 -- Help command
 vim.api.nvim_create_user_command('OllamaHelp', function()
@@ -127,7 +130,7 @@ vim.api.nvim_create_user_command('OllamaHelp', function()
             [":OllamaSwitch"] = "Switch model in current session",
             [":OllamaToggle"] = "Toggle chat visibility",
             [":OllamaClose"] = "Close chat session",
-            [":OllamaInfo"] = "Show model and session information"
+            [":OllamaInfo"] = "Show model and session information",
         },
         ["Primary Operations"] = {
             ["<leader>od"] = "Set/change default model (persistent)",
@@ -153,9 +156,9 @@ vim.api.nvim_create_user_command('OllamaHelp', function()
             ["<leader>oh"] = "Show this help window",
             [":OllamaChats"] = "Show saved chat information"
         },
-        ["Buffer Context"] = {
-            ["<leader>ob"] = "Send current buffer content to Ollama",
-            ["<leader>os"] = "Send visual selection to Ollama (visual mode)"
+        ["Buffer Context (API-Only)"] = {
+            ["<leader>ob"] = "Send current buffer content to Ollama via API",
+            ["<leader>os"] = "Send visual selection to Ollama via API (visual mode)"
         },
         ["Model Management"] = {
             ["Validation"] = "Check model availability before starting chat",
