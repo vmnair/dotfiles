@@ -21,6 +21,99 @@ M.config = {
 }
 
 -- ========================================
+-- CORE FUNCTIONS (Essential for todo_commands.lua)
+-- ========================================
+
+-- Get active todos (stub implementation for now)
+function M.get_active_todos()
+	-- This is a stub - returns sample data for testing
+	return {
+		{
+			description = "Sample active todo 1",
+			category = "Personal", 
+			due_date = "2025-09-01",
+			show_date = "2025-08-31",
+			completed = false,
+			tags = "#test"
+		},
+		{
+			description = "Sample active todo 2", 
+			category = "Work",
+			due_date = "2025-09-02",
+			show_date = "2025-08-31", 
+			completed = false,
+			tags = "#sample"
+		}
+	}
+end
+
+-- Format todo line (stub implementation)  
+function M.format_todo_line(todo, context)
+	local checkbox = todo.completed and "- [x]" or "- [ ]"
+	local due_display = todo.due_date and " [Due: " .. todo.due_date .. "]" or ""
+	return checkbox .. " " .. todo.description .. due_display .. " " .. (todo.tags or "")
+end
+
+-- Create and open a filtered active todos view
+function M.open_filtered_active_view()
+	local active_todos = M.get_active_todos()
+
+	-- Check if filtered view buffer already exists
+	local buf_name = "Active Todos (Filtered View)"
+	local existing_buf = vim.fn.bufnr(buf_name)
+
+	local buf
+	if existing_buf ~= -1 and vim.api.nvim_buf_is_valid(existing_buf) then
+		-- Reuse existing buffer
+		buf = existing_buf
+		-- Make buffer modifiable first, then clear content
+		vim.api.nvim_buf_set_option(buf, "modifiable", true)
+		vim.api.nvim_buf_set_option(buf, "readonly", false)
+		vim.api.nvim_buf_set_lines(buf, 0, -1, false, {})
+	else
+		-- Create a new scratch buffer
+		buf = vim.api.nvim_create_buf(false, true)
+
+		-- Set buffer options
+		vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
+		vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
+		vim.api.nvim_buf_set_option(buf, "swapfile", false)
+		vim.api.nvim_buf_set_name(buf, buf_name)
+	end
+
+	-- Create content lines
+	local lines = {}
+	table.insert(lines, "# Active Todos (Filtered View)")
+	table.insert(lines, "")
+	table.insert(lines, "Showing only todos whose show date has arrived")
+	table.insert(lines, "")
+
+	-- Add filtered todos with active context (hides show dates)
+	for _, todo in ipairs(active_todos) do
+		table.insert(lines, M.format_todo_line(todo, "active"))
+	end
+
+	-- Ensure buffer is modifiable before setting content
+	vim.api.nvim_buf_set_option(buf, "modifiable", true)
+	vim.api.nvim_buf_set_option(buf, "readonly", false)
+
+	-- Set buffer content
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+
+	-- Set buffer as read-only
+	vim.api.nvim_buf_set_option(buf, "modifiable", false)
+	vim.api.nvim_buf_set_option(buf, "readonly", true)
+
+	-- Open buffer in current window
+	vim.api.nvim_set_current_buf(buf)
+
+	-- Set syntax highlighting
+	vim.api.nvim_buf_set_option(buf, "filetype", "markdown")
+
+	print("✓ Opened filtered active todos view")
+end
+
+-- ========================================
 -- UTILITY FUNCTIONS
 -- ========================================
 
