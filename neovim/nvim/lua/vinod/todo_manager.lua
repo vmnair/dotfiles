@@ -653,4 +653,158 @@ vim.api.nvim_create_user_command("TestCreateTodo", function()
 	end)
 end, { desc = "Test todo creation with date picker" })
 
+-- ========================================
+-- PHASE 3: CONTINUATION WORKFLOW CONSOLIDATION UTILITIES
+-- ========================================
+
+-- State for command-line continuation workflows
+M._continuation_state = {
+	active = false,
+	description = "",
+	category = "",
+	tags = "",
+	due_date = "",
+	show_date = "",
+	waiting_for = nil, -- "show_date" or "due_date"
+}
+
+-- Parse continuation input and return command type and validity
+local function parse_continuation_input(input, expected_command)
+	input = input or ""
+	
+	if input == "" then
+		return "finish", true
+	elseif input:match("/" .. expected_command) then
+		return expected_command, true  
+	else
+		return "invalid", false
+	end
+end
+
+-- Check if show date has been reached (stub for compatibility)
+local function is_show_date_reached(show_date)
+	if not show_date or show_date == "" then
+		return true
+	end
+	
+	-- Simple date comparison (stub implementation)
+	local current_date = os.date("%Y-%m-%d")
+	return show_date <= current_date
+end
+
+-- Format success message based on todo state and scheduling
+local function format_todo_success_message(state)
+	local is_scheduled = not is_show_date_reached(state.show_date)
+	local has_both_dates = state.show_date ~= "" and state.due_date ~= "" and state.show_date ~= state.due_date
+	
+	if is_scheduled and has_both_dates then
+		return "✓ " .. state.category .. " todo scheduled: " .. state.description 
+			.. " [Show: " .. state.show_date .. "] [Due: " .. state.due_date .. "]"
+	elseif state.due_date and state.due_date ~= "" then
+		local show_display = has_both_dates and " [Show: " .. state.show_date .. "]" or ""
+		return "✓ " .. state.category .. " todo added: " .. state.description 
+			.. show_display .. " [Due: " .. state.due_date .. "]"
+	else
+		return "✓ " .. state.category .. " todo added: " .. state.description
+	end
+end
+
+-- Unified continuation workflow processor
+function M.process_continuation_workflow(input, context)
+	local state = M._continuation_state
+	
+	if not state.active then
+		return
+	end
+	
+	-- Reset state
+	M._continuation_state.active = false
+	
+	local command_type, is_valid = parse_continuation_input(input, context.expected_command)
+	
+	if command_type == "finish" then
+		-- User pressed Enter, add todo with current dates
+		local success = M.add_todo(state.description, state.category, state.tags, state.due_date, state.show_date)
+		if success then
+			print(format_todo_success_message(state))
+		else
+			print("✗ Failed to add todo")
+		end
+		
+	elseif command_type == context.expected_command then
+		-- User wants to add additional date, get date input
+		M.get_date_input(function(picked_date)
+			if picked_date then
+				state[context.date_field] = picked_date
+			else
+				print("No " .. context.expected_command .. " date selected, keeping current dates")
+			end
+			
+			-- Add todo with final dates
+			local success = M.add_todo(state.description, state.category, state.tags, state.due_date, state.show_date)
+			if success then
+				print(format_todo_success_message(state))
+			else
+				print("✗ Failed to add todo")
+			end
+		end)
+		
+	else
+		-- Invalid input, cancel
+		print("Todo cancelled. Use /" .. context.expected_command .. " to add " .. context.expected_command .. " date or press Enter to finish.")
+	end
+end
+
+-- Process continuation input after due date selection
+function M.process_continuation(input)
+	M.process_continuation_workflow(input, {
+		expected_command = "show",
+		date_field = "show_date"
+	})
+end
+
+-- Process continuation input after show date selection  
+function M.process_show_continuation(input)
+	M.process_continuation_workflow(input, {
+		expected_command = "due", 
+		date_field = "due_date"
+	})
+end
+
+-- ========================================
+-- PHASE 3 TEST COMMANDS
+-- ========================================
+
+vim.api.nvim_create_user_command("TestContinuationDue", function()
+	-- Simulate continuation after due date selection
+	M._continuation_state = {
+		active = true,
+		description = "Test due continuation",
+		category = "Personal",
+		tags = "",
+		due_date = "2025-09-15",
+		show_date = "2025-09-15",
+	}
+	
+	print("Testing due continuation workflow. Enter '/show' for show date or Enter to finish:")
+	local input = vim.fn.input("Continuation: ")
+	M.process_continuation(input)
+end, { desc = "Test Phase 3 due continuation workflow" })
+
+vim.api.nvim_create_user_command("TestContinuationShow", function()
+	-- Simulate continuation after show date selection
+	M._continuation_state = {
+		active = true,
+		description = "Test show continuation",
+		category = "Work",
+		tags = "",
+		due_date = "2025-09-20",
+		show_date = "2025-09-10",
+	}
+	
+	print("Testing show continuation workflow. Enter '/due' for due date or Enter to finish:")
+	local input = vim.fn.input("Continuation: ")
+	M.process_show_continuation(input)
+end, { desc = "Test Phase 3 show continuation workflow" })
+
 return M

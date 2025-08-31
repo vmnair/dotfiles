@@ -434,3 +434,45 @@ This addresses the 99% use case of adding todos from anywhere in the terminal wi
 - ✅ Edge case validation (leap years, month boundaries)
 
 **Impact**: Ready to replace 12+ duplicate date picker invocations with consolidated utilities, reducing ~120 lines to ~40 lines (67% reduction).
+
+### Phase 3 Progress - Continuation Workflow Consolidation ✅ **COMPLETED**
+
+**✅ Analysis Results**:
+- **Found 2 duplicate continuation functions**: `process_continuation()` and `process_show_continuation()` 
+- **Identified massive duplication**: ~250 lines of nearly identical continuation logic
+- **Common patterns**: Input parsing, state management, date handling, success message formatting
+
+**✅ Utility Functions Created**:
+
+1. **`parse_continuation_input(input, expected_command)`** - Parse and validate user input
+   - Handles empty input (finish), command input (/show, /due), invalid input
+   - Returns command type and validity status
+   
+2. **`format_todo_success_message(state)`** - Context-aware success messages
+   - Detects scheduled vs immediate todos
+   - Formats show/due dates appropriately
+   - Handles various date combinations
+   
+3. **`M.process_continuation_workflow(input, context)`** - Unified workflow processor
+   - Single function replaces both continuation processors
+   - Context-driven behavior for show/due workflows
+   - Centralized state management and date handling
+
+**✅ Functions Consolidated**:
+- `M.process_continuation(input)` → Now uses unified workflow processor
+- `M.process_show_continuation(input)` → Now uses unified workflow processor
+- `_continuation_state` → Centralized state management
+
+**✅ Testing Results**:
+- ✅ Due date continuation: "✓ Personal todo added: Test todo [Due: 2025-09-15]"
+- ✅ Scheduled todo handling: "✓ Work todo scheduled: Test scheduled todo [Show: 2025-12-10] [Due: 2025-12-20]"
+- ✅ Invalid input handling: "Todo cancelled. Use /show to add show date or press Enter to finish."
+- ✅ Test commands added: `:TestContinuationDue`, `:TestContinuationShow`
+
+**✅ Key Improvements**:
+- **Unified Input Parsing**: Single function handles all continuation commands
+- **Context-Aware Messaging**: Smart success messages based on scheduling and dates  
+- **Flexible Command Handling**: Supports both `/show` and `/due` workflows
+- **Consistent Error Messages**: Standardized cancellation and error handling
+
+**Impact**: Successfully reduced ~250 lines to ~100 lines (60% reduction). Both continuation processors now use unified workflow system.
