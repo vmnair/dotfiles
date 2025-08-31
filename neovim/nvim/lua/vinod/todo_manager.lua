@@ -420,14 +420,13 @@ function M.get_upcoming_todos(days)
       local month, day, year = todo.show_date:match("(%d+)-(%d+)-(%d+)")
       if month and day and year then
         local show_time = os.time({
-          year = tonumber(year),
-          month = tonumber(month),
-          day = tonumber(day),
+          year = tonumber(year) or 1970,
+          month = tonumber(month) or 1,
+          day = tonumber(day) or 1,
           hour = 0,
           min = 0,
           sec = 0,
         })
-
         -- Include if show date is within the next N days
         local current_time = os.time()
         if show_time >= current_time and show_time <= cutoff_time then
@@ -1599,374 +1598,254 @@ end
 -- BUFFER FILTERING FUNCTIONS
 -- ========================================
 
--- Buffer filtering functions for interactive todo views
+-- Buffer filtering utility functions (refactored 2025-08-31)
+
+-- Collect todos with a filter function
+local function collect_todos_with_filter(filter_function)
+	local todos = {}
+	local total_lines = vim.api.nvim_buf_line_count(0)
+
+	for line_num = 1, total_lines do
+		local line = vim.api.nvim_buf_get_lines(0, line_num - 1, line_num, false)[1]
+		local todo = M.parse_todo_line(line)
+
+		if todo and filter_function(todo) then
+			local display_text = todo.description
+			if todo.completed then
+				display_text = display_text .. " ✓"
+			end
+
+			-- Add category icon
+			local icon = get_display_icon(todo)
+			if icon ~= "" then
+				display_text = display_text .. " " .. icon
+			end
+
+			-- Add due date with color indicator if present
+			if todo.due_date and todo.due_date ~= "" then
+				local due_indicator = is_past_due(todo.due_date) and " [OVERDUE: " or " [Due: "
+				display_text = display_text .. due_indicator .. todo.due_date .. "]"
+			end
+
+			-- Add show date if present and different from due date
+			if todo.show_date and todo.show_date ~= "" and todo.show_date ~= todo.due_date then
+				display_text = display_text .. " [Show: " .. todo.show_date .. "]"
+			end
+
+			-- Add tags
+			if #todo.tags > 0 then
+				display_text = display_text .. " #" .. table.concat(todo.tags, " #")
+			end
+
+			table.insert(todos, {
+				text = display_text,
+				line_num = line_num,
+				completed = todo.completed,
+				past_due = todo.due_date and is_past_due(todo.due_date) or false,
+			})
+		end
+	end
+
+	return todos
+end
+
+-- Create a filter buffer with todos and setup
+local function create_filter_buffer(todos, title, filter_type, source_file)
+	if #todos == 0 then
+		print("No todos found for " .. title:lower())
+		return nil
+	end
+
+	local buf = vim.api.nvim_create_buf(false, true)
+	local lines = {}
+	
+	table.insert(lines, title .. " (" .. #todos .. " found)")
+	table.insert(lines, string.rep("=", #lines[1]))
+	table.insert(lines, "")
+
+	for i, todo in ipairs(todos) do
+		table.insert(lines, string.format("%d. %s", i, todo.text))
+	end
+
+	table.insert(lines, "")
+	table.insert(lines, "Press Enter to jump to todo, Space to toggle completion, q to close")
+
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+	vim.api.nvim_buf_set_option(buf, "modifiable", false)
+	vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
+	vim.api.nvim_buf_set_option(buf, "filetype", "todofilter")
+
+	vim.cmd("botright 15split")
+	vim.api.nvim_win_set_buf(0, buf)
+
+	vim.b.filtered_todos = todos
+	vim.b.source_file = source_file
+	vim.b.filter_category = filter_type
+
+	return buf
+end
+
+-- Setup common keymaps for filter buffers
+local function setup_filter_keymaps(buf, todos)
+	-- Enter - Jump to todo
+	vim.keymap.set("n", "<CR>", function()
+		local line = vim.fn.line(".") - 3
+		local filtered_todos = vim.b.filtered_todos
+		local file = vim.b.source_file
+
+		if line >= 1 and line <= #filtered_todos and file then
+			local todo = filtered_todos[line]
+			if todo and todo.line_num and type(todo.line_num) == "number" then
+				vim.cmd("close")
+				vim.schedule(function()
+					vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
+					vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
+				end)
+			else
+				print("Error: Invalid todo object or line_num")
+			end
+		else
+			print("Error: Could not navigate to todo")
+		end
+	end, { buffer = buf, desc = "Jump to todo" })
+
+	-- Space - Toggle completion
+	vim.keymap.set("n", "<Space>", function()
+		local line = vim.fn.line(".") - 3
+		local filtered_todos = vim.b.filtered_todos
+		local file = vim.b.source_file
+
+		if line >= 1 and line <= #filtered_todos and file then
+			local todo = filtered_todos[line]
+			if todo and todo.line_num and type(todo.line_num) == "number" then
+				vim.cmd("close")
+				vim.schedule(function()
+					vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
+					vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
+					M.toggle_todo_in_filtered_view()
+				end)
+			else
+				print("Error: Could not toggle todo")
+			end
+		else
+			print("Error: Could not toggle todo")
+		end
+	end, { buffer = buf, desc = "Toggle todo completion" })
+
+	-- q - Close window
+	vim.keymap.set("n", "q", function()
+		vim.cmd("close")
+	end, { buffer = buf, desc = "Close filter window" })
+end
+
+-- Buffer filtering functions for interactive todo views (refactored)
 
 -- Filter todos by due dates in scratch buffer
 function M.filter_buffer_by_due_dates()
-  local source_file = vim.api.nvim_buf_get_name(0)
-  local todos = {}
-  local total_lines = vim.api.nvim_buf_line_count(0)
-
-  -- Collect todos with due dates
-  for line_num = 1, total_lines do
-    local line = vim.api.nvim_buf_get_lines(0, line_num - 1, line_num, false)[1]
-    local todo = M.parse_todo_line(line)
-
-    if todo and todo.due_date and todo.due_date ~= "" then
-      local display_text = todo.description
-      if todo.completed then
-        display_text = display_text .. " ✓"
-      end
-
-      -- Add category icon (only if not already present)
-      local icon = get_display_icon(todo)
-      if icon ~= "" then
-        display_text = display_text .. " " .. icon
-      end
-
-      -- Add due date with color indicator
-      local due_indicator = is_past_due(todo.due_date) and " [OVERDUE: " or " [Due: "
-      display_text = display_text .. due_indicator .. todo.due_date .. "]"
-
-      if #todo.tags > 0 then
-        display_text = display_text .. " #" .. table.concat(todo.tags, " #")
-      end
-
-      table.insert(todos, {
-        text = display_text,
-        line_num = line_num,
-        completed = todo.completed,
-        past_due = is_past_due(todo.due_date),
-      })
-    end
-  end
-
-  if #todos == 0 then
-    print("No todos with due dates found")
-    return
-  end
-
-  -- Create a new scratch buffer for filtered todos
-  local buf = vim.api.nvim_create_buf(false, true)
-
-  -- Prepare buffer content
-  local lines = {}
-  table.insert(lines, "Due Date Todos (" .. #todos .. " found)")
-  table.insert(lines, string.rep("=", #lines[1]))
-  table.insert(lines, "")
-
-  for i, todo in ipairs(todos) do
-    table.insert(lines, string.format("%d. %s", i, todo.text))
-  end
-
-  table.insert(lines, "")
-  table.insert(lines, "Press Enter to jump to todo, Space to toggle completion, q to close")
-
-  -- Set buffer content
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(buf, "modifiable", false)
-  vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
-  vim.api.nvim_buf_set_option(buf, "filetype", "todofilter")
-
-  -- Open in a split window
-  vim.cmd("botright 15split")
-  vim.api.nvim_win_set_buf(0, buf)
-
-  -- Store todo data in buffer variable for navigation
-  vim.b.filtered_todos = todos
-  vim.b.source_file = source_file
-  vim.b.filter_category = "due_dates"
-
-  -- Set up keybindings (same as other filter functions)
-  vim.keymap.set("n", "<CR>", function()
-    local line = vim.fn.line(".") - 3 -- Adjust for header lines
-    local todos = vim.b.filtered_todos
-    local file = vim.b.source_file
-
-    if line >= 1 and line <= #todos and file then
-      local todo = todos[line]
-      if todo and todo.line_num and type(todo.line_num) == "number" then
-        -- Close filter window first
-        vim.cmd("close")
-
-        -- Use vim.schedule to defer the navigation to avoid timing issues
-        vim.schedule(function()
-          -- Navigate to file and line
-          vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
-          vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
-        end)
-      else
-        print("Error: Invalid todo object or line_num")
-      end
-    else
-      print("Error: Could not navigate to todo")
-    end
-  end, { buffer = buf, desc = "Jump to todo" })
-
-  vim.keymap.set("n", "<Space>", function()
-    local line = vim.fn.line(".") - 3 -- Adjust for header lines
-    local todos = vim.b.filtered_todos
-    local file = vim.b.source_file
-    if line >= 1 and line <= #todos and file then
-      local todo = todos[line]
-      -- Jump to original file and toggle
-      vim.schedule(function()
-        vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
-        vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
-        M.toggle_todo_on_line()
-        -- Return to filter and refresh
-        vim.defer_fn(function()
-          M.filter_todos_by_due_dates()
-        end, 100)
-      end)
-    else
-      print("Error: Could not toggle todo")
-    end
-  end, { buffer = buf, desc = "Toggle todo completion" })
-
-  vim.keymap.set("n", "q", function()
-    vim.cmd("close")
-  end, { buffer = buf, desc = "Close filter window" })
+	local source_file = vim.api.nvim_buf_get_name(0)
+	
+	local todos = collect_todos_with_filter(function(todo)
+		return todo.due_date and todo.due_date ~= ""
+	end)
+	
+	local buf = create_filter_buffer(todos, "Due Date Todos", "due_dates", source_file)
+	if buf then
+		setup_filter_keymaps(buf, todos)
+	end
 end
 
 -- Filter todos by category in scratch buffer
 function M.filter_buffer_by_category(category)
-  if not category then
-    print("Error: No category provided")
-    return
-  end
+	if not category then
+		print("Error: No category provided")
+		return
+	end
 
-  -- Validate category
-  if not vim.tbl_contains(M.config.categories, category) then
-    print("Invalid category. Must be one of: " .. table.concat(M.config.categories, ", "))
-    return
-  end
+	-- Validate category
+	if not vim.tbl_contains(M.config.categories, category) then
+		print("Invalid category. Must be one of: " .. table.concat(M.config.categories, ", "))
+		return
+	end
 
-  -- Check if we're in a todo file
-  local current_file = vim.api.nvim_buf_get_name(0)
-  local active_file_path = get_file_path(M.config.active_file)
-  local completed_file_path = get_file_path(M.config.completed_file)
+	-- Check if we're in a todo file
+	local current_file = vim.api.nvim_buf_get_name(0)
+	local active_file_path = get_file_path(M.config.active_file)
+	local completed_file_path = get_file_path(M.config.completed_file)
 
-  if current_file ~= active_file_path and current_file ~= completed_file_path then
-    print("Error: Must be in a todo file to filter")
-    return
-  end
+	if current_file ~= active_file_path and current_file ~= completed_file_path then
+		print("Error: Must be in a todo file to filter")
+		return
+	end
 
-  -- Get todos for the category
-  local source_file = vim.api.nvim_buf_get_name(0)
-  local todos = {}
-  local total_lines = vim.api.nvim_buf_line_count(0)
-
-  -- Collect matching todos with their line numbers
-  for line_num = 1, total_lines do
-    local line = vim.api.nvim_buf_get_lines(0, line_num - 1, line_num, false)[1]
-    local todo = M.parse_todo_line(line)
-
-    if todo and todo.category and todo.category:lower() == category:lower() then
-      local display_text = todo.description
-      if todo.completed then
-        display_text = display_text .. " ✓"
-      end
-      -- No category icon needed since header already shows the category
-      if todo.due_date and todo.due_date ~= "" then
-        display_text = display_text .. " [Due: " .. todo.due_date .. "]"
-      end
-      if #todo.tags > 0 then
-        display_text = display_text .. " #" .. table.concat(todo.tags, " #")
-      end
-
-      table.insert(todos, {
-        text = display_text,
-        line_num = line_num,
-        completed = todo.completed,
-      })
-    end
-  end
-
-  if #todos == 0 then
-    print("No " .. category .. " todos found")
-    return
-  end
-
-  -- Create a new scratch buffer for filtered todos
-  local buf = vim.api.nvim_create_buf(false, true)
-
-  -- Prepare buffer content with category icon in header
-  local lines = {}
-  local category_icon = M.config.category_icons[category] or "📝"
-  local header = category_icon .. " " .. category .. " Todos (" .. #todos .. " found)"
-  table.insert(lines, header)
-  table.insert(lines, string.rep("=", #header))
-  table.insert(lines, "")
-
-  for i, todo in ipairs(todos) do
-    table.insert(lines, string.format("%d. %s", i, todo.text))
-  end
-
-  table.insert(lines, "")
-  table.insert(lines, "Press Enter to jump to todo, Space to toggle completion, q to close")
-
-  -- Set buffer content
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(buf, "modifiable", false)
-  vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
-  vim.api.nvim_buf_set_option(buf, "filetype", "todofilter")
-
-  -- Open in a split window
-  vim.cmd("botright 15split")
-  vim.api.nvim_win_set_buf(0, buf)
-
-  -- Store todo data in buffer variable for navigation
-  vim.b.filtered_todos = todos
-  vim.b.source_file = source_file
-  vim.b.filter_category = category
-
-  -- Set up keybindings
-  vim.keymap.set("n", "<CR>", function()
-    local line = vim.fn.line(".") - 3 -- Adjust for header lines
-    local todos = vim.b.filtered_todos
-    local file = vim.b.source_file
-
-    if line >= 1 and line <= #todos and file then
-      local todo = todos[line]
-      if todo and todo.line_num and type(todo.line_num) == "number" then
-        -- Close filter window first
-        vim.cmd("close")
-
-        -- Use vim.schedule to defer the navigation to avoid timing issues
-        vim.schedule(function()
-          -- Navigate to file and line
-          vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
-          vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
-        end)
-      else
-        print("Error: Invalid todo object or line_num")
-      end
-    else
-      print("Error: Could not navigate to todo")
-    end
-  end, { buffer = buf, desc = "Jump to todo" })
-
-  vim.keymap.set("n", "<Space>", function()
-    local line = vim.fn.line(".") - 3 -- Adjust for header lines
-    local todos = vim.b.filtered_todos
-    local file = vim.b.source_file
-    local category = vim.b.filter_category
-    if line >= 1 and line <= #todos and file then
-      local todo = todos[line]
-      -- Jump to original file and toggle
-      vim.schedule(function()
-        vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
-        vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
-        M.toggle_todo_on_line()
-        -- Return to filter and refresh
-        vim.defer_fn(function()
-          M.filter_todos_by_category(category)
-        end, 100)
-      end)
-    else
-      print("Error: Could not toggle todo")
-    end
-  end, { buffer = buf, desc = "Toggle todo completion" })
-
-  vim.keymap.set("n", "q", function()
-    vim.cmd("close")
-  end, { buffer = buf, desc = "Close filter window" })
+	local source_file = vim.api.nvim_buf_get_name(0)
+	
+	local todos = collect_todos_with_filter(function(todo)
+		return todo.category == category
+	end)
+	
+	local buf = create_filter_buffer(todos, category .. " Todos", "category_" .. category:lower(), source_file)
+	if buf then
+		setup_filter_keymaps(buf, todos)
+	end
 end
 
 -- Show all todos in scratch buffer
 function M.show_all_todos()
-  local source_file = vim.api.nvim_buf_get_name(0)
-  local todos = {}
-  local total_lines = vim.api.nvim_buf_line_count(0)
+	local source_file = vim.api.nvim_buf_get_name(0)
+	
+	local todos = collect_todos_with_filter(function(todo)
+		return true  -- Show all todos
+	end)
+	
+	local buf = create_filter_buffer(todos, "All Todos", "all", source_file)
+	if buf then
+		setup_filter_keymaps(buf, todos)
+	end
+end
 
-  -- Get all todos
-  for line_num = 1, total_lines do
-    local line = vim.api.nvim_buf_get_lines(0, line_num - 1, line_num, false)[1]
-    local todo = M.parse_todo_line(line)
+-- Filter today's todos in scratch buffer
+function M.filter_buffer_by_today()
+	local source_file = vim.api.nvim_buf_get_name(0)
+	
+	local todos = collect_todos_with_filter(function(todo)
+		return todo.due_date and todo.due_date ~= "" and is_due_today(todo.due_date)
+	end)
+	
+	local buf = create_filter_buffer(todos, "Today's Todos", "today", source_file)
+	if buf then
+		setup_filter_keymaps(buf, todos)
+	end
+end
 
-    if todo then
-      local display_text = todo.description
-      if todo.completed then
-        display_text = display_text .. " ✓"
-      end
-      -- Add category icon instead of text in parentheses (only if not already present)
-      local icon = get_display_icon(todo)
-      if icon ~= "" then
-        display_text = display_text .. " " .. icon
-      end
-      if todo.due_date and todo.due_date ~= "" then
-        display_text = display_text .. " [Due: " .. todo.due_date .. "]"
-      end
-      if #todo.tags > 0 then
-        display_text = display_text .. " #" .. table.concat(todo.tags, " #")
-      end
+-- Filter past due todos in scratch buffer
+function M.filter_buffer_by_past_due()
+	local source_file = vim.api.nvim_buf_get_name(0)
+	
+	local todos = collect_todos_with_filter(function(todo)
+		return todo.due_date and todo.due_date ~= "" and is_past_due(todo.due_date)
+	end)
+	
+	local buf = create_filter_buffer(todos, "Past Due Todos", "past_due", source_file)
+	if buf then
+		setup_filter_keymaps(buf, todos)
+	end
+end
 
-      table.insert(todos, {
-        text = display_text,
-        line_num = line_num,
-        completed = todo.completed,
-      })
-    end
-  end
+function M.filter_buffer_by_today_and_past_due()
+	local source_file = vim.api.nvim_buf_get_name(0)
+	
+	local todos = collect_todos_with_filter(function(todo)
+		return todo.due_date and todo.due_date ~= "" and (is_due_today(todo.due_date) or is_past_due(todo.due_date))
+	end)
+	
+	local buf = create_filter_buffer(todos, "Urgent Todos (Today + Past Due)", "urgent", source_file)
+	if buf then
+		setup_filter_keymaps(buf, todos)
+	end
+end
 
-  if #todos == 0 then
-    print("No todos found")
-    return
-  end
-
-  -- Create a new scratch buffer for all todos
-  local buf = vim.api.nvim_create_buf(false, true)
-
-  -- Prepare buffer content
-  local lines = {}
-  table.insert(lines, "All Todos (" .. #todos .. " found)")
-  table.insert(lines, string.rep("=", #lines[1]))
-  table.insert(lines, "")
-
-  for i, todo in ipairs(todos) do
-    table.insert(lines, string.format("%d. %s", i, todo.text))
-  end
-
-  table.insert(lines, "")
-  table.insert(lines, "Press Enter to jump to todo, Space to toggle completion, q to close")
-
-  -- Set buffer content
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(buf, "modifiable", false)
-  vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
-  vim.api.nvim_buf_set_option(buf, "filetype", "todofilter")
-
-  -- Open in a split window
-  vim.cmd("botright 15split")
-  vim.api.nvim_win_set_buf(0, buf)
-
-  -- Store todo data in buffer variable for navigation
-  vim.b.filtered_todos = todos
-  vim.b.source_file = source_file
-
-  -- Set up keybindings
-  vim.keymap.set("n", "<CR>", function()
-    local line = vim.fn.line(".") - 3 -- Adjust for header lines
-    local todos = vim.b.filtered_todos
-    local file = vim.b.source_file
-    if line >= 1 and line <= #todos and file then
-      local todo = todos[line]
-      if todo and todo.line_num and type(todo.line_num) == "number" then
-        -- Close filter window first
-        vim.cmd("close")
-
-        -- Use vim.schedule to defer the navigation
-        vim.schedule(function()
-          vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
-          vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
-        end)
-      else
-        print("Error: Invalid todo object or line_num")
-      end
-    else
-      print("Error: Could not navigate to todo")
-    end
+-- ========================================
+-- COMMAND-LINE CONTINUATION UTILITY
   end, { buffer = buf, desc = "Jump to todo" })
 
   vim.keymap.set("n", "<Space>", function()
@@ -2867,7 +2746,7 @@ function M.show_todo_modal()
   local form_data = {
     description = "",
     category = "Personal", --default
-    category_index = 3, -- Personal is index 3 in categories array
+    category_index = 3,  -- Personal is index 3 in categories array
     show_date = "",
     due_date = "",
     tags = {},
@@ -2882,7 +2761,7 @@ function M.show_todo_modal()
 
   -- Window dimensions
   local width = 50
-  local height = 15
+  local height = 8
 
   -- Window options
   local win_opts = {
@@ -2893,9 +2772,11 @@ function M.show_todo_modal()
     row = (vim.o.lines - height) / 2,
     anchor = "NW",
     style = "minimal",
-    border = "rounded",
-    title = " New Todo ",
+    border = "single",
+    title = " Add New Todo ",
     title_pos = "center",
+    footer = " Press 's' to submit, 'q' to cancel ",
+    footer_pos = "center",
   }
 
   -- Create window FIRST so it's available to functions
@@ -2905,13 +2786,8 @@ function M.show_todo_modal()
   local function render_form()
     local lines = {}
 
-    -- Compact header
-    table.insert(lines, " Add New Todo")
-    table.insert(lines, string.rep("─", width))
-    table.insert(lines, "")
-    
-    -- Form fields with proper alignment  
-    table.insert(lines, " Description: " .. form_data.description)
+    -- Form fields with proper alignment (note space after colon)
+    table.insert(lines, " Description:  " .. form_data.description)
     table.insert(lines, "")
     table.insert(lines, " Category:    " .. form_data.category)
     table.insert(lines, "")
@@ -2919,12 +2795,13 @@ function M.show_todo_modal()
     table.insert(lines, "")
     table.insert(lines, " Due Date:    " .. (form_data.due_date ~= "" and form_data.due_date or "[Not Set]"))
     table.insert(lines, "")
-    table.insert(lines, string.rep("─", width))
-    table.insert(lines, "")
-    table.insert(lines, " [i] Edit Description     [j/k] Change Category")
-    table.insert(lines, " [Enter] Set Dates        [Tab] Navigate Fields")
-    table.insert(lines, "")
-    table.insert(lines, " [s] Submit  [Enter] Set Dates  [Tab] Navigate  [Esc/q] Cancel")
+    -- table.insert(lines, string.rep("─", width))
+    -- table.insert(lines, "")
+    -- table.insert(lines, " [i] Edit Description     [j/k] Change Category")
+    -- table.insert(lines, " [Enter] Set Dates        [Tab] Navigate Fields")
+    -- table.insert(lines, "")
+    -- table.insert(lines, " [s] Submit  [Enter] Set Dates ")
+    -- table.insert(lines, "[Tab] Navigate  [Esc/q] Cancel")
 
     -- Update buffer content
     vim.api.nvim_buf_set_option(buf, "modifiable", true)
@@ -2938,17 +2815,18 @@ function M.show_todo_modal()
     vim.keymap.set("n", "i", function()
       -- Position cursor at end of description text and enter insert mode
       local desc_len = #form_data.description
-      vim.api.nvim_win_set_cursor(win, {4, 15 + desc_len}) -- line 4, after "Description: " + existing text
+      vim.api.nvim_win_set_cursor(win, { 1, 15 + desc_len }) -- line 1, after " Description:  " + existing text
       vim.api.nvim_buf_set_option(buf, "modifiable", true)
       vim.cmd("startinsert")
     end, { buffer = buf, silent = true })
-    
+
     -- Handle insert mode exit to capture new description
     vim.keymap.set("i", "<ESC>", function()
       local line = vim.api.nvim_get_current_line()
-      local desc = line:match("Description: (.*)") or ""
-      -- Remove cursor indicator if present
-      desc = desc:gsub("_$", "")
+      -- Use flexible pattern to match any amount of spaces after colon
+      local desc = line:match(" Description:%s*(.*)") or ""
+      -- Remove trailing whitespace
+      desc = desc:gsub("%s+$", "")
       form_data.description = desc
       vim.api.nvim_buf_set_option(buf, "modifiable", false)
       vim.cmd("stopinsert")
@@ -2958,7 +2836,7 @@ function M.show_todo_modal()
     -- [j/k] Navigate categories when on category line
     vim.keymap.set("n", "j", function()
       local cursor = vim.api.nvim_win_get_cursor(win)
-      if cursor[1] == 6 then -- On category line
+      if cursor[1] == 3 then -- On category line
         form_data.category_index = (form_data.category_index % #M.config.categories) + 1
         form_data.category = M.config.categories[form_data.category_index]
         render_form()
@@ -2967,10 +2845,10 @@ function M.show_todo_modal()
         vim.cmd("normal! j")
       end
     end, { buffer = buf, silent = true })
-    
+
     vim.keymap.set("n", "k", function()
       local cursor = vim.api.nvim_win_get_cursor(win)
-      if cursor[1] == 6 then -- On category line
+      if cursor[1] == 3 then -- On category line
         form_data.category_index = form_data.category_index - 1
         if form_data.category_index < 1 then
           form_data.category_index = #M.config.categories
@@ -3007,16 +2885,16 @@ function M.show_todo_modal()
     vim.keymap.set("n", "<CR>", function()
       local cursor = vim.api.nvim_win_get_cursor(win)
       local current_line = cursor[1]
-      
+
       -- Check which field we're on
-      if current_line == 8 then -- Show Date line
+      if current_line == 5 then -- Show Date line
         M.get_date_input(function(picked_date)
           if picked_date then
             form_data.show_date = picked_date
             render_form()
           end
         end)
-      elseif current_line == 10 then -- Due Date line
+      elseif current_line == 7 then -- Due Date line
         M.get_date_input(function(picked_date)
           if picked_date then
             form_data.due_date = picked_date
@@ -3059,7 +2937,7 @@ function M.show_todo_modal()
       vim.api.nvim_win_close(win, true)
       print("Todo creation cancelled")
     end, { buffer = buf, silent = true })
-    
+
     -- [s] Submit form from anywhere
     vim.keymap.set("n", "s", function()
       if form_data.description == "" then
@@ -3085,22 +2963,22 @@ function M.show_todo_modal()
         print("✗ Failed to add todo")
       end
     end, { buffer = buf, silent = true })
-    
+
     -- [Tab] Navigate between fields
     vim.keymap.set("n", "<Tab>", function()
       local cursor = vim.api.nvim_win_get_cursor(win)
       local current_line = cursor[1]
-      
+
       -- Navigate to next field's text entry position
-      if current_line <= 4 then -- Description area
-        vim.api.nvim_win_set_cursor(win, {6, 14}) -- Category text position
-      elseif current_line <= 6 then -- Category area  
-        vim.api.nvim_win_set_cursor(win, {8, 14}) -- Show Date text position
-      elseif current_line <= 8 then -- Show Date area
-        vim.api.nvim_win_set_cursor(win, {10, 14}) -- Due Date text position
-      else -- Due Date or below
+      if current_line <= 1 then                            -- Description area
+        vim.api.nvim_win_set_cursor(win, { 3, 14 })        -- Category text position
+      elseif current_line <= 3 then                        -- Category area
+        vim.api.nvim_win_set_cursor(win, { 5, 14 })        -- Show Date text position
+      elseif current_line <= 5 then                        -- Show Date area
+        vim.api.nvim_win_set_cursor(win, { 7, 14 })        -- Due Date text position
+      else                                                 -- Due Date or below
         local desc_len = #form_data.description
-        vim.api.nvim_win_set_cursor(win, {4, 15 + desc_len}) -- Back to Description end
+        vim.api.nvim_win_set_cursor(win, { 1, 15 + desc_len }) -- Back to Description end
       end
     end, { buffer = buf, silent = true })
   end

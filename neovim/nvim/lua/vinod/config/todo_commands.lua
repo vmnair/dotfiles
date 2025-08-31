@@ -613,7 +613,7 @@ vim.api.nvim_create_user_command("TodoHelp", function()
       ["<leader>tl"] = "List active todos",
       ["<leader>to"] = "Open filtered view of active todos (main workflow)",
       ["<leader>ts"] = "Show todo statistics",
-      ["<leader>tb"] = "Interactive todo builder with calendar picker",
+      ["<leader>tb"] = "Interactive todo builder modal (all fields on one screen)",
       ["<leader>th"] = "Show this help window",
       ["<leader>tr"] = "Open raw todos file (includes scheduled todos)",
       ["<leader>tcc"] = "Open completed todos file",
@@ -632,6 +632,14 @@ vim.api.nvim_create_user_command("TodoHelp", function()
       ["<leader>tvt"] = "Filter todos due today",
       ["<leader>tvx"] = "Filter urgent todos (today + past due)",
       ["<leader>tvq"] = "Close filter window",
+    },
+    ["TodoBuild Modal Controls (<leader>tb)"] = {
+      ["i"] = "Edit description inline (cursor positioned after space)",
+      ["j/k"] = "Navigate category selection (Medicine/OMS/Personal)",
+      ["Enter"] = "Context-sensitive: set dates on date fields, submit otherwise",
+      ["Tab"] = "Navigate between form fields",
+      ["s"] = "Submit form from anywhere",
+      ["ESC/q"] = "Cancel and close modal",
     },
     ["Command-Line Continuation (/due workflow)"] = {
       [":Todo task /due → pick date → command line shows:"] = "':Todo task [Due: date] '",

@@ -278,13 +278,92 @@ Multiple scratch buffer functions for interactive filtering:
 - **Commands**: 8 essential + 8 support commands
 - **Keybindings**: 20+ keybindings across 3 scopes
 
-## Current Development Priority
+## Recent Development Updates
 
-**User Request (2025-08-30)**: Replace current sequential TodoBuild with a modal dialog showing all options on one screen:
-- Description input field
-- Category selection
-- Show date picker  
-- Due date picker
-- All accessible from `<leader>tb`
+### TodoBuild Modal Dialog Implementation (2025-08-31)
+
+**✅ COMPLETED**: Replaced sequential TodoBuild with an improved modal dialog showing all options on one screen.
+
+**Changes Implemented**:
+1. **Improved Modal Layout**:
+   - Removed unnecessary "Add new todo" header
+   - Increased dialog height from 15 to 20 lines for better visibility of control instructions
+   - Fixed cursor positioning to start after "Description: " with proper spacing
+
+2. **Enhanced User Experience**:
+   - Description field now has consistent spacing with other labels (`" Description:  "`)
+   - Cursor properly positioned after the space when entering insert mode
+   - Fixed text capture issue where typed description disappeared on ESC
+   - Flexible pattern matching handles varying whitespace after field labels
+
+3. **Modal Controls** (accessible from `<leader>tb`):
+   - **[i]** - Edit description inline (cursor positioned after space)
+   - **[j/k]** - Navigate category selection (Medicine/OMS/Personal)
+   - **[Enter]** - Context-sensitive: set dates when on date fields, submit otherwise
+   - **[Tab]** - Navigate between form fields
+   - **[s]** - Submit form from anywhere
+   - **[ESC/q]** - Cancel and close modal
+
+**Technical Fixes**:
+- Pattern matching: Uses `" Description:%s*(.*)"` for flexible whitespace handling
+- Cursor positioning: Position 15 accounts for `" Description:  "` (15 characters)
+- Buffer management: Proper modifiable state handling during text entry
+- Line number adjustments: Updated all references after removing header lines
 
 This addresses the 99% use case of adding todos from anywhere in the terminal with a more efficient interface.
+
+### Code Refactoring and Cleanup (2025-08-31)
+
+**🔄 IN PROGRESS**: Major code cleanup to reduce duplication and improve maintainability.
+
+**Analysis Results**:
+- **Total file size**: ~3094 lines with significant duplication
+- **Potential reduction**: ~400-500 lines (15-20% of file)
+- **Major duplication areas**: 6 buffer filtering functions, continuation workflows, date picker patterns
+
+**Refactoring Plan**:
+
+**Phase 1: Buffer Filter Pattern Consolidation** 
+- **Target**: Lines 1598-2342 (6 functions with ~600 lines of duplication)
+- **Impact**: Reduce to ~200 lines (66% reduction)
+- **Functions affected**: 
+  - `filter_buffer_by_due_dates()` → consolidated utility
+  - `filter_buffer_by_category()` → consolidated utility  
+  - `show_all_todos()` → consolidated utility
+  - `filter_buffer_by_today()` → consolidated utility
+  - `filter_buffer_by_past_due()` → consolidated utility
+  - `filter_buffer_by_today_and_past_due()` → consolidated utility
+- **New utilities**: 
+  - `create_filter_buffer(todos, title, filter_type)`
+  - `setup_filter_keymaps(buf, todos, refresh_function)`
+  - `collect_todos_with_filter(filter_function)`
+
+**Phase 2: Date Picker Logic Consolidation**
+- **Target**: 8 duplicate date picker invocations (~120 lines)
+- **Impact**: Reduce to ~40 lines (67% reduction)
+- **New utility**: `handle_date_picker_with_callback(callback, error_message)`
+
+**Phase 3: Continuation Workflow Merge**
+- **Target**: Lines 2344-2603 (show/due continuation duplication)
+- **Impact**: Reduce ~250 lines to ~100 lines (60% reduction)  
+- **Merge**: `process_continuation()` + `process_show_continuation()` → unified function
+
+**Backup Plan**: All changes tracked with git commits for easy rollback if issues arise.
+
+**Phase 1 Progress - Buffer Filter Pattern Consolidation** ✅ **PARTIALLY COMPLETED**
+
+**✅ Achievements**:
+- **Created 3 utility functions** (lines 1603-1739):
+  - `collect_todos_with_filter(filter_function)` - Unified todo collection with flexible filtering
+  - `create_filter_buffer(todos, title, filter_type, source_file)` - Standardized buffer creation
+  - `setup_filter_keymaps(buf, todos)` - Consistent keymap setup across all filter functions
+- **Successfully refactored 3 functions**:
+  - `filter_buffer_by_due_dates()` - Reduced from ~130 lines to 8 lines (94% reduction)
+  - `filter_buffer_by_category()` - Reduced from ~140 lines to 22 lines (preserves validation logic)
+  - `show_all_todos()` - Reduced from ~120 lines to 8 lines (93% reduction)
+
+**🔄 Remaining Work**:
+- Clean up leftover code from incomplete replacements 
+- Refactor remaining 3 functions: `filter_buffer_by_today()`, `filter_buffer_by_past_due()`, `filter_buffer_by_today_and_past_due()`
+
+**Impact So Far**: Reduced ~390 lines to ~38 lines in refactored functions (90% reduction in targeted area)
