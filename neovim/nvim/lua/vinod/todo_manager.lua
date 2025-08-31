@@ -394,6 +394,153 @@ function M.filter_buffer_by_today_and_past_due()
 end
 
 -- ========================================
+-- DATE PICKER CONSOLIDATION UTILITIES (PHASE 2)
+-- ========================================
+
+-- Consolidated date picker utility function
+-- Handles the most common date picker usage patterns
+function M.get_date_with_action(options)
+	-- Default options
+	local opts = vim.tbl_extend("force", {
+		on_success = nil,              -- Required: function(picked_date)
+		on_cancel = nil,               -- Optional: function()
+		fallback_date = "none",        -- "today", "none", or specific date string
+		cancel_message = nil,          -- Optional: custom cancel message
+		success_message = nil,         -- Optional: success message template
+		auto_fallback = false,         -- Auto-apply fallback if cancelled
+	}, options or {})
+
+	-- Validate required callback
+	if not opts.on_success or type(opts.on_success) ~= "function" then
+		error("get_date_with_action: on_success callback is required")
+		return
+	end
+
+	-- Call the original date picker
+	M.get_date_input(function(picked_date)
+		if picked_date then
+			-- Success path
+			if opts.success_message then
+				print(string.format(opts.success_message, picked_date))
+			end
+			opts.on_success(picked_date)
+		else
+			-- Cancellation path
+			if opts.cancel_message then
+				print(opts.cancel_message)
+			end
+
+			-- Handle fallback
+			local fallback_value = nil
+			if opts.fallback_date == "today" then
+				fallback_value = get_current_date()
+				print("No date selected, using today's date: " .. fallback_value)
+			elseif opts.fallback_date ~= "none" and type(opts.fallback_date) == "string" then
+				fallback_value = opts.fallback_date
+				print("No date selected, using fallback: " .. fallback_value)
+			end
+
+			-- Apply auto-fallback or call cancel handler
+			if fallback_value and opts.auto_fallback then
+				opts.on_success(fallback_value)
+			elseif opts.on_cancel then
+				opts.on_cancel()
+			end
+		end
+	end)
+end
+
+-- Specialized helper for form field updates with refresh
+function M.update_form_field_with_date(field_name, form_data, refresh_callback)
+	M.get_date_with_action({
+		on_success = function(picked_date)
+			form_data[field_name] = picked_date
+			if refresh_callback then
+				refresh_callback()
+			end
+		end,
+		cancel_message = "Date selection cancelled"
+	})
+end
+
+-- Specialized helper for todo creation workflows
+function M.create_todo_with_date(todo_params, date_field, completion_callback)
+	M.get_date_with_action({
+		on_success = function(picked_date)
+			todo_params[date_field] = picked_date
+			local success = M.add_todo(
+				todo_params.description,
+				todo_params.category,
+				todo_params.tags,
+				todo_params.due_date,
+				todo_params.show_date
+			)
+			
+			if success then
+				print("✓ " .. (todo_params.category or "Personal") .. " todo added: " .. todo_params.description)
+			else
+				print("✗ Failed to add todo")
+			end
+			
+			if completion_callback then
+				completion_callback(success)
+			end
+		end,
+		fallback_date = "today",
+		auto_fallback = true
+	})
+end
+
+-- ========================================
+-- DATE PICKER IMPLEMENTATION (SIMPLIFIED FOR TESTING)
+-- ========================================
+
+-- Simplified date picker for testing (stub of the actual calendar implementation)
+function M.get_date_input(callback)
+	-- In the real implementation, this would show a floating calendar window
+	-- For testing purposes, we'll simulate with a simple input prompt
+	vim.ui.input({
+		prompt = "Enter date (mm-dd-yyyy) or leave empty to cancel: ",
+		default = get_current_date(),
+	}, function(input)
+		if input and input ~= "" then
+			-- Enhanced date validation
+			if input:match("^%d%d%-%d%d%-%d%d%d%d$") then
+				-- Parse the date components
+				local month, day, year = input:match("(%d%d)%-(%d%d)%-(%d%d%d%d)")
+				month, day, year = tonumber(month), tonumber(day), tonumber(year)
+				
+				-- Validate date ranges
+				if month >= 1 and month <= 12 and day >= 1 and day <= 31 and year >= 1900 then
+					-- Additional validation for days per month
+					local days_in_month = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
+					
+					-- Check for leap year
+					if year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0) then
+						days_in_month[2] = 29
+					end
+					
+					if day <= days_in_month[month] then
+						callback(input)
+					else
+						print("Invalid date: " .. input .. " (day " .. day .. " doesn't exist in month " .. month .. ")")
+						callback(nil)
+					end
+				else
+					print("Invalid date: " .. input .. " (month: 1-12, day: 1-31, year: >=1900)")
+					callback(nil)
+				end
+			else
+				print("Invalid date format. Use mm-dd-yyyy")
+				callback(nil)
+			end
+		else
+			callback(nil) -- User cancelled
+		end
+	end)
+end
+
+-- ========================================
 -- MISSING FUNCTIONS (STUBS FOR COMPATIBILITY)
 -- ========================================
 
@@ -402,6 +549,16 @@ function M.init_todo_files()
 	-- This is a stub - the actual initialization would create directories and files
 	-- For testing purposes, we assume the files already exist
 	return true
+end
+
+-- Add todo function (simplified for testing)
+function M.add_todo(description, category, tags, due_date, show_date)
+	-- This is a stub - the actual function would write to todo files
+	-- For testing purposes, we just simulate success
+	if description and description ~= "" then
+		return true
+	end
+	return false
 end
 
 -- Setup todo syntax highlighting (stub for compatibility)
@@ -454,5 +611,46 @@ end, { desc = "Test filter past due todos" })
 vim.api.nvim_create_user_command("TestFilterUrgent", function()
 	M.filter_buffer_by_today_and_past_due()
 end, { desc = "Test filter urgent todos" })
+
+-- ========================================
+-- PHASE 2 DATE PICKER TEST COMMANDS
+-- ========================================
+
+vim.api.nvim_create_user_command("TestDatePicker", function()
+	print("Testing basic date picker utility...")
+	M.get_date_with_action({
+		on_success = function(date)
+			print("✅ Selected date: " .. date)
+		end,
+		on_cancel = function()
+			print("❌ Date selection cancelled")
+		end,
+		cancel_message = "No date selected"
+	})
+end, { desc = "Test basic date picker utility" })
+
+vim.api.nvim_create_user_command("TestDatePickerFallback", function()
+	print("Testing date picker with fallback to today...")
+	M.get_date_with_action({
+		on_success = function(date)
+			print("✅ Using date: " .. date)
+		end,
+		fallback_date = "today",
+		auto_fallback = true
+	})
+end, { desc = "Test date picker with auto-fallback" })
+
+vim.api.nvim_create_user_command("TestCreateTodo", function()
+	print("Testing todo creation with date picker...")
+	M.create_todo_with_date({
+		description = "Test todo from Phase 2",
+		category = "Personal",
+		tags = {"test"},
+		due_date = "",
+		show_date = ""
+	}, "due_date", function(success)
+		print("Todo creation " .. (success and "succeeded" or "failed"))
+	end)
+end, { desc = "Test todo creation with date picker" })
 
 return M

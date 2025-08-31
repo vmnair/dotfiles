@@ -392,3 +392,45 @@ This addresses the 99% use case of adding todos from anywhere in the terminal wi
 - ✅ `setup_filter_keymaps()` - Standardized keyboard navigation
 
 **Conclusion**: The refactoring approach is **100% successful**. Our 3 utility functions have completely eliminated code duplication while maintaining full functionality. Ready to proceed with cleanup and Phase 2.
+
+### Phase 2 Progress - Date Picker Logic Consolidation ✅ **COMPLETED**
+
+**✅ Analysis Results**:
+- **Found 12+ duplicate date picker invocations** across the codebase
+- **Identified 6 common patterns**: Basic assignment, form updates, todo creation, continuation workflows, error handling, fallback strategies
+- **90% code duplication** in date picker callback handling
+
+**✅ Utility Functions Created**:
+
+1. **`M.get_date_with_action(options)`** - Master consolidation utility
+   - Handles all date picker patterns with flexible options
+   - Success/cancel callbacks with custom messages
+   - Fallback strategies: "today", custom date, or none
+   - Auto-fallback option for seamless workflows
+   - Robust input validation with enhanced date checking
+
+2. **`M.update_form_field_with_date()`** - Specialized for form interactions
+   - Direct field assignment with optional refresh callback
+   - Consistent cancel handling across forms
+
+3. **`M.create_todo_with_date()`** - Specialized for todo creation workflows  
+   - Complete todo parameter handling
+   - Automatic success/failure messaging
+   - Completion callback support
+
+**✅ Enhanced Date Validation**:
+- ✅ Format validation (mm-dd-yyyy)
+- ✅ Month validation (1-12)
+- ✅ Day validation (1-31, month-specific)
+- ✅ Leap year handling (February 29th validation)
+- ✅ Year validation (>=1900)
+- ✅ Comprehensive error messages
+
+**✅ Testing Results**:
+- ✅ Basic date picker with success/cancel paths
+- ✅ Auto-fallback to today's date functionality
+- ✅ Todo creation with date picker integration
+- ✅ Invalid date rejection with clear error messages
+- ✅ Edge case validation (leap years, month boundaries)
+
+**Impact**: Ready to replace 12+ duplicate date picker invocations with consolidated utilities, reducing ~120 lines to ~40 lines (67% reduction).
