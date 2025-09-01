@@ -1,7 +1,4 @@
--- TEMPORARY TODO MANAGER FOR TESTING REFACTORED FUNCTIONS
--- This file contains just the working refactored buffer filtering functions
--- for testing purposes while we clean up the main file.
-
+-- Description: Core logic for Vinod's Todo Manager plugin
 local M = {}
 
 -- ========================================
@@ -9,9 +6,11 @@ local M = {}
 -- ========================================
 
 M.config = {
+	todo_dir = "/Users/vinodnair/Library/CloudStorage/Dropbox/notebook/todo",
+	notebook_dir = "/Users/vinodnair/Library/CloudStorage/Dropbox/notebook",
 	active_file = "active-todos.md",
 	completed_file = "completed-todos.md",
-	todo_directory = "/Users/vinodnair/Library/CloudStorage/Dropbox/notebook/todo",
+	date_format = "%m-%d-%Y",
 	categories = { "Medicine", "OMS", "Personal" },
 	category_icons = {
 		Medicine = "💊",
@@ -24,37 +23,309 @@ M.config = {
 -- CORE FUNCTIONS (Essential for todo_commands.lua)
 -- ========================================
 
--- Get active todos (stub implementation for now)
-function M.get_active_todos()
-	-- This is a stub - returns sample data for testing
-	return {
-		{
-			description = "Sample active todo 1",
-			category = "Personal", 
-			due_date = "2025-09-01",
-			show_date = "2025-08-31",
-			completed = false,
-			tags = "#test"
-		},
-		{
-			description = "Sample active todo 2", 
-			category = "Work",
-			due_date = "2025-09-02",
-			show_date = "2025-08-31", 
-			completed = false,
-			tags = "#sample"
-		}
-	}
+-- Check if a show date has arrived (today or in the past)
+local function is_show_date_reached(date_str)
+	if not date_str or date_str == "" then
+		return true -- No show date means show immediately
+	end
+
+	-- Parse the date string (mm-dd-yyyy)
+	local month, day, year = date_str:match("(%d+)-(%d+)-(%d+)")
+	if not month or not day or not year then
+		return true -- Invalid date means show immediately
+	end
+
+	-- Convert to timestamp for comparison
+	local year_num, month_num, day_num = tonumber(year), tonumber(month), tonumber(day)
+	if not year_num or not month_num or not day_num then
+		return true -- Invalid numbers mean show immediately
+	end
+
+	local show_time = os.time({
+		year = year_num,
+		month = month_num,
+		day = day_num,
+		hour = 0,
+		min = 0,
+		sec = 0,
+	})
+
+	local current_time = os.time()
+	return current_time >= show_time
 end
 
--- Format todo line (stub implementation)  
+-- Get active todos (real implementation)
+function M.get_active_todos()
+	local all_todos = M.read_todos_from_file(M.config.active_file)
+	local active_todos = {}
+
+	-- Only return todos that are not completed AND have reached their show date
+	for i, todo in ipairs(all_todos) do
+		if not todo.completed and is_show_date_reached(todo.show_date) then
+			table.insert(active_todos, todo)
+		end
+	end
+
+	return active_todos
+end
+
+-- Get completed todos
+function M.get_completed_todos()
+	return M.read_todos_from_file(M.config.completed_file)
+end
+
+-- Get all todos from active file (including scheduled)
+function M.get_all_todos_from_active_file()
+	local all_todos = M.read_todos_from_file(M.config.active_file)
+	local active_todos = {}
+	-- Return all todos that are not completed (regardless of show date)
+	for _, todo in ipairs(all_todos) do
+		if not todo.completed then
+			table.insert(active_todos, todo)
+		end
+	end
+	return active_todos
+end
+
+-- Toggle todo completion on current line
+function M.toggle_todo_on_line()
+	local line = vim.api.nvim_get_current_line()
+	local line_num = vim.api.nvim_win_get_cursor(0)[1]
+
+	-- Check if current line is a todo
+	local todo = M.parse_todo_line(line)
+	if not todo then
+		print("Current line is not a todo item")
+		return false
+	end
+
+	-- Toggle completion status
+	todo.completed = not todo.completed
+
+	-- Set appropriate date
+	local current_date = os.date("%m-%d-%Y")
+	if todo.completed then
+		todo.completion_date = current_date
+		todo.added_date = ""
+	else
+		todo.completion_date = ""
+		if not todo.added_date or todo.added_date == "" then
+			todo.added_date = current_date
+		end
+	end
+
+	-- Format the new line
+	local new_line = M.format_todo_line(todo)
+
+	-- Replace the current line
+	vim.api.nvim_buf_set_lines(0, line_num - 1, line_num, false, { new_line })
+
+	-- Handle file movement if needed
+	local current_file = vim.api.nvim_buf_get_name(0)
+	local active_file_path = M.config.todo_dir .. "/" .. M.config.active_file
+	local completed_file_path = M.config.todo_dir .. "/" .. M.config.completed_file
+
+	if current_file == active_file_path and todo.completed then
+		-- Remove from current buffer and add to completed file
+		vim.api.nvim_buf_set_lines(0, line_num - 1, line_num, false, {})
+
+		local completed_todos = M.get_completed_todos()
+		table.insert(completed_todos, todo)
+
+		local completed_header = "# Completed Todos\n\nManaged by Vinod's Todo Manager"
+		M.write_todos_to_file(M.config.completed_file, completed_todos, completed_header, "storage")
+
+		print("✓ Todo completed and moved to completed list")
+	elseif current_file == completed_file_path and not todo.completed then
+		-- Remove from current buffer and add to active file
+		vim.api.nvim_buf_set_lines(0, line_num - 1, line_num, false, {})
+
+		local active_todos = M.get_all_todos_from_active_file()
+		table.insert(active_todos, todo)
+
+		local active_header = "# Active Todos (Raw)\n\nManaged by Vinod's Todo Manager"
+		M.write_todos_to_file(M.config.active_file, active_todos, active_header, "storage")
+
+		print("↶ Todo uncompleted and moved back to active list")
+	else
+		local status = todo.completed and "completed" or "uncompleted"
+		print("✓ Todo " .. status)
+	end
+
+	return true
+end
+
+-- List active todos (for command compatibility)
+function M.list_active_todos(category)
+	local todos = M.get_active_todos()
+
+	-- Filter by category if specified
+	if category then
+		local filtered = {}
+		for _, todo in ipairs(todos) do
+			if todo.category == category then
+				table.insert(filtered, todo)
+			end
+		end
+		todos = filtered
+	end
+
+	if #todos == 0 then
+		print("No active todos found" .. (category and " for " .. category or ""))
+		return
+	end
+
+	print("Active Todos" .. (category and " - " .. category or "") .. " (" .. #todos .. "):")
+	print(string.rep("=", 40))
+
+	for i, todo in ipairs(todos) do
+		local icon = M.config.category_icons[todo.category] or "📝"
+		local line = string.format("%d. %s %s", i, icon, todo.description)
+
+		-- Add due date with color coding
+		if todo.due_date and todo.due_date ~= "" then
+			if is_past_due(todo.due_date) then
+				line = line .. " [OVERDUE: " .. todo.due_date .. "]"
+			elseif is_due_today(todo.due_date) then
+				line = line .. " [Due TODAY: " .. todo.due_date .. "]"
+			else
+				line = line .. " [Due: " .. todo.due_date .. "]"
+			end
+		end
+
+		-- Add tags
+		if todo.tags and type(todo.tags) == "table" and #todo.tags > 0 then
+			line = line .. " #" .. table.concat(todo.tags, " #")
+		elseif todo.tags and type(todo.tags) == "string" and todo.tags ~= "" then
+			line = line .. " " .. todo.tags
+		end
+
+		print(line)
+	end
+end
+
+-- Format todo line for file output
 function M.format_todo_line(todo, context)
 	local checkbox = todo.completed and "- [x]" or "- [ ]"
-	local due_display = todo.due_date and " [Due: " .. todo.due_date .. "]" or ""
-	return checkbox .. " " .. todo.description .. due_display .. " " .. (todo.tags or "")
+	local icon = M.config.category_icons[todo.category] or "📝"
+	local description = todo.description
+
+	-- Build the formatted line
+	local line = checkbox .. " " .. icon .. " " .. description
+
+	-- Add show date (for scheduled and storage contexts)
+	if (context == "scheduled" or context == "storage") and todo.show_date and todo.show_date ~= "" then
+		line = line .. " [Show: " .. todo.show_date .. "]"
+	end
+
+	-- Add due date
+	if todo.due_date and todo.due_date ~= "" then
+		line = line .. " [Due: " .. todo.due_date .. "]"
+	end
+
+	-- Add tags
+	if todo.tags and type(todo.tags) == "table" and #todo.tags > 0 then
+		line = line .. " #" .. table.concat(todo.tags, " #")
+	elseif todo.tags and type(todo.tags) == "string" and todo.tags ~= "" then
+		line = line .. " " .. todo.tags
+	end
+
+	-- Add added date (in parentheses) - only for non-active contexts
+	if context ~= "active" and todo.added_date and todo.added_date ~= "" then
+		line = line .. " (" .. todo.added_date .. ")"
+	end
+
+	return line
 end
 
 -- Create and open a filtered active todos view
+-- Toggle todo completion in filtered view
+function M.toggle_todo_in_filtered_view()
+	local line = vim.api.nvim_get_current_line()
+	local line_num = vim.api.nvim_win_get_cursor(0)[1]
+
+	-- Check if current line is a todo
+	local todo = M.parse_todo_line(line)
+	if not todo then
+		return false
+	end
+
+	-- Make buffer temporarily modifiable
+	local buf = vim.api.nvim_get_current_buf()
+	vim.api.nvim_buf_set_option(buf, "modifiable", true)
+	vim.api.nvim_buf_set_option(buf, "readonly", false)
+
+	-- Toggle completion status
+	todo.completed = not todo.completed
+
+	-- Set appropriate date
+	local current_date = os.date("%m-%d-%Y")
+	if todo.completed then
+		todo.completion_date = current_date
+		todo.added_date = ""
+	else
+		todo.completion_date = ""
+		if not todo.added_date or todo.added_date == "" then
+			todo.added_date = current_date
+		end
+	end
+
+	-- Update the real active file
+	local active_todos = M.read_todos_from_file(M.config.active_file)
+	local updated = false
+	for i, existing_todo in ipairs(active_todos) do
+		if existing_todo.description == todo.description and existing_todo.category == todo.category then
+			active_todos[i] = todo
+			updated = true
+			break
+		end
+	end
+
+	if updated then
+		-- Write updated todos back to file
+		if todo.completed then
+			-- Move to completed file
+			local completed_todos = M.get_completed_todos()
+			table.insert(completed_todos, todo)
+			local completed_header = "# Completed Todos\n\nManaged by Vinod's Todo Manager"
+			M.write_todos_to_file(M.config.completed_file, completed_todos, completed_header, "storage")
+
+			-- Remove from active file
+			local remaining_todos = {}
+			for _, t in ipairs(active_todos) do
+				if not (t.description == todo.description and t.category == todo.category) then
+					table.insert(remaining_todos, t)
+				end
+			end
+			local active_header = "# Active Todos (Raw)\n\nManaged by Vinod's Todo Manager"
+			M.write_todos_to_file(M.config.active_file, remaining_todos, active_header, "storage")
+
+			print("✓ Todo completed and moved to completed list")
+		else
+			-- Update active file
+			local active_header = "# Active Todos (Raw)\n\nManaged by Vinod's Todo Manager"
+			M.write_todos_to_file(M.config.active_file, active_todos, active_header, "storage")
+			print("↶ Todo uncompleted")
+		end
+
+		-- Store cursor position before refresh
+		local cursor_pos = vim.api.nvim_win_get_cursor(0)
+		local target_line = math.max(1, cursor_pos[1])
+
+		-- Refresh the filtered view
+		M.open_filtered_active_view()
+
+		-- Restore cursor position, adjusting for potential line changes
+		local total_lines = vim.api.nvim_buf_line_count(0)
+		local restore_line = math.min(target_line, total_lines)
+		vim.api.nvim_win_set_cursor(0, { restore_line, cursor_pos[2] })
+	else
+		print("⚠ Could not find matching todo to update")
+	end
+
+	return true
+end
+
 function M.open_filtered_active_view()
 	local active_todos = M.get_active_todos()
 
@@ -100,7 +371,7 @@ function M.open_filtered_active_view()
 	-- Set buffer content
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
-	-- Set buffer as read-only
+	-- Set buffer as read-only (but will be made modifiable during toggle)
 	vim.api.nvim_buf_set_option(buf, "modifiable", false)
 	vim.api.nvim_buf_set_option(buf, "readonly", true)
 
@@ -109,6 +380,16 @@ function M.open_filtered_active_view()
 
 	-- Set syntax highlighting
 	vim.api.nvim_buf_set_option(buf, "filetype", "markdown")
+	M.setup_todo_syntax()
+
+	-- Set up keybindings for filtered view
+	vim.keymap.set("n", "tt", function()
+		M.toggle_todo_in_filtered_view()
+	end, { buffer = buf, desc = "Toggle todo completion in filtered view" })
+
+	vim.keymap.set("n", "<leader>te", function()
+		M.edit_todo_modal()
+	end, { buffer = buf, desc = "Edit todo on current line" })
 
 	print("✓ Opened filtered active todos view")
 end
@@ -127,18 +408,18 @@ function is_past_due(date_str)
 	if not date_str or date_str == "" then
 		return false
 	end
-	
+
 	local current_date = get_current_date()
 	local month, day, year = date_str:match("(%d+)-(%d+)-(%d+)")
 	local cur_month, cur_day, cur_year = current_date:match("(%d+)-(%d+)-(%d+)")
-	
+
 	if not month or not cur_month then
 		return false
 	end
-	
-	local date_time = os.time({year = tonumber(year), month = tonumber(month), day = tonumber(day)})
-	local current_time = os.time({year = tonumber(cur_year), month = tonumber(cur_month), day = tonumber(cur_day)})
-	
+
+	local date_time = os.time({ year = tonumber(year), month = tonumber(month), day = tonumber(day) })
+	local current_time = os.time({ year = tonumber(cur_year), month = tonumber(cur_month), day = tonumber(cur_day) })
+
 	return date_time < current_time
 end
 
@@ -159,8 +440,8 @@ function get_display_icon(todo)
 end
 
 -- Get full file path for todo files
-function get_file_path(filename)
-	return M.config.todo_directory .. "/" .. filename
+local function get_file_path(filename)
+	return M.config.todo_dir .. "/" .. filename
 end
 
 -- ========================================
@@ -220,7 +501,7 @@ function M.parse_todo_line(line)
 		end
 		desc_part = desc_part:gsub("%s*#%w+", "")
 
-		-- Extract category from icon
+		-- Extract category from icon and remove ALL icons from description
 		for category, icon in pairs(M.config.category_icons) do
 			if desc_part:find(icon, 1, true) then
 				todo.category = category
@@ -228,6 +509,9 @@ function M.parse_todo_line(line)
 				break
 			end
 		end
+
+		-- Also remove any fallback notepad icons that might have been added previously
+		desc_part = desc_part:gsub("📝", ""):gsub("^%s+", ""):gsub("%s+$", "")
 
 		todo.description = desc_part:gsub("^%s+", ""):gsub("%s+$", "")
 	end
@@ -297,7 +581,7 @@ local function create_filter_buffer(todos, title, filter_type, source_file)
 
 	local buf = vim.api.nvim_create_buf(false, true)
 	local lines = {}
-	
+
 	table.insert(lines, title .. " (" .. #todos .. " found)")
 	table.insert(lines, string.rep("=", #lines[1]))
 	table.insert(lines, "")
@@ -384,11 +668,11 @@ end
 -- Filter todos by due dates in scratch buffer
 function M.filter_buffer_by_due_dates()
 	local source_file = vim.api.nvim_buf_get_name(0)
-	
+
 	local todos = collect_todos_with_filter(function(todo)
 		return todo.due_date and todo.due_date ~= ""
 	end)
-	
+
 	local buf = create_filter_buffer(todos, "Due Date Todos", "due_dates", source_file)
 	if buf then
 		setup_filter_keymaps(buf, todos)
@@ -419,11 +703,11 @@ function M.filter_buffer_by_category(category)
 	end
 
 	local source_file = vim.api.nvim_buf_get_name(0)
-	
+
 	local todos = collect_todos_with_filter(function(todo)
 		return todo.category == category
 	end)
-	
+
 	local buf = create_filter_buffer(todos, category .. " Todos", "category_" .. category:lower(), source_file)
 	if buf then
 		setup_filter_keymaps(buf, todos)
@@ -433,11 +717,11 @@ end
 -- Show all todos in scratch buffer
 function M.show_all_todos()
 	local source_file = vim.api.nvim_buf_get_name(0)
-	
+
 	local todos = collect_todos_with_filter(function(todo)
-		return true  -- Show all todos
+		return true -- Show all todos
 	end)
-	
+
 	local buf = create_filter_buffer(todos, "All Todos", "all", source_file)
 	if buf then
 		setup_filter_keymaps(buf, todos)
@@ -447,11 +731,11 @@ end
 -- Filter today's todos in scratch buffer
 function M.filter_buffer_by_today()
 	local source_file = vim.api.nvim_buf_get_name(0)
-	
+
 	local todos = collect_todos_with_filter(function(todo)
 		return todo.due_date and todo.due_date ~= "" and is_due_today(todo.due_date)
 	end)
-	
+
 	local buf = create_filter_buffer(todos, "Today's Todos", "today", source_file)
 	if buf then
 		setup_filter_keymaps(buf, todos)
@@ -461,11 +745,11 @@ end
 -- Filter past due todos in scratch buffer
 function M.filter_buffer_by_past_due()
 	local source_file = vim.api.nvim_buf_get_name(0)
-	
+
 	local todos = collect_todos_with_filter(function(todo)
 		return todo.due_date and todo.due_date ~= "" and is_past_due(todo.due_date)
 	end)
-	
+
 	local buf = create_filter_buffer(todos, "Past Due Todos", "past_due", source_file)
 	if buf then
 		setup_filter_keymaps(buf, todos)
@@ -475,15 +759,235 @@ end
 -- Filter urgent todos (today + past due) in scratch buffer
 function M.filter_buffer_by_today_and_past_due()
 	local source_file = vim.api.nvim_buf_get_name(0)
-	
+
 	local todos = collect_todos_with_filter(function(todo)
 		return todo.due_date and todo.due_date ~= "" and (is_due_today(todo.due_date) or is_past_due(todo.due_date))
 	end)
-	
+
 	local buf = create_filter_buffer(todos, "Urgent Todos (Today + Past Due)", "urgent", source_file)
 	if buf then
 		setup_filter_keymaps(buf, todos)
 	end
+end
+
+-- ========================================
+-- DATE SHORTCUT RESOLVER
+-- ========================================
+
+-- Resolve date shortcuts like "tomorrow", "next week", "5 days", etc.
+function M.resolve_date_shortcut(keyword)
+	if not keyword or keyword == "" then
+		return nil
+	end
+
+	keyword = keyword:lower():gsub("^%s+", ""):gsub("%s+$", "") -- trim whitespace
+
+	-- Special cases
+	if keyword == "today" then
+		return os.date("%m-%d-%Y")
+	elseif keyword == "tomorrow" then
+		local tomorrow = os.time() + (24 * 60 * 60) -- Add 1 day in seconds
+		return os.date("%m-%d-%Y", tomorrow)
+	elseif keyword == "next week" then
+		local next_week = os.time() + (7 * 24 * 60 * 60) -- Add 7 days
+		return os.date("%m-%d-%Y", next_week)
+	elseif keyword == "this weekend" then
+		-- Find next Saturday
+		local current_time = os.time()
+		local current_date = os.date("*t", current_time)
+		local days_to_saturday = (6 - current_date.wday + 1) % 7 -- wday: 1=Sunday, 7=Saturday
+		if days_to_saturday == 0 then -- Today is Saturday
+			days_to_saturday = 7 -- Next Saturday
+		end
+		local saturday_time = current_time + (days_to_saturday * 24 * 60 * 60)
+		return os.date("%m-%d-%Y", saturday_time)
+	end
+
+	-- Pattern matching for "[number] [unit]" or "[word] [unit]"
+	local number_text, unit = keyword:match("^(%S+)%s+(%S+)$")
+	if not number_text or not unit then
+		return nil
+	end
+
+	-- Convert text numbers to actual numbers
+	local text_to_number = {
+		one = 1, two = 2, three = 3, four = 4, five = 5, six = 6,
+		seven = 7, eight = 8, nine = 9, ten = 10, eleven = 11, twelve = 12
+	}
+
+	local number = tonumber(number_text) or text_to_number[number_text:lower()]
+	if not number or number < 1 or number > 12 then
+		return nil
+	end
+
+	-- Calculate days based on unit
+	local days = 0
+	unit = unit:lower()
+	if unit == "day" or unit == "days" then
+		days = number
+	elseif unit == "week" or unit == "weeks" then
+		days = number * 7
+	elseif unit == "month" or unit == "months" then
+		days = number * 30 -- Approximate
+	elseif unit == "year" or unit == "years" then
+		days = number * 365 -- Approximate
+	else
+		return nil
+	end
+
+	-- Calculate future date
+	local future_time = os.time() + (days * 24 * 60 * 60)
+	return os.date("%m-%d-%Y", future_time)
+end
+
+-- ========================================
+-- COMMAND CONTINUATION WORKFLOW
+-- ========================================
+
+-- Handle command continuation workflow for quick todo commands
+function M.handle_command_continuation(description, category, tags, due_date, show_date, use_show_calendar, use_due_calendar, command_prefix)
+	if not use_show_calendar and not use_due_calendar then
+		return false -- No continuation needed
+	end
+
+	-- Note: Date logic rules are handled by calling function before this point
+	-- This function only handles calendar picker workflows
+
+	-- Handle calendar pickers
+	if use_show_calendar or use_due_calendar then
+		local function add_todo_with_dates()
+			local success = M.add_todo(description, category, tags, due_date, show_date)
+			if success then
+				local cat_display = category and category ~= "" and category or "Personal"
+				local show_display = show_date and show_date ~= "" and " [Show: " .. show_date .. "]" or ""
+				local due_display = due_date and due_date ~= "" and " [Due: " .. due_date .. "]" or ""
+				print("✓ " .. cat_display .. " todo added: " .. description .. show_display .. due_display)
+			else
+				print("✗ Failed to add todo")
+			end
+		end
+
+		local function handle_due_date_picker()
+			if use_due_calendar then
+				M.get_date_input(function(picked_due_date)
+					if picked_due_date then
+						due_date = picked_due_date
+					else
+						due_date = os.date("%m-%d-%Y") -- Today's date in mm-dd-yyyy format
+						print("No due date selected, using today's date: " .. due_date)
+					end
+					add_todo_with_dates()
+				end)
+			else
+				add_todo_with_dates()
+			end
+		end
+
+		local function handle_show_date_picker()
+			if use_show_calendar then
+				M.get_date_input(function(picked_show_date)
+					if picked_show_date then
+						show_date = picked_show_date
+					else
+						show_date = os.date("%m-%d-%Y") -- Today's date in mm-dd-yyyy format
+						print("No show date selected, using today's date: " .. show_date)
+					end
+					handle_due_date_picker()
+				end)
+			else
+				handle_due_date_picker()
+			end
+		end
+
+		-- Start the sequential picker process
+		handle_show_date_picker()
+		return true -- Handled
+	end
+
+	return false -- Not handled
+end
+
+-- ========================================
+-- SCHEDULED AND UPCOMING TODO FUNCTIONS
+-- ========================================
+
+-- Get scheduled todos (future show dates)
+function M.get_scheduled_todos()
+	local all_todos = M.read_todos_from_file(M.config.active_file)
+	local scheduled_todos = {}
+
+	for _, todo in ipairs(all_todos) do
+		if not todo.completed and not is_show_date_reached(todo.show_date) then
+			table.insert(scheduled_todos, todo)
+		end
+	end
+
+	return scheduled_todos
+end
+
+-- Get upcoming todos (within specified number of days)
+function M.get_upcoming_todos(days)
+	days = days or 7
+	local all_todos = M.read_todos_from_file(M.config.active_file)
+	local upcoming_todos = {}
+	local current_time = os.time()
+	local future_cutoff = current_time + (days * 24 * 60 * 60)
+
+	for _, todo in ipairs(all_todos) do
+		if not todo.completed and todo.show_date and todo.show_date ~= "" then
+			-- Parse the show date
+			local month, day, year = todo.show_date:match("(%d+)-(%d+)-(%d+)")
+			if month and day and year then
+				local show_time = os.time({
+					year = tonumber(year),
+					month = tonumber(month),
+					day = tonumber(day),
+					hour = 0,
+					min = 0,
+					sec = 0,
+				})
+
+				-- Include if within the upcoming period (from now to future cutoff)
+				if show_time >= current_time and show_time <= future_cutoff then
+					table.insert(upcoming_todos, todo)
+				end
+			end
+		end
+	end
+
+	return upcoming_todos
+end
+
+-- Display todos with a title
+function M.display_todos(todos, title)
+	if #todos == 0 then
+		print(title .. ": No todos found")
+		return
+	end
+
+	print("\n" .. title .. ":")
+	print(string.rep("=", #title + 1))
+	
+	for i, todo in ipairs(todos) do
+		local icon = M.config.category_icons[todo.category] or "📝"
+		local tags_str = ""
+		if todo.tags and #todo.tags > 0 then
+			tags_str = " #" .. table.concat(todo.tags, " #")
+		end
+		
+		local show_str = ""
+		if todo.show_date and todo.show_date ~= "" then
+			show_str = " [Show: " .. todo.show_date .. "]"
+		end
+		
+		local due_str = ""
+		if todo.due_date and todo.due_date ~= "" then
+			due_str = " [Due: " .. todo.due_date .. "]"
+		end
+		
+		print(string.format("%2d. %s %s%s%s%s", i, icon, todo.description, tags_str, show_str, due_str))
+	end
+	print("")
 end
 
 -- ========================================
@@ -495,12 +999,12 @@ end
 function M.get_date_with_action(options)
 	-- Default options
 	local opts = vim.tbl_extend("force", {
-		on_success = nil,              -- Required: function(picked_date)
-		on_cancel = nil,               -- Optional: function()
-		fallback_date = "none",        -- "today", "none", or specific date string
-		cancel_message = nil,          -- Optional: custom cancel message
-		success_message = nil,         -- Optional: success message template
-		auto_fallback = false,         -- Auto-apply fallback if cancelled
+		on_success = nil, -- Required: function(picked_date)
+		on_cancel = nil, -- Optional: function()
+		fallback_date = "none", -- "today", "none", or specific date string
+		cancel_message = nil, -- Optional: custom cancel message
+		success_message = nil, -- Optional: success message template
+		auto_fallback = false, -- Auto-apply fallback if cancelled
 	}, options or {})
 
 	-- Validate required callback
@@ -552,7 +1056,7 @@ function M.update_form_field_with_date(field_name, form_data, refresh_callback)
 				refresh_callback()
 			end
 		end,
-		cancel_message = "Date selection cancelled"
+		cancel_message = "Date selection cancelled",
 	})
 end
 
@@ -568,104 +1072,886 @@ function M.create_todo_with_date(todo_params, date_field, completion_callback)
 				todo_params.due_date,
 				todo_params.show_date
 			)
-			
+
 			if success then
 				print("✓ " .. (todo_params.category or "Personal") .. " todo added: " .. todo_params.description)
 			else
 				print("✗ Failed to add todo")
 			end
-			
+
 			if completion_callback then
 				completion_callback(success)
 			end
 		end,
 		fallback_date = "today",
-		auto_fallback = true
+		auto_fallback = true,
 	})
 end
 
 -- ========================================
--- DATE PICKER IMPLEMENTATION (SIMPLIFIED FOR TESTING)
+-- DATE PICKER IMPLEMENTATION (FULL CALENDAR)
 -- ========================================
 
--- Simplified date picker for testing (stub of the actual calendar implementation)
-function M.get_date_input(callback)
-	-- In the real implementation, this would show a floating calendar window
-	-- For testing purposes, we'll simulate with a simple input prompt
-	vim.ui.input({
-		prompt = "Enter date (mm-dd-yyyy) or leave empty to cancel: ",
-		default = get_current_date(),
-	}, function(input)
-		if input and input ~= "" then
-			-- Enhanced date validation
-			if input:match("^%d%d%-%d%d%-%d%d%d%d$") then
-				-- Parse the date components
-				local month, day, year = input:match("(%d%d)%-(%d%d)%-(%d%d%d%d)")
-				month, day, year = tonumber(month), tonumber(day), tonumber(year)
-				
-				-- Validate date ranges
-				if month >= 1 and month <= 12 and day >= 1 and day <= 31 and year >= 1900 then
-					-- Additional validation for days per month
-					local days_in_month = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
-					
-					-- Check for leap year
-					if year % 4 == 0 and (year % 100 ~= 0 or year % 400 == 0) then
-						days_in_month[2] = 29
-					end
-					
-					if day <= days_in_month[month] then
-						callback(input)
-					else
-						print("Invalid date: " .. input .. " (day " .. day .. " doesn't exist in month " .. month .. ")")
-						callback(nil)
-					end
-				else
-					print("Invalid date: " .. input .. " (month: 1-12, day: 1-31, year: >=1900)")
-					callback(nil)
+-- Show interactive calendar date picker
+function M.show_date_picker(callback)
+	local current_date = os.date("*t")
+	local selected_year = current_date.year
+	local selected_month = current_date.month
+	local selected_day = current_date.day
+	local today = { year = current_date.year, month = current_date.month, day = current_date.day }
+
+	-- Month names for display
+	local month_names = {
+		"January",
+		"February",
+		"March",
+		"April",
+		"May",
+		"June",
+		"July",
+		"August",
+		"September",
+		"October",
+		"November",
+		"December",
+	}
+
+	-- Function to get days in month
+	local function days_in_month(month, year)
+		local days = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
+		if month == 2 and ((year % 4 == 0 and year % 100 ~= 0) or (year % 400 == 0)) then
+			return 29 -- Leap year
+		end
+		return days[month]
+	end
+
+	-- Function to get first day of month (0=Sunday, 1=Monday, etc.)
+	local function first_day_of_month(month, year)
+		local first_date = os.time({ year = year, month = month, day = 1 })
+		return tonumber(os.date("%w", first_date))
+	end
+
+	-- Create calendar buffer
+	local buf = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_option(buf, "modifiable", true)
+	vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
+	vim.api.nvim_buf_set_option(buf, "filetype", "calendar")
+
+	-- Function to render calendar
+	local function render_calendar()
+		local lines = {}
+
+		-- Header with month and year
+		local header = month_names[selected_month] .. " " .. selected_year
+		table.insert(lines, " " .. string.rep(" ", math.floor((20 - #header) / 2)) .. header)
+		table.insert(lines, " Su Mo Tu We Th Fr Sa")
+
+		-- Get calendar data
+		local max_days = days_in_month(selected_month, selected_year)
+		local first_day = first_day_of_month(selected_month, selected_year)
+
+		-- Build calendar grid
+		local current_line = " "
+		local day_count = 1
+
+		-- Add spaces for days before first day of month
+		for i = 1, first_day do
+			current_line = current_line .. "   "
+		end
+
+		-- Add days of the month
+		for day = 1, max_days do
+			local day_str = string.format("%2d", day)
+
+			-- Mark today with brackets
+			if selected_year == today.year and selected_month == today.month and day == today.day then
+				day_str = "[" .. string.format("%d", day) .. "]"
+				if day < 10 then
+					day_str = "[" .. day .. "]"
 				end
-			else
-				print("Invalid date format. Use mm-dd-yyyy")
+			end
+
+			-- Mark selected day with asterisk
+			if day == selected_day then
+				if day_str:match("%[") then
+					day_str = day_str -- Already has brackets (today)
+				else
+					day_str = "*" .. string.format("%d", day) .. "*"
+					if day < 10 then
+						day_str = "*" .. day .. "*"
+					end
+				end
+			end
+
+			current_line = current_line .. day_str .. " "
+
+			-- New line after Saturday (day 6)
+			if (first_day + day - 1) % 7 == 6 then
+				table.insert(lines, current_line)
+				current_line = " "
+			end
+		end
+
+		-- Add remaining line if needed
+		if current_line ~= " " then
+			table.insert(lines, current_line)
+		end
+
+		-- Add instructions
+		table.insert(lines, "")
+		table.insert(lines, " Navigation:")
+		table.insert(lines, " • h/l: Previous/Next month")
+		table.insert(lines, " • j/k: Previous/Next day")
+		table.insert(lines, " • H/L: Previous/Next year")
+		table.insert(lines, " • Enter: Select date")
+		table.insert(lines, " • q/ESC: Cancel")
+		table.insert(lines, "")
+		table.insert(
+			lines,
+			" Selected: " .. string.format("%02d-%02d-%04d", selected_month, selected_day, selected_year)
+		)
+
+		vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+		vim.api.nvim_buf_set_option(buf, "modifiable", false)
+	end
+
+	-- Open calendar in floating window
+	local width = 28
+	local height = 15
+	local opts = {
+		relative = "editor",
+		width = width,
+		height = height,
+		col = (vim.o.columns - width) / 2,
+		row = (vim.o.lines - height) / 2,
+		anchor = "NW",
+		style = "minimal",
+		border = "rounded",
+		title = " 📅 Date Picker ",
+		title_pos = "center",
+	}
+
+	local win = vim.api.nvim_open_win(buf, true, opts)
+
+	-- Initial render
+	render_calendar()
+
+	-- Set up navigation keymaps
+	local function setup_keymaps()
+		-- Navigate months
+		vim.keymap.set("n", "h", function()
+			selected_month = selected_month - 1
+			if selected_month < 1 then
+				selected_month = 12
+				selected_year = selected_year - 1
+			end
+			-- Adjust day if it doesn't exist in new month
+			local max_days = days_in_month(selected_month, selected_year)
+			if selected_day > max_days then
+				selected_day = max_days
+			end
+			vim.api.nvim_buf_set_option(buf, "modifiable", true)
+			render_calendar()
+		end, { buffer = buf, silent = true })
+
+		vim.keymap.set("n", "l", function()
+			selected_month = selected_month + 1
+			if selected_month > 12 then
+				selected_month = 1
+				selected_year = selected_year + 1
+			end
+			-- Adjust day if it doesn't exist in new month
+			local max_days = days_in_month(selected_month, selected_year)
+			if selected_day > max_days then
+				selected_day = max_days
+			end
+			vim.api.nvim_buf_set_option(buf, "modifiable", true)
+			render_calendar()
+		end, { buffer = buf, silent = true })
+
+		-- Navigate days
+		vim.keymap.set("n", "j", function()
+			selected_day = selected_day + 1
+			local max_days = days_in_month(selected_month, selected_year)
+			if selected_day > max_days then
+				selected_day = 1
+			end
+			vim.api.nvim_buf_set_option(buf, "modifiable", true)
+			render_calendar()
+		end, { buffer = buf, silent = true })
+
+		vim.keymap.set("n", "k", function()
+			selected_day = selected_day - 1
+			if selected_day < 1 then
+				selected_day = days_in_month(selected_month, selected_year)
+			end
+			vim.api.nvim_buf_set_option(buf, "modifiable", true)
+			render_calendar()
+		end, { buffer = buf, silent = true })
+
+		-- Navigate years
+		vim.keymap.set("n", "H", function()
+			selected_year = selected_year - 1
+			-- Adjust for leap year
+			local max_days = days_in_month(selected_month, selected_year)
+			if selected_day > max_days then
+				selected_day = max_days
+			end
+			vim.api.nvim_buf_set_option(buf, "modifiable", true)
+			render_calendar()
+		end, { buffer = buf, silent = true })
+
+		vim.keymap.set("n", "L", function()
+			selected_year = selected_year + 1
+			-- Adjust for leap year
+			local max_days = days_in_month(selected_month, selected_year)
+			if selected_day > max_days then
+				selected_day = max_days
+			end
+			vim.api.nvim_buf_set_option(buf, "modifiable", true)
+			render_calendar()
+		end, { buffer = buf, silent = true })
+
+		-- Selection and cancellation
+		vim.keymap.set("n", "<CR>", function()
+			local result = string.format("%02d-%02d-%04d", selected_month, selected_day, selected_year)
+			vim.api.nvim_win_close(win, true)
+			if callback then
+				callback(result)
+			end
+		end, { buffer = buf, silent = true })
+
+		vim.keymap.set("n", "<ESC>", function()
+			vim.api.nvim_win_close(win, true)
+			if callback then
 				callback(nil)
 			end
-		else
-			callback(nil) -- User cancelled
-		end
-	end)
+		end, { buffer = buf, silent = true })
+
+		vim.keymap.set("n", "q", function()
+			vim.api.nvim_win_close(win, true)
+			if callback then
+				callback(nil)
+			end
+		end, { buffer = buf, silent = true })
+	end
+
+	setup_keymaps()
+end
+
+-- Wrapper function for compatibility with existing code
+function M.get_date_input(callback)
+	M.show_date_picker(callback)
 end
 
 -- ========================================
 -- MISSING FUNCTIONS (STUBS FOR COMPATIBILITY)
 -- ========================================
 
--- Initialize todo system (stub for compatibility)
-function M.init_todo_files()
-	-- This is a stub - the actual initialization would create directories and files
-	-- For testing purposes, we assume the files already exist
-	return true
-end
-
--- Add todo function (simplified for testing)
-function M.add_todo(description, category, tags, due_date, show_date)
-	-- This is a stub - the actual function would write to todo files
-	-- For testing purposes, we just simulate success
-	if description and description ~= "" then
-		return true
+-- Read todos from file
+function M.read_todos_from_file(filename)
+	local file_path = get_file_path(filename)
+	local file = io.open(file_path, "r")
+	if not file then
+		return {}
 	end
-	return false
+	local todos = {}
+	for line in file:lines() do
+		local todo = M.parse_todo_line(line)
+		if todo then
+			table.insert(todos, todo)
+		end
+	end
+	file:close()
+	return todos
 end
 
--- Setup todo syntax highlighting (stub for compatibility)
+-- Write todos to file with header
+function M.write_todos_to_file(filename, todos, header, context)
+	local file_path = get_file_path(filename)
+	local file = io.open(file_path, "w")
+	if not file then
+		error("Could not open file for writing: " .. file_path)
+		return false
+	end
+	-- Write header if provided
+	if header then
+		file:write(header .. "\n\n")
+	end
+	-- Write each todo
+	for _, todo in ipairs(todos) do
+		file:write(M.format_todo_line(todo, context) .. "\n")
+	end
+	file:close()
+	return true
+end
+
+-- Initialize todo system
+function M.init_todo_files()
+	-- Create todo directory if it doesn't exist
+	local todo_dir = M.config.todo_dir
+	local stat = vim.loop.fs_stat(todo_dir)
+	if not stat then
+		vim.loop.fs_mkdir(todo_dir, 448) -- 0700 in octal
+	end
+
+	-- Initialize active todos file
+	local active_file_path = get_file_path(M.config.active_file)
+	local active_file = io.open(active_file_path, "r")
+	if not active_file then
+		active_file = io.open(active_file_path, "w")
+		if active_file then
+			active_file:write("# Active Todos (Raw)\n\nManaged by Vinod's Todo Manager\n\n")
+			active_file:close()
+		end
+	else
+		active_file:close()
+	end
+
+	-- Initialize completed todos file
+	local completed_file_path = get_file_path(M.config.completed_file)
+	local completed_file = io.open(completed_file_path, "r")
+	if not completed_file then
+		completed_file = io.open(completed_file_path, "w")
+		if completed_file then
+			completed_file:write("# Completed Todos\n\nArchive of completed todos\n\n")
+			completed_file:close()
+		end
+	else
+		completed_file:close()
+	end
+
+	return true
+end
+
+-- Add todo function
+function M.add_todo(description, category, tags, due_date, show_date)
+	if not description or description == "" then
+		return false
+	end
+
+	-- Initialize files if needed
+	M.init_todo_files()
+
+	-- Create todo object
+	local todo = {
+		completed = false,
+		description = description,
+		category = category or "Personal",
+		tags = tags or {},
+		due_date = due_date or "",
+		show_date = show_date or "",
+		added_date = get_current_date(),
+		completion_date = "",
+	}
+
+	-- Read existing todos
+	local todos = M.read_todos_from_file(M.config.active_file)
+
+	-- Add new todo
+	table.insert(todos, todo)
+
+	-- Write back to file
+	local header = "# Active Todos (Raw)\n\nManaged by Vinod's Todo Manager"
+	local success = M.write_todos_to_file(M.config.active_file, todos, header, "storage")
+
+	-- Refresh filtered view if it's open
+	if success then
+		M.refresh_filtered_view_if_open()
+	end
+
+	return success
+end
+
+-- Refresh filtered view if it exists and is open
+function M.refresh_filtered_view_if_open()
+	local buf_name = "Active Todos (Filtered View)"
+	local existing_buf = vim.fn.bufnr(buf_name)
+
+	-- Check if the filtered view buffer exists and is displayed in any window
+	if existing_buf ~= -1 and vim.api.nvim_buf_is_valid(existing_buf) then
+		-- Check if buffer is displayed in any window
+		local windows = vim.api.nvim_list_wins()
+		local is_displayed = false
+		for _, win in ipairs(windows) do
+			if vim.api.nvim_win_get_buf(win) == existing_buf then
+				is_displayed = true
+				break
+			end
+		end
+
+		-- If buffer is displayed, refresh it
+		if is_displayed then
+			-- Store current window and buffer
+			local current_win = vim.api.nvim_get_current_win()
+			local current_buf = vim.api.nvim_get_current_buf()
+
+			-- Store cursor position from filtered view if it's the current buffer
+			local cursor_line = 1
+			if current_buf == existing_buf then
+				cursor_line = vim.api.nvim_win_get_cursor(current_win)[1]
+			end
+
+			-- Switch to filtered view window temporarily to refresh
+			for _, win in ipairs(windows) do
+				if vim.api.nvim_win_get_buf(win) == existing_buf then
+					vim.api.nvim_set_current_win(win)
+					M.open_filtered_active_view() -- This will refresh the content
+
+					-- Restore cursor position if we stored one
+					if current_buf == existing_buf then
+						local line_count = vim.api.nvim_buf_line_count(existing_buf)
+						if cursor_line <= line_count then
+							vim.api.nvim_win_set_cursor(win, { cursor_line, 0 })
+						end
+					end
+
+					break
+				end
+			end
+
+			-- Restore original window if it's still valid and different
+			if vim.api.nvim_win_is_valid(current_win) and current_win ~= vim.api.nvim_get_current_win() then
+				vim.api.nvim_set_current_win(current_win)
+			end
+		end
+	end
+end
+
+-- Setup todo syntax highlighting
 function M.setup_todo_syntax()
-	-- This is a stub - the actual function would setup syntax highlighting
-	-- For testing purposes, we skip syntax setup
+	-- Set up syntax highlighting for todo items
+	vim.cmd([[
+		syntax match TodoCheckbox /^- \[\s\?\]/
+		syntax match TodoCheckboxDone /^- \[x\]/
+		syntax match TodoIcon /💊\|🛠️\|🏡\|📝/
+		syntax match TodoTag /#\w\+/
+		syntax match TodoShowDate /\[Show: [0-9-]\+\]/
+		syntax match TodoDueDate /\[Due: [0-9-]\+\]/
+		syntax match TodoAddedDate /([0-9-]\+)$/
+		syntax match TodoCompleted /^- \[x\].*$/
+	]])
+
+	-- Set up highlight groups
+	vim.cmd([[
+		highlight TodoCheckbox ctermfg=blue guifg=#528bff
+		highlight TodoCheckboxDone ctermfg=green guifg=#228B22
+		highlight TodoIcon ctermfg=yellow guifg=#ffd700
+		highlight TodoTag ctermfg=blue guifg=#569cd6
+		highlight TodoShowDate ctermfg=cyan guifg=#4EC9B0
+		highlight TodoAddedDate ctermfg=gray guifg=#767676
+		highlight TodoCompleted ctermfg=gray guifg=#767676 gui=strikethrough
+	]])
+
+	-- Set up due date color highlighting
+	M.highlight_due_dates_with_colors()
+
 	return true
 end
 
--- Highlight due dates with colors (stub for compatibility)
+-- Highlight due dates with colors based on urgency
 function M.highlight_due_dates_with_colors()
-	-- This is a stub - the actual function would highlight due dates
-	-- For testing purposes, we skip highlighting
+	-- Clear existing due date matches
+	vim.cmd([[
+		silent! syntax clear TodoDueDatePastDue
+		silent! syntax clear TodoDueDateToday
+		silent! syntax clear TodoDueDateFuture
+	]])
+
+	local current_date = get_current_date()
+	local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+
+	for i, line in ipairs(lines) do
+		local due_date = line:match("%[Due: ([0-9-]+)%]")
+		if due_date then
+			local line_num = i
+			if is_past_due(due_date) then
+				-- Past due - red
+				vim.cmd(string.format(
+					[[
+					syntax match TodoDueDatePastDue /\[Due: %s\]/ containedin=ALL
+				]],
+					vim.pesc(due_date)
+				))
+			elseif due_date == current_date then
+				-- Due today - green
+				vim.cmd(string.format(
+					[[
+					syntax match TodoDueDateToday /\[Due: %s\]/ containedin=ALL
+				]],
+					vim.pesc(due_date)
+				))
+			else
+				-- Future - gray
+				vim.cmd(string.format(
+					[[
+					syntax match TodoDueDateFuture /\[Due: %s\]/ containedin=ALL
+				]],
+					vim.pesc(due_date)
+				))
+			end
+		end
+	end
+
+	-- Set up colors for due dates
+	vim.cmd([[
+		highlight TodoDueDatePastDue ctermfg=red guifg=#DC143C
+		highlight TodoDueDateToday ctermfg=green guifg=#228B22
+		highlight TodoDueDateFuture ctermfg=gray guifg=#767676
+	]])
+
 	return true
+end
+
+-- ========================================
+-- TODO MODAL DIALOG
+-- ========================================
+
+-- Show interactive todo creation modal
+function M.show_todo_modal(options)
+	-- Handle optional pre-populated data for edit mode
+	options = options or {}
+
+	-- Form state with optional pre-population
+	local form_data = {
+		description = options.description or "",
+		category = options.category or "Personal", --default
+		category_index = 3, -- Will be updated based on category
+		show_date = options.show_date or "",
+		due_date = options.due_date or "",
+		tags = options.tags or {},
+	}
+
+	-- Set correct category index for pre-populated data
+	local categories = { "Medicine", "OMS", "Personal" }
+	for i, cat in ipairs(categories) do
+		if cat == form_data.category then
+			form_data.category_index = i
+			break
+		end
+	end
+
+	-- Store edit mode data
+	local is_edit_mode = options.mode == "edit"
+	local original_line_number = options.line_number
+	local original_todo = options.original_todo
+
+	-- Create buffer for modal
+	local buf = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
+	vim.api.nvim_buf_set_option(buf, "filetype", "todomodal")
+
+	-- Window dimensions
+	local width = 50
+	local height = 8
+
+	-- Window options
+	local win_opts = {
+		relative = "editor",
+		width = width,
+		height = height,
+		col = (vim.o.columns - width) / 2,
+		row = (vim.o.lines - height) / 2,
+		anchor = "NW",
+		style = "minimal",
+		border = "single",
+		title = is_edit_mode and " Edit Todo " or " Add New Todo ",
+		title_pos = "center",
+		footer = " Press 's' to submit, 'q' to cancel ",
+		footer_pos = "center",
+	}
+
+	-- Create window FIRST so it's available to functions
+	local win = vim.api.nvim_open_win(buf, true, win_opts)
+
+	-- Function to render form content
+	local function render_form()
+		local lines = {}
+
+		-- Form fields with proper alignment (note space after colon)
+		table.insert(lines, " Description:  " .. form_data.description)
+		table.insert(lines, "")
+		table.insert(lines, " Category:    " .. form_data.category)
+		table.insert(lines, "")
+		table.insert(lines, " Show Date:   " .. (form_data.show_date ~= "" and form_data.show_date or "[Not Set]"))
+		table.insert(lines, "")
+		table.insert(lines, " Due Date:    " .. (form_data.due_date ~= "" and form_data.due_date or "[Not Set]"))
+
+		-- Update buffer content
+		vim.api.nvim_buf_set_option(buf, "modifiable", true)
+		vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+		vim.api.nvim_buf_set_option(buf, "modifiable", false)
+	end
+
+	-- Handle user input for all form interactions
+	local function handle_input()
+		-- [i] Edit Description inline
+		vim.keymap.set("n", "i", function()
+			-- Position cursor at end of description text and enter insert mode
+			local desc_len = #form_data.description
+			vim.api.nvim_buf_set_option(buf, "modifiable", true)
+			-- Use normal mode commands to position cursor at end of description
+			vim.cmd("normal! 0") -- Go to beginning of line
+			vim.cmd("normal! f:") -- Find the colon
+			vim.cmd("normal! 2l") -- Move 2 characters right (past the colon and spaces)
+			vim.cmd("normal! E") -- Move to end of current word (end of description)
+			vim.cmd("startinsert!") -- Enter insert mode at end
+		end, { buffer = buf, silent = true })
+
+		-- Handle insert mode exit to capture new description
+		vim.keymap.set("i", "<ESC>", function()
+			local line = vim.api.nvim_get_current_line()
+			-- Use flexible pattern to match any amount of spaces after colon
+			local desc = line:match(" Description:%s*(.*)") or ""
+			-- Remove trailing whitespace
+			desc = desc:gsub("%s+$", "")
+			form_data.description = desc
+			vim.api.nvim_buf_set_option(buf, "modifiable", false)
+			vim.cmd("stopinsert")
+			render_form()
+		end, { buffer = buf, silent = true })
+
+		-- [j/k] Navigate categories when on category line
+		vim.keymap.set("n", "j", function()
+			local cursor = vim.api.nvim_win_get_cursor(win)
+			if cursor[1] == 3 then -- On category line
+				form_data.category_index = (form_data.category_index % #M.config.categories) + 1
+				form_data.category = M.config.categories[form_data.category_index]
+				render_form()
+			else
+				-- Normal j movement
+				vim.cmd("normal! j")
+			end
+		end, { buffer = buf, silent = true })
+
+		vim.keymap.set("n", "k", function()
+			local cursor = vim.api.nvim_win_get_cursor(win)
+			if cursor[1] == 3 then -- On category line
+				form_data.category_index = form_data.category_index - 1
+				if form_data.category_index < 1 then
+					form_data.category_index = #M.config.categories
+				end
+				form_data.category = M.config.categories[form_data.category_index]
+				render_form()
+			else
+				-- Normal k movement
+				vim.cmd("normal! k")
+			end
+		end, { buffer = buf, silent = true })
+
+		-- [Enter] Context-sensitive action
+		vim.keymap.set("n", "<CR>", function()
+			local cursor = vim.api.nvim_win_get_cursor(win)
+			local current_line = cursor[1]
+
+			-- Check which field we're on
+			if current_line == 5 then -- Show Date line
+				M.get_date_input(function(picked_date)
+					if picked_date then
+						form_data.show_date = picked_date
+						render_form()
+					end
+				end)
+			elseif current_line == 7 then -- Due Date line
+				M.get_date_input(function(picked_date)
+					if picked_date then
+						form_data.due_date = picked_date
+						render_form()
+					end
+				end)
+			else -- Submit form
+				if form_data.description == "" then
+					print("Error: Description is required")
+					return
+				end
+
+				-- Close modal first
+				vim.api.nvim_win_close(win, true)
+
+				if is_edit_mode then
+					-- Edit mode: Update existing todo
+					local updated_todo = {
+						completed = original_todo.completed,
+						description = form_data.description,
+						category = form_data.category,
+						tags = form_data.tags,
+						due_date = form_data.due_date,
+						show_date = form_data.show_date,
+						added_date = original_todo.added_date,
+						completion_date = original_todo.completion_date,
+					}
+
+					-- Format the new line
+					local context = "storage" -- Default context for file storage
+					local new_line = M.format_todo_line(updated_todo, context)
+
+					-- Make buffer temporarily modifiable if needed
+					local current_buf = vim.api.nvim_get_current_buf()
+					local was_modifiable = vim.api.nvim_buf_get_option(current_buf, "modifiable")
+					if not was_modifiable then
+						vim.api.nvim_buf_set_option(current_buf, "modifiable", true)
+						vim.api.nvim_buf_set_option(current_buf, "readonly", false)
+					end
+
+					-- Update the line in the current buffer
+					vim.api.nvim_buf_set_lines(0, original_line_number - 1, original_line_number, false, { new_line })
+
+					-- Restore original modifiable state
+					if not was_modifiable then
+						vim.api.nvim_buf_set_option(current_buf, "modifiable", false)
+						vim.api.nvim_buf_set_option(current_buf, "readonly", true)
+					end
+
+					-- Update the file if we're in a todo file
+					local current_file = vim.api.nvim_buf_get_name(0)
+					local active_file_path = M.config.todo_dir .. "/" .. M.config.active_file
+					local completed_file_path = M.config.todo_dir .. "/" .. M.config.completed_file
+
+					if current_file == active_file_path or current_file == completed_file_path then
+						-- Save the file
+						vim.cmd("write")
+					end
+
+					-- Refresh filtered view if open
+					M.refresh_filtered_view_if_open()
+
+					print("✓ Todo updated: " .. form_data.description)
+				else
+					-- Add mode: Create new todo
+					local success = M.add_todo(
+						form_data.description,
+						form_data.category,
+						form_data.tags,
+						form_data.due_date,
+						form_data.show_date
+					)
+
+					if success then
+						print("✓ Todo added: " .. form_data.description)
+					else
+						print("✗ Failed to add todo")
+					end
+				end
+			end
+		end, { buffer = buf, silent = true })
+
+		-- [ESC/q] Cancel
+		vim.keymap.set("n", "<ESC>", function()
+			vim.api.nvim_win_close(win, true)
+			print("Todo creation cancelled")
+		end, { buffer = buf, silent = true })
+
+		vim.keymap.set("n", "q", function()
+			vim.api.nvim_win_close(win, true)
+			print("Todo creation cancelled")
+		end, { buffer = buf, silent = true })
+
+		-- [s] Submit form from anywhere
+		vim.keymap.set("n", "s", function()
+			if form_data.description == "" then
+				print("Error: Description is required")
+				return
+			end
+
+			-- Close modal first
+			vim.api.nvim_win_close(win, true)
+
+			if is_edit_mode then
+				-- Edit mode: Update existing todo
+				local updated_todo = {
+					completed = original_todo.completed,
+					description = form_data.description,
+					category = form_data.category,
+					tags = form_data.tags,
+					due_date = form_data.due_date,
+					show_date = form_data.show_date,
+					added_date = original_todo.added_date,
+					completion_date = original_todo.completion_date,
+				}
+
+				-- Format the new line
+				local context = "storage" -- Default context for file storage
+				local new_line = M.format_todo_line(updated_todo, context)
+
+				-- Update the actual todo file directly instead of trying to modify buffer
+				-- Find and update the todo in the file
+				local all_todos = M.get_all_todos_from_active_file()
+				local found = false
+				for i, file_todo in ipairs(all_todos) do
+					if
+						file_todo.description == original_todo.description
+						and file_todo.category == original_todo.category
+						and file_todo.added_date == original_todo.added_date
+					then
+						-- Update this todo
+						all_todos[i] = updated_todo
+						found = true
+						break
+					end
+				end
+
+				if found then
+					-- Write the updated todos back to the file
+					local active_header = "# Active Todos (Raw)\n\nManaged by Vinod's Todo Manager"
+					M.write_todos_to_file(M.config.active_file, all_todos, active_header, "storage")
+
+					-- Refresh filtered view if open (this will regenerate the view from the updated file)
+					M.refresh_filtered_view_if_open()
+				else
+					print("⚠ Could not find todo to update in file")
+				end
+
+				print("✓ Todo updated: " .. form_data.description)
+			else
+				-- Add mode: Create new todo
+				local success = M.add_todo(
+					form_data.description,
+					form_data.category,
+					form_data.tags,
+					form_data.due_date,
+					form_data.show_date
+				)
+
+				if success then
+					print("✓ Todo added: " .. form_data.description)
+				else
+					print("✗ Failed to add todo")
+				end
+			end
+		end, { buffer = buf, silent = true })
+
+		-- [Tab] Navigate between fields
+		vim.keymap.set("n", "<Tab>", function()
+			local cursor = vim.api.nvim_win_get_cursor(win)
+			local current_line = cursor[1]
+
+			-- Navigate to next field's text entry position
+			if current_line <= 1 then -- Description area
+				vim.api.nvim_win_set_cursor(win, { 3, 14 }) -- Category text position
+			elseif current_line <= 3 then -- Category area
+				vim.api.nvim_win_set_cursor(win, { 5, 14 }) -- Show Date text position
+			elseif current_line <= 5 then -- Show Date area
+				vim.api.nvim_win_set_cursor(win, { 7, 14 }) -- Due Date text position
+			else -- Due Date or below
+				local desc_len = #form_data.description
+				vim.api.nvim_win_set_cursor(win, { 1, 15 + desc_len }) -- Back to Description end
+			end
+		end, { buffer = buf, silent = true })
+	end
+
+	-- Setup input handlers and render initial form
+	handle_input()
+	render_form()
+
+	-- For edit mode, position cursor at end of description for immediate editing
+	if is_edit_mode and form_data.description ~= "" then
+		vim.schedule(function()
+			vim.cmd("normal! 0") -- Go to beginning of line
+			vim.cmd("normal! f:") -- Find the colon
+			vim.cmd("normal! 2l") -- Move 2 characters right (past the colon and spaces)
+			vim.cmd("normal! E") -- Move to end of current word (end of description)
+		end)
+	end
 end
 
 -- ========================================
@@ -718,7 +2004,7 @@ vim.api.nvim_create_user_command("TestDatePicker", function()
 		on_cancel = function()
 			print("❌ Date selection cancelled")
 		end,
-		cancel_message = "No date selected"
+		cancel_message = "No date selected",
 	})
 end, { desc = "Test basic date picker utility" })
 
@@ -729,21 +2015,25 @@ vim.api.nvim_create_user_command("TestDatePickerFallback", function()
 			print("✅ Using date: " .. date)
 		end,
 		fallback_date = "today",
-		auto_fallback = true
+		auto_fallback = true,
 	})
 end, { desc = "Test date picker with auto-fallback" })
 
 vim.api.nvim_create_user_command("TestCreateTodo", function()
 	print("Testing todo creation with date picker...")
-	M.create_todo_with_date({
-		description = "Test todo from Phase 2",
-		category = "Personal",
-		tags = {"test"},
-		due_date = "",
-		show_date = ""
-	}, "due_date", function(success)
-		print("Todo creation " .. (success and "succeeded" or "failed"))
-	end)
+	M.create_todo_with_date(
+		{
+			description = "Test todo from Phase 2",
+			category = "Personal",
+			tags = { "test" },
+			due_date = "",
+			show_date = "",
+		},
+		"due_date",
+		function(success)
+			print("Todo creation " .. (success and "succeeded" or "failed"))
+		end
+	)
 end, { desc = "Test todo creation with date picker" })
 
 -- ========================================
@@ -764,11 +2054,11 @@ M._continuation_state = {
 -- Parse continuation input and return command type and validity
 local function parse_continuation_input(input, expected_command)
 	input = input or ""
-	
+
 	if input == "" then
 		return "finish", true
 	elseif input:match("/" .. expected_command) then
-		return expected_command, true  
+		return expected_command, true
 	else
 		return "invalid", false
 	end
@@ -779,7 +2069,7 @@ local function is_show_date_reached(show_date)
 	if not show_date or show_date == "" then
 		return true
 	end
-	
+
 	-- Simple date comparison (stub implementation)
 	local current_date = os.date("%Y-%m-%d")
 	return show_date <= current_date
@@ -789,14 +2079,27 @@ end
 local function format_todo_success_message(state)
 	local is_scheduled = not is_show_date_reached(state.show_date)
 	local has_both_dates = state.show_date ~= "" and state.due_date ~= "" and state.show_date ~= state.due_date
-	
+
 	if is_scheduled and has_both_dates then
-		return "✓ " .. state.category .. " todo scheduled: " .. state.description 
-			.. " [Show: " .. state.show_date .. "] [Due: " .. state.due_date .. "]"
+		return "✓ "
+			.. state.category
+			.. " todo scheduled: "
+			.. state.description
+			.. " [Show: "
+			.. state.show_date
+			.. "] [Due: "
+			.. state.due_date
+			.. "]"
 	elseif state.due_date and state.due_date ~= "" then
 		local show_display = has_both_dates and " [Show: " .. state.show_date .. "]" or ""
-		return "✓ " .. state.category .. " todo added: " .. state.description 
-			.. show_display .. " [Due: " .. state.due_date .. "]"
+		return "✓ "
+			.. state.category
+			.. " todo added: "
+			.. state.description
+			.. show_display
+			.. " [Due: "
+			.. state.due_date
+			.. "]"
 	else
 		return "✓ " .. state.category .. " todo added: " .. state.description
 	end
@@ -805,16 +2108,16 @@ end
 -- Unified continuation workflow processor
 function M.process_continuation_workflow(input, context)
 	local state = M._continuation_state
-	
+
 	if not state.active then
 		return
 	end
-	
+
 	-- Reset state
 	M._continuation_state.active = false
-	
+
 	local command_type, is_valid = parse_continuation_input(input, context.expected_command)
-	
+
 	if command_type == "finish" then
 		-- User pressed Enter, add todo with current dates
 		local success = M.add_todo(state.description, state.category, state.tags, state.due_date, state.show_date)
@@ -823,7 +2126,6 @@ function M.process_continuation_workflow(input, context)
 		else
 			print("✗ Failed to add todo")
 		end
-		
 	elseif command_type == context.expected_command then
 		-- User wants to add additional date, get date input
 		M.get_date_input(function(picked_date)
@@ -832,7 +2134,7 @@ function M.process_continuation_workflow(input, context)
 			else
 				print("No " .. context.expected_command .. " date selected, keeping current dates")
 			end
-			
+
 			-- Add todo with final dates
 			local success = M.add_todo(state.description, state.category, state.tags, state.due_date, state.show_date)
 			if success then
@@ -841,10 +2143,15 @@ function M.process_continuation_workflow(input, context)
 				print("✗ Failed to add todo")
 			end
 		end)
-		
 	else
 		-- Invalid input, cancel
-		print("Todo cancelled. Use /" .. context.expected_command .. " to add " .. context.expected_command .. " date or press Enter to finish.")
+		print(
+			"Todo cancelled. Use /"
+				.. context.expected_command
+				.. " to add "
+				.. context.expected_command
+				.. " date or press Enter to finish."
+		)
 	end
 end
 
@@ -852,15 +2159,15 @@ end
 function M.process_continuation(input)
 	M.process_continuation_workflow(input, {
 		expected_command = "show",
-		date_field = "show_date"
+		date_field = "show_date",
 	})
 end
 
--- Process continuation input after show date selection  
+-- Process continuation input after show date selection
 function M.process_show_continuation(input)
 	M.process_continuation_workflow(input, {
-		expected_command = "due", 
-		date_field = "due_date"
+		expected_command = "due",
+		date_field = "due_date",
 	})
 end
 
@@ -878,7 +2185,7 @@ vim.api.nvim_create_user_command("TestContinuationDue", function()
 		due_date = "2025-09-15",
 		show_date = "2025-09-15",
 	}
-	
+
 	print("Testing due continuation workflow. Enter '/show' for show date or Enter to finish:")
 	local input = vim.fn.input("Continuation: ")
 	M.process_continuation(input)
@@ -894,10 +2201,78 @@ vim.api.nvim_create_user_command("TestContinuationShow", function()
 		due_date = "2025-09-20",
 		show_date = "2025-09-10",
 	}
-	
+
 	print("Testing show continuation workflow. Enter '/due' for due date or Enter to finish:")
 	local input = vim.fn.input("Continuation: ")
 	M.process_show_continuation(input)
 end, { desc = "Test Phase 3 show continuation workflow" })
+
+-- ========================================
+-- TODO EDITING FUNCTIONALITY
+-- ========================================
+
+-- Get todo data from current cursor line
+function M.get_current_todo()
+	local line = vim.api.nvim_get_current_line()
+	local line_num = vim.api.nvim_win_get_cursor(0)[1]
+
+	local todo = M.parse_todo_line(line)
+	if not todo then
+		return nil
+	end
+
+	-- Check if we're in a filtered view (where show dates might be hidden)
+	local buf_name = vim.api.nvim_buf_get_name(0)
+	if buf_name:match("Active Todos %(Filtered View%)") or buf_name:match("todos") then
+		-- We're in a filtered view, need to get the full todo data from the actual file
+		-- Match this todo against the full todo list to get complete data
+		local all_todos = M.get_all_todos_from_active_file()
+		for i, full_todo in ipairs(all_todos) do
+			if full_todo.description == todo.description and full_todo.category == todo.category then
+				-- Found matching todo, use the full data
+				full_todo.line_number = line_num
+				return full_todo
+			end
+		end
+
+		-- If not found in active, check completed todos
+		local completed_todos = M.get_completed_todos()
+		for _, full_todo in ipairs(completed_todos) do
+			if full_todo.description == todo.description and full_todo.category == todo.category then
+				full_todo.line_number = line_num
+				return full_todo
+			end
+		end
+	end
+
+	-- Add line number for reference
+	todo.line_number = line_num
+	return todo
+end
+
+-- Edit todo modal - reuses existing show_todo_modal with pre-populated data
+function M.edit_todo_modal()
+	local current_todo = M.get_current_todo()
+	if not current_todo then
+		print("Current line is not a todo item")
+		return
+	end
+
+	-- Store the line number and original todo for updating
+	local original_line_number = current_todo.line_number
+	local original_todo = vim.deepcopy(current_todo)
+
+	-- Call existing modal with pre-populated data and edit mode
+	M.show_todo_modal({
+		mode = "edit",
+		line_number = original_line_number,
+		original_todo = original_todo,
+		description = current_todo.description or "",
+		category = current_todo.category or "Personal",
+		show_date = current_todo.show_date or "",
+		due_date = current_todo.due_date or "",
+		tags = current_todo.tags or {},
+	})
+end
 
 return M

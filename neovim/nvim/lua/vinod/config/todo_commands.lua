@@ -29,6 +29,8 @@ local function parse_add_todo_args(args)
 
   -- Check for /show and /due with optional keywords
   -- Pattern: /show [keyword] or /due [keyword]
+  -- Process both /show and /due independently
+  
   -- First check for /show with keywords
   local show_match = args:match("%s*/show%s+([^/|]+)")
   if show_match then
@@ -39,37 +41,9 @@ local function parse_add_todo_args(args)
       -- Remove the /show keyword from args
       args = args:gsub("%s*/show%s+[^/|]+", "")
     else
-      -- Provide specific error feedback
-      local number_str, unit_str = keyword:match("^(%w+)%s+(%w+)$")
-      if number_str and unit_str then
-        local number_words = {
-          one = 1,
-          two = 2,
-          three = 3,
-          four = 4,
-          five = 5,
-          six = 6,
-          seven = 7,
-          eight = 8,
-          nine = 9,
-          ten = 10,
-          eleven = 11,
-          twelve = 12,
-        }
-        local amount = tonumber(number_str) or number_words[string.lower(number_str)]
-        if not amount then
-          print("Error: Invalid number '" .. number_str .. "'. Use 1-12 or one-twelve")
-        elseif amount < 1 or amount > 12 then
-          print("Error: Number out of range '" .. amount .. "'. Use 1-12 only")
-        else
-          print("Error: Invalid time unit '" .. unit_str .. "'. Use days/weeks/months/years")
-        end
-      else
-        print("Error: Unrecognized date shortcut '" .. keyword .. "'")
-        print("Available patterns: [1-12 or one-twelve] [days/weeks/months/years]")
-        print("Special shortcuts: today, tomorrow, next week, this weekend")
-        print("Examples: 5 days, two weeks, 1 month, twelve years")
-      end
+      print("Error: Unrecognized show date shortcut '" .. keyword .. "'")
+      print("Available patterns: [1-12 or one-twelve] [days/weeks/months/years]")
+      print("Special shortcuts: today, tomorrow, next week, this weekend")
       return "", "", {}, "", "", false, false
     end
   elseif args:match("%s*/show%s*$") or args:match("%s*/show%s*[|]") then
@@ -78,7 +52,7 @@ local function parse_add_todo_args(args)
     args = args:gsub("%s*/show%s*", "") -- Remove /show flag
   end
 
-  -- Check for /due with keywords
+  -- Then check for /due with keywords
   local due_match = args:match("%s*/due%s+([^/|]+)")
   if due_match then
     local keyword = vim.trim(due_match)
@@ -88,37 +62,9 @@ local function parse_add_todo_args(args)
       -- Remove the /due keyword from args
       args = args:gsub("%s*/due%s+[^/|]+", "")
     else
-      -- Provide specific error feedback
-      local number_str, unit_str = keyword:match("^(%w+)%s+(%w+)$")
-      if number_str and unit_str then
-        local number_words = {
-          one = 1,
-          two = 2,
-          three = 3,
-          four = 4,
-          five = 5,
-          six = 6,
-          seven = 7,
-          eight = 8,
-          nine = 9,
-          ten = 10,
-          eleven = 11,
-          twelve = 12,
-        }
-        local amount = tonumber(number_str) or number_words[string.lower(number_str)]
-        if not amount then
-          print("Error: Invalid number '" .. number_str .. "'. Use 1-12 or one-twelve")
-        elseif amount < 1 or amount > 12 then
-          print("Error: Number out of range '" .. amount .. "'. Use 1-12 only")
-        else
-          print("Error: Invalid time unit '" .. unit_str .. "'. Use days/weeks/months/years")
-        end
-      else
-        print("Error: Unrecognized date shortcut '" .. keyword .. "'")
-        print("Available patterns: [1-12 or one-twelve] [days/weeks/months/years]")
-        print("Special shortcuts: today, tomorrow, next week, this weekend")
-        print("Examples: 5 days, two weeks, 1 month, twelve years")
-      end
+      print("Error: Unrecognized due date shortcut '" .. keyword .. "'")
+      print("Available patterns: [1-12 or one-twelve] [days/weeks/months/years]") 
+      print("Special shortcuts: today, tomorrow, next week, this weekend")
       return "", "", {}, "", "", false, false
     end
   elseif args:match("%s*/due%s*$") or args:match("%s*/due%s*[|]") then
@@ -226,60 +172,134 @@ vim.api.nvim_create_user_command("TodoAdd", function(opts)
     return
   end
 
-  -- Handle calendar pickers for show and due dates
-  if use_show_calendar or use_due_calendar then
-    -- Define all functions first to avoid forward reference issues
-    local function add_todo_with_dates()
-      local success = todo_manager.add_todo(description, category, tags, due_date, show_date)
-      if success then
-        local cat_display = category and category ~= "" and category or "Personal"
-        local show_display = show_date and show_date ~= "" and " [Show: " .. show_date .. "]" or ""
-        local due_display = due_date and due_date ~= "" and " [Due: " .. due_date .. "]" or ""
-        print("✓ Todo added: " .. description .. " (" .. cat_display .. ")" .. show_display .. due_display)
-      else
-        print("✗ Failed to add todo")
-      end
-    end
+  -- Always default to Personal category for TodoAdd command
+  if not category or category == "" then
+    category = "Personal"
+  end
 
-    local function handle_due_date_picker()
-      if use_due_calendar then
-        todo_manager.get_date_input(function(picked_due_date)
-          if picked_due_date then
-            due_date = picked_due_date
+  -- Apply date logic rules:
+  -- 1. If /show is used without /due, set both to show value  
+  -- 2. If /due is used without /show, keep command line active for continuation
+  if show_date ~= "" and due_date == "" and not use_due_calendar then
+    -- Show date provided without due date - set both to same value
+    due_date = show_date
+  elseif (due_date ~= "" or use_due_calendar) and show_date == "" and not use_show_calendar then
+    -- Due date specified but no show date required
+    if use_due_calendar then
+      -- /due without keyword - show calendar picker first, then continuation
+      todo_manager.get_date_input(function(picked_due_date)
+        if picked_due_date then
+          due_date = picked_due_date
+        else
+          due_date = os.date("%m-%d-%Y") -- fallback to today
+        end
+        
+        -- Now that we have due date, prompt for show date
+        vim.ui.input({ 
+          prompt = ":TodoAdd " .. description .. " [Due: " .. due_date .. "] ",
+          default = "/show "
+        }, function(input)
+          if input and input:match("/show") then
+            -- Parse the /show part
+            local show_match = input:match("/show%s+([^/|]+)")
+            if show_match then
+              local keyword = vim.trim(show_match)
+              local resolved_date = todo_manager.resolve_date_shortcut(keyword)
+              if resolved_date then
+                show_date = resolved_date
+              else
+                show_date = os.date("%m-%d-%Y") -- fallback to today
+              end
+            else
+              -- Just /show without keyword - use calendar picker
+              todo_manager.get_date_input(function(picked_show_date)
+                if picked_show_date then
+                  show_date = picked_show_date
+                else
+                  show_date = os.date("%m-%d-%Y")
+                end
+                -- Add todo with both dates
+                local success = todo_manager.add_todo(description, category, tags, due_date, show_date)
+                if success then
+                  print("✓ Todo added: " .. description .. " (Personal) [Show: " .. show_date .. "] [Due: " .. due_date .. "]")
+                end
+              end)
+              return
+            end
           else
-            due_date = os.date("%m-%d-%Y") -- Today's date in mm-dd-yyyy format
-            print("No due date selected, using today's date: " .. due_date)
+            print("Todo cancelled. Use /show to set show date.")
+            return
           end
-
-          -- Now add the todo with both dates
-          add_todo_with_dates()
+          
+          -- Add todo with both dates
+          local success = todo_manager.add_todo(description, category, tags, due_date, show_date)
+          if success then
+            print("✓ Todo added: " .. description .. " (Personal) [Show: " .. show_date .. "] [Due: " .. due_date .. "]")
+          end
         end)
-      else
-        add_todo_with_dates()
-      end
-    end
-
-    local function handle_show_date_picker()
-      if use_show_calendar then
-        todo_manager.get_date_input(function(picked_show_date)
-          if picked_show_date then
-            show_date = picked_show_date
+      end)
+      return
+    else
+      -- /due with keyword - due_date already set, just prompt for show date
+      vim.ui.input({ 
+        prompt = ":TodoAdd " .. description .. " [Due: " .. due_date .. "] ",
+        default = "/show "
+      }, function(input)
+        if input and input:match("/show") then
+          -- Parse the /show part
+          local show_match = input:match("/show%s+([^/|]+)")
+          if show_match then
+            local keyword = vim.trim(show_match)
+            local resolved_date = todo_manager.resolve_date_shortcut(keyword)
+            if resolved_date then
+              show_date = resolved_date
+            else
+              show_date = os.date("%m-%d-%Y") -- fallback to today
+            end
           else
-            show_date = os.date("%m-%d-%Y") -- Today's date in mm-dd-yyyy format
-            print("No show date selected, using today's date: " .. show_date)
+            -- Just /show without keyword - use calendar picker
+            todo_manager.get_date_input(function(picked_show_date)
+              if picked_show_date then
+                show_date = picked_show_date
+              else
+                show_date = os.date("%m-%d-%Y")
+              end
+              -- Add todo with both dates
+              local success = todo_manager.add_todo(description, category, tags, due_date, show_date)
+              if success then
+                print("✓ Todo added: " .. description .. " (Personal) [Show: " .. show_date .. "] [Due: " .. due_date .. "]")
+              end
+            end)
+            return
           end
-
-          -- Now handle due date picker
-          handle_due_date_picker()
-        end)
-      else
-        handle_due_date_picker()
-      end
+        else
+          print("Todo cancelled. Use /show to set show date.")
+          return
+        end
+        
+        -- Add todo with both dates
+        local success = todo_manager.add_todo(description, category, tags, due_date, show_date)
+        if success then
+          print("✓ Todo added: " .. description .. " (Personal) [Show: " .. show_date .. "] [Due: " .. due_date .. "]")
+        end
+      end)
+      return
     end
+  end
 
-    -- Start the sequential picker process
-    handle_show_date_picker()
-  else
+  -- Handle command continuation workflow
+  local handled = todo_manager.handle_command_continuation(
+    description,
+    category,
+    tags,
+    due_date,
+    show_date,
+    use_show_calendar,
+    use_due_calendar,
+    ":TodoAdd"
+  )
+
+  if not handled then
     -- No calendar pickers, add todo directly
     local success = todo_manager.add_todo(description, category, tags, due_date, show_date)
     if success then
@@ -469,30 +489,9 @@ end, {
 })
 
 -- List all completed todos with optional category filtering
--- Usage: :TodoCompleted [category]
--- Shows historical view of completed tasks
-vim.api.nvim_create_user_command("TodoCompleted", function(opts)
-  local category = opts.args ~= "" and opts.args or nil
-  todo_manager.list_completed_todos(category)
-end, {
-  nargs = "?",
-  desc = "List completed todos, optionally filtered by category",
-})
-
--- Show comprehensive category view (both active and completed todos)
--- Usage: :TodoCategory <Medicine|OMS|Personal>
--- Displays both active and completed todos for the category with statistics
-vim.api.nvim_create_user_command("TodoCategory", function(opts)
-  local category = opts.args
-  if category == "" then
-    print("Usage: :TodoCategory <Medicine|OMS|Personal>")
-    return
-  end
-  todo_manager.list_todos_by_category(category)
-end, {
-  nargs = 1,
-  desc = "Show both active and completed todos for a specific category",
-})
+-- Removed TodoCompleted and TodoCategory commands - functionality not implemented
+-- Use <leader>tcc to open completed todos file directly
+-- Use <leader>tvm, <leader>tvo, <leader>tvp for category filtering in active view
 
 -- List all scheduled (future) todos
 -- Usage: :TodoScheduled
@@ -575,6 +574,14 @@ end, {
 })
 
 -- ===================
+-- Edit selected todo with pre-populated modal
+-- Usage: :TodoEditSelected
+vim.api.nvim_create_user_command("TodoEditSelected", function()
+  todo_manager.edit_todo_modal()
+end, {
+  desc = "Edit the todo on the current cursor line",
+})
+
 -- MAINTENANCE COMMANDS
 -- ===================
 
@@ -622,6 +629,7 @@ vim.api.nvim_create_user_command("TodoHelp", function()
       ["tt"] = "Toggle todo completion (works in filtered view & raw files)",
       ["<leader>tc"] = "Create zk note from todo",
       ["<leader>td"] = "Update due date with calendar picker",
+      ["<leader>te"] = "Edit todo with pre-populated modal",
     },
     ["View/Filter Keybindings (in todo files only)"] = {
       ["<leader>tvm"] = "Filter Medicine todos",
@@ -879,6 +887,15 @@ vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
       silent = true,
     })
 
+    -- Edit todo on current line
+    vim.keymap.set("n", "<leader>te", function()
+      todo_manager.edit_todo_modal()
+    end, {
+      buffer = true,
+      desc = "Edit todo on current line",
+      silent = true,
+    })
+
     -- Setup syntax highlighting for better visual appearance
     todo_manager.setup_todo_syntax()
 
@@ -984,39 +1001,9 @@ end, {
   desc = "Add a new category with custom icon",
 })
 
--- List all available categories with their icons
--- Usage: :TodoCategories
-vim.api.nvim_create_user_command("TodoCategories", function()
-  todo_manager.list_categories()
-end, {
-  desc = "List all available categories with their icons",
-})
-
--- Update icon for an existing category
--- Usage: :TodoUpdateIcon Medicine 💉
-vim.api.nvim_create_user_command("TodoUpdateIcon", function(opts)
-  local args = vim.split(opts.args, " ", { trimempty = true })
-  if #args < 2 then
-    print("Usage: :TodoUpdateIcon <category_name> <new_icon>")
-    print("Example: :TodoUpdateIcon Medicine 💉")
-    todo_manager.list_categories()
-    return
-  end
-
-  local category_name = args[1]
-  local new_icon = args[2]
-
-  local success = todo_manager.update_category_icon(category_name, new_icon)
-  if not success then
-    print("Failed to update category icon")
-  end
-end, {
-  nargs = "*",
-  complete = function()
-    return todo_manager.config.categories
-  end,
-  desc = "Update icon for an existing category",
-})
+-- Available categories with their icons:
+-- Medicine (💊), OMS (🛠️), Personal (🏡)
+-- Icons are hardcoded in M.config.category_icons
 
 -- Confirm successful loading of the todo system (silent load)
 
