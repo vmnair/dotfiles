@@ -356,3 +356,250 @@ All functionality verified working correctly:
 - ✅ **Well tested** - All reported issues verified resolved
 
 The todo system is now fully functional with all reported bugs resolved and no regressions introduced.
+
+## **NEW FEATURE: IN-PLACE CATEGORY FILTERING** 📋
+
+### **Feature Overview**
+In-place category filtering allows users to filter the current todo view by category without opening new scratch buffers. The filtered view integrates with TodoBuilder and provides both menu and command-line interfaces.
+
+### **Core Components**
+
+#### **1. Filter State Management**
+- Global filter state tracking current category (Medicine/OMS/Personal/Clear)  
+- Filter persistence across todo operations (add, complete, edit)
+- Integration with existing refresh mechanisms
+- Visual feedback in buffer names and headers
+
+#### **2. User Interfaces**
+- **Menu Interface**: `<leader>tf` - Interactive category selection menu
+- **Command Interface**: `:TodoFilter [Category]` with validation and error handling
+- **Visual Feedback**: Buffer name changes to show active filter status
+
+#### **3. Category Management System**
+- **Static Configuration**: Categories stored in `M.config.categories`
+- **Dynamic Updates**: New categories automatically available in filter system
+- **Validation**: Strict category validation with suggestions for typos
+- **Safe Removal**: Category deletion requires completing all active/scheduled todos
+
+### **Filter Commands**
+
+#### **`:TodoFilter` Command Variants**
+```bash
+:TodoFilter Medicine      # Apply Medicine category filter
+:TodoFilter Personal      # Apply Personal category filter  
+:TodoFilter OMS          # Apply OMS category filter
+:TodoFilter Clear        # Remove filter (show all todos)
+:TodoFilter              # Show current filter status or open menu
+:TodoFilter Work         # Apply custom category filter (if exists)
+:TodoFilter Invalid      # Error + suggestions for valid categories
+```
+
+#### **Error Handling & Suggestions**
+```bash
+:TodoFilter Medicin      # "Did you mean: Medicine?"
+:TodoFilter xyz          # "Category 'xyz' not found. Available: Medicine, OMS, Personal"
+```
+
+### **Menu Interface (`<leader>tf`)**
+Uses `vim.ui.select` for consistent interface with TodoBuilder:
+```
+Todo Category Filter:
+● Clear (23 todos)          ← Currently active (filled circle)
+○ Medicine 💊 (5)
+○ OMS 🛠️ (8)
+○ Personal 🏡 (10) 
+○ Work 💼 (0)              ← Empty but available
+```
+
+### **Visual Feedback System**
+
+#### **Buffer Names**
+- **No Filter**: "Active Todos (Filtered View)"
+- **With Filter**: "Active Todos - Medicine Filter"  
+- **Empty Filter**: "Active Todos - Medicine Filter (No todos found)"
+
+#### **Buffer Headers**
+- **Filtered**: "Showing 5 Medicine todos (18 others hidden)"
+- **Empty**: "No todos found in Medicine category - Use :TodoFilter Clear to show all"
+
+### **TodoBuilder Integration**
+
+#### **Category Pre-selection**
+- **Filter Active**: TodoBuilder (`<leader>tb`) defaults to filtered category
+- **No Filter**: TodoBuilder defaults to "Personal" as usual  
+- **User Override**: User can still change category in TodoBuilder if needed
+
+#### **Workflow Example**
+```bash
+:TodoFilter Medicine     # Apply Medicine filter
+<leader>tb              # TodoBuilder opens with Medicine pre-selected
+# User creates Medicine todo → appears immediately in filtered view
+```
+
+### **Category Management Workflows**
+
+#### **Adding New Categories**
+```bash
+:TodoAddCategory Work 💼
+# → Updates M.config.categories = { "Medicine", "OMS", "Personal", "Work" }
+# → :TodoFilter Work becomes valid command
+# → <leader>tf menu shows Work option  
+# → TodoBuilder includes Work in category selection
+```
+
+#### **Category Removal Workflow**  
+```bash
+:TodoRemoveCategory Work
+# Step 1: Check for active/scheduled todos
+# → If active/scheduled exist: "Cannot remove 'Work'. Complete 3 active, 2 scheduled todos first."
+# → If none exist: Proceed with removal
+
+# Step 2: Handle active filter  
+# → If Work filter active + no remaining todos: Auto-clear filter, show all
+# → If Work filter active + todos remain: Show error, require manual clear
+
+# Step 3: Preserve completed todos
+# → Completed Work todos remain in completed file with Work category
+# → Historical data preserved
+```
+
+### **Empty Category Handling**
+- **Stay Filtered**: Don't auto-clear when category becomes empty
+- **Clear Message**: "No todos found in [Category] - Use :TodoFilter Clear or <leader>tf to change"  
+- **User Decision**: Let user manually change or clear filter
+
+### **Technical Implementation**
+
+#### **New Functions Added**
+```lua
+-- Filter State Management
+M.current_filter = nil                    -- Global filter state
+M.set_category_filter(category)           -- Apply in-place filter
+M.clear_category_filter()                 -- Remove filter
+M.get_current_filter()                    -- Get active filter state
+
+-- Category Management  
+M.validate_category(name)                 -- Check + suggestions
+M.update_static_categories(new_category)  -- Add to config
+M.remove_category_with_checks(category)   -- Safe removal with validation
+
+-- In-Place Filtering
+M.apply_category_filter_to_current_view() -- Update current buffer
+M.refresh_filtered_view_with_state()      -- Maintain filter during refresh
+M.get_category_todo_counts()              -- For menu display
+
+-- Menu System
+M.show_category_filter_menu()             -- Interactive category selection
+```
+
+#### **Integration Points**
+- **Existing Filters**: Replace `<leader>tvm`, `<leader>tvo`, `<leader>tvp` with in-place filtering
+- **Auto-refresh**: Maintain filter state during todo operations
+- **TodoBuilder**: Pre-select filtered category when modal opens
+- **Buffer Management**: Update buffer names and headers dynamically
+
+### **Error Handling & Edge Cases**
+
+#### **Category Validation**
+- Invalid category names with fuzzy matching suggestions
+- Case-insensitive matching with proper case correction
+- Fallback to filter menu for invalid inputs
+
+#### **Filter State Management**  
+- Filter persistence across todo operations (add/complete/edit)
+- Multiple buffer handling (each buffer maintains its own filter state)
+- Memory cleanup when buffers are closed
+
+#### **Category Lifecycle**
+- Safe category addition with conflict detection
+- Protected category removal with active todo checks  
+- Graceful handling of filter state during category operations
+
+### **Testing Scenarios**
+
+#### **Basic Filtering**
+- Apply category filters via command and menu
+- Clear filters and verify all todos shown
+- Visual feedback verification (buffer names, headers)
+
+#### **TodoBuilder Integration**
+- Filter active → TodoBuilder pre-selects category
+- Create todo → appears in filtered view immediately
+- Change category in TodoBuilder → works normally
+
+#### **Category Management**
+- Add new category → appears in filter menu and commands
+- Remove category with active todos → proper error handling
+- Remove empty category → graceful filter clearing
+
+#### **Edge Cases**
+- Invalid category names with suggestion testing
+- Empty category filtering behavior
+- Multiple buffer filter state independence
+- Filter persistence across operations
+
+### **Implementation Status: COMPLETED** ✅
+
+**All Core Features Working:**
+- ✅ **TodoFilter Command**: All variants working (Medicine/OMS/Personal/Clear/Invalid)
+- ✅ **Filter Menu**: `<leader>tf` with vim.ui.select interface 
+- ✅ **TodoBuilder Integration**: Pre-selects filtered category automatically
+- ✅ **Category Management**: Add/Remove with safety checks
+- ✅ **Validation System**: Typo detection and suggestions
+- ✅ **Dynamic Categories**: New categories immediately available in all systems
+
+**Testing Results:**
+```bash
+# All commands tested and working
+:TodoFilter Medicine        # ✓ Filter applied: Medicine
+:TodoFilter Clear          # ✓ Filter cleared - showing all todos  
+:TodoFilter Invalid        # ✓ Error with suggestions
+:TodoFilter Medicin        # ✓ "Did you mean: Medicine?"
+:TodoAddCategory Work 💼   # ✓ Category added and available in filter
+:TodoRemoveCategory Work   # ✓ Safety checks working correctly
+<leader>tf                 # ✓ vim.ui.select menu with counts and icons
+<leader>tb                 # ✅ Pre-selects filtered category
+```
+
+### **Key Implementation Details**
+
+#### **Filter State Management** (todo_manager.lua:994-1238)
+- `M.current_filter` - Global state variable (nil = show all)
+- `M.set_category_filter(category)` - Apply filter with view refresh
+- `M.clear_category_filter()` - Remove filter and refresh
+- `M.get_current_filter()` - Get active filter state
+
+#### **Category Validation** (todo_manager.lua:1022-1056)
+- Exact match with case-insensitive search
+- Fuzzy matching for suggestions ("Medicin" → "Medicine?")
+- Available categories listing on invalid input
+- Fallback to filter menu for correction
+
+#### **TodoBuilder Integration** (todo_manager.lua:1880-1883)
+```lua
+-- Pre-select filtered category or default to Personal
+local default_category = M.current_filter or "Personal"
+local form_data = {
+  category = options.category or default_category,
+  -- ... other fields
+}
+```
+
+#### **Menu Interface** (todo_commands.lua:1052-1102)
+- Uses `vim.ui.select` for consistency with TodoBuilder
+- Shows active filter with filled circles (●/○)
+- Displays category icons and todo counts
+- Clean cancellation handling
+
+#### **Commands Added**
+- `:TodoFilter [Category|Clear]` - Apply/clear filters with validation
+- `:TodoRemoveCategory <name>` - Safe category removal with checks
+- `<leader>tf` - Interactive filter menu
+
+### **Benefits**
+- **Intuitive Workflow**: No context switching between scratch buffers
+- **Smart Integration**: TodoBuilder automatically respects filtering context  
+- **Comprehensive Interface**: Both menu and command-line access with consistent vim.ui.select
+- **Safe Operations**: Protected category management with validation
+- **Visual Clarity**: Clear feedback on filter state and todo counts
+- **Dynamic System**: Categories added/removed propagate to all features instantly

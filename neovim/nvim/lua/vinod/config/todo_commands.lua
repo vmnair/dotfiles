@@ -948,6 +948,11 @@ vim.keymap.set("n", "<leader>tb", ":TodoBuild<CR>", { desc = "Interactive todo b
 -- Show todo help
 vim.keymap.set("n", "<leader>th", ":TodoHelp<CR>", { desc = "Show todo help" })
 
+-- Category filter menu
+vim.keymap.set("n", "<leader>tf", function()
+  todo_manager.show_category_filter_menu()
+end, { desc = "Show category filter menu" })
+
 -- Additional file access keybindings - these need supporting commands
 vim.keymap.set("n", "<leader>tr", ":TodoOpenRaw<CR>", { desc = "Open raw todos file (with scheduled)" })
 
@@ -999,6 +1004,121 @@ vim.api.nvim_create_user_command("TodoAddCategory", function(opts)
 end, {
   nargs = "*",
   desc = "Add a new category with custom icon",
+})
+
+-- ===============================
+-- CATEGORY FILTERING SYSTEM
+-- ===============================
+
+-- TodoFilter command for in-place category filtering
+vim.api.nvim_create_user_command("TodoFilter", function(opts)
+  local args = opts.args
+  
+  if args == "" then
+    -- No args - show current filter status or open menu
+    local current_filter = todo_manager.get_current_filter()
+    if current_filter then
+      print("Current filter: " .. current_filter)
+      print("Use :TodoFilter Clear to show all todos")
+    else
+      print("No filter active - showing all todos")
+      print("Use :TodoFilter [Category] or <leader>tf for menu")
+    end
+    return
+  end
+  
+  -- Handle "Clear" command
+  if args:lower() == "clear" then
+    todo_manager.clear_category_filter()
+    print("✓ Filter cleared - showing all todos")
+    return
+  end
+  
+  -- Validate category
+  local valid, result = todo_manager.validate_category(args)
+  if valid then
+    todo_manager.set_category_filter(result)
+    print("✓ Filter applied: " .. result)
+  else
+    print("✗ " .. result)
+    -- Optionally show menu for correction
+    print("Use <leader>tf to select from available categories")
+  end
+end, {
+  nargs = "?",
+  desc = "Filter todos by category (use Clear to show all)",
+})
+
+-- Category filter menu interface using vim.ui.select
+function todo_manager.show_category_filter_menu()
+  local counts = todo_manager.get_category_todo_counts()
+  local current_filter = todo_manager.get_current_filter()
+  
+  -- Create menu options
+  local options = {}
+  local display_options = {}
+  
+  -- Add "Clear" option first
+  local clear_marker = current_filter == nil and "● " or "○ "
+  local clear_display = clear_marker .. "Clear (" .. counts["Clear"] .. " todos)"
+  table.insert(options, "Clear")
+  table.insert(display_options, clear_display)
+  
+  -- Add category options
+  for _, category in ipairs(todo_manager.config.categories) do
+    local marker = current_filter == category and "● " or "○ "
+    local count = counts[category] or 0
+    local icon = todo_manager.config.category_icons[category] or "📝"
+    local display = marker .. category .. " " .. icon .. " (" .. count .. ")"
+    table.insert(options, category)
+    table.insert(display_options, display)
+  end
+  
+  -- Use vim.ui.select for consistent interface
+  vim.ui.select(options, {
+    prompt = "Todo Category Filter:",
+    format_item = function(item)
+      -- Find the index of this item to get the display version
+      for i, option in ipairs(options) do
+        if option == item then
+          return display_options[i]
+        end
+      end
+      return item
+    end,
+  }, function(selected)
+    if not selected then
+      return -- User cancelled
+    end
+    
+    if selected == "Clear" then
+      todo_manager.clear_category_filter()
+      print("✓ Filter cleared - showing all todos")
+    else
+      todo_manager.set_category_filter(selected)
+      print("✓ Filter applied: " .. selected)
+    end
+  end)
+end
+
+-- Add TodoRemoveCategory command
+vim.api.nvim_create_user_command("TodoRemoveCategory", function(opts)
+  local args = opts.args
+  if args == "" then
+    print("Usage: :TodoRemoveCategory <category_name>")
+    print("Available categories: " .. table.concat(todo_manager.config.categories, ", "))
+    return
+  end
+  
+  local success, message = todo_manager.remove_category_with_checks(args)
+  if success then
+    print("✓ " .. message)
+  else
+    print("✗ " .. message)
+  end
+end, {
+  nargs = 1,
+  desc = "Remove a category (requires all todos to be completed first)",
 })
 
 -- Available categories with their icons:

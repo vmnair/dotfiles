@@ -371,6 +371,9 @@ function M.open_filtered_active_view()
 	-- Set buffer content
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 
+	-- Set markdown filetype to get proper checkbox rendering
+	vim.api.nvim_buf_set_option(buf, "filetype", "markdown")
+	
 	-- Set buffer as read-only (but will be made modifiable during toggle)
 	vim.api.nvim_buf_set_option(buf, "modifiable", false)
 	vim.api.nvim_buf_set_option(buf, "readonly", true)
@@ -378,9 +381,19 @@ function M.open_filtered_active_view()
 	-- Open buffer in current window
 	vim.api.nvim_set_current_buf(buf)
 
-	-- Set syntax highlighting
-	vim.api.nvim_buf_set_option(buf, "filetype", "markdown")
+	-- Apply todo syntax overlays with multiple timing strategies
+	-- Immediate attempt
 	M.setup_todo_syntax()
+	
+	-- Deferred attempt (in case immediate fails)
+	vim.defer_fn(function()
+		M.setup_todo_syntax()
+	end, 100)
+	
+	-- Final attempt after longer delay
+	vim.defer_fn(function()
+		M.setup_todo_syntax()
+	end, 300)
 
 	-- Set up keybindings for filtered view
 	vim.keymap.set("n", "tt", function()
@@ -991,6 +1004,282 @@ function M.display_todos(todos, title)
 end
 
 -- ========================================
+-- IN-PLACE CATEGORY FILTERING SYSTEM
+-- ========================================
+
+-- Global filter state
+M.current_filter = nil  -- nil means "Clear" (show all), otherwise category name
+
+-- Get current filter state
+function M.get_current_filter()
+	return M.current_filter
+end
+
+-- Set category filter (in-place filtering)
+function M.set_category_filter(category)
+	if category == "Clear" or category == "clear" or category == "" then
+		M.current_filter = nil
+	else
+		M.current_filter = category
+	end
+	-- Apply filter to current view if it's a todo buffer
+	M.apply_category_filter_to_current_view()
+end
+
+-- Clear category filter (show all todos)
+function M.clear_category_filter()
+	M.current_filter = nil
+	M.apply_category_filter_to_current_view()
+end
+
+-- Validate category name and provide suggestions
+function M.validate_category(name)
+	if not name or name == "" then
+		return false, "Category name cannot be empty"
+	end
+	
+	name = name:lower()
+	local valid_categories = {}
+	for _, cat in ipairs(M.config.categories) do
+		table.insert(valid_categories, cat:lower())
+	end
+	
+	-- Exact match (case insensitive)
+	for i, cat in ipairs(valid_categories) do
+		if cat == name then
+			return true, M.config.categories[i]  -- return proper case
+		end
+	end
+	
+	-- Fuzzy matching for suggestions
+	local suggestions = {}
+	for i, cat in ipairs(valid_categories) do
+		if cat:find(name, 1, true) or name:find(cat, 1, true) then
+			table.insert(suggestions, M.config.categories[i])
+		end
+	end
+	
+	local available = table.concat(M.config.categories, ", ")
+	if #suggestions > 0 then
+		local suggestion_str = table.concat(suggestions, ", ")
+		return false, "Category '" .. name .. "' not found. Did you mean: " .. suggestion_str .. "?"
+	else
+		return false, "Category '" .. name .. "' not found. Available: " .. available
+	end
+end
+
+-- Get todo counts for each category (for menu display)
+function M.get_category_todo_counts()
+	local active_todos = M.get_active_todos()
+	local counts = {}
+	
+	-- Initialize counts for all categories
+	for _, category in ipairs(M.config.categories) do
+		counts[category] = 0
+	end
+	
+	-- Count todos by category
+	local total_count = 0
+	for _, todo in ipairs(active_todos) do
+		local cat = todo.category or "Personal"  -- default fallback
+		if counts[cat] ~= nil then
+			counts[cat] = counts[cat] + 1
+		end
+		total_count = total_count + 1
+	end
+	
+	counts["Clear"] = total_count  -- "Clear" shows all todos
+	return counts
+end
+
+-- Apply category filter to current view (in-place)
+function M.apply_category_filter_to_current_view()
+	local buf_name = vim.api.nvim_buf_get_name(0)
+	
+	-- Check if we're in a todo buffer that supports filtering
+	if buf_name:match("Active Todos") or buf_name:match("todo") then
+		-- Refresh the current view with filter applied
+		M.refresh_filtered_view_with_state()
+	end
+end
+
+-- Refresh filtered view maintaining current filter state
+function M.refresh_filtered_view_with_state()
+	local current_filter = M.current_filter
+	local all_todos = M.get_active_todos()
+	local filtered_todos = all_todos
+	
+	-- Apply category filter if active
+	if current_filter then
+		filtered_todos = {}
+		for _, todo in ipairs(all_todos) do
+			if todo.category == current_filter then
+				table.insert(filtered_todos, todo)
+			end
+		end
+	end
+	
+	-- Update buffer name to reflect filter state
+	local buffer_name
+	if current_filter then
+		if #filtered_todos == 0 then
+			buffer_name = "Active Todos - " .. current_filter .. " Filter (No todos found)"
+		else
+			buffer_name = "Active Todos - " .. current_filter .. " Filter"
+		end
+	else
+		buffer_name = "Active Todos (Filtered View)"
+	end
+	
+	-- Create or update buffer content
+	local buf = vim.api.nvim_get_current_buf()
+	vim.api.nvim_buf_set_name(buf, buffer_name)
+	
+	-- Generate header with filter information
+	local lines = {}
+	table.insert(lines, "# " .. buffer_name)
+	table.insert(lines, "")
+	
+	if current_filter then
+		if #filtered_todos == 0 then
+			table.insert(lines, "No todos found in " .. current_filter .. " category")
+			table.insert(lines, "Use :TodoFilter Clear or <leader>tf to change filter")
+		else
+			local hidden_count = #all_todos - #filtered_todos
+			table.insert(lines, "Showing " .. #filtered_todos .. " " .. current_filter .. " todos (" .. hidden_count .. " others hidden)")
+		end
+	else
+		table.insert(lines, "Showing all " .. #filtered_todos .. " todos")
+	end
+	
+	table.insert(lines, "")
+	
+	-- Add filtered todos
+	for _, todo in ipairs(filtered_todos) do
+		table.insert(lines, M.format_todo_line(todo, "active"))
+	end
+	
+	-- Update buffer content and set filetype first
+	vim.api.nvim_buf_set_option(buf, "modifiable", true)
+	vim.api.nvim_buf_set_option(buf, "readonly", false)
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+	vim.api.nvim_buf_set_option(buf, "filetype", "markdown")
+	vim.api.nvim_buf_set_option(buf, "modifiable", false)
+	vim.api.nvim_buf_set_option(buf, "readonly", true)
+	vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
+	
+	-- Apply todo syntax overlays with multiple timing strategies  
+	-- Immediate attempt
+	M.setup_todo_syntax()
+	
+	-- Deferred attempts to ensure it works
+	vim.defer_fn(function()
+		M.setup_todo_syntax()
+	end, 100)
+	
+	vim.defer_fn(function()
+		M.setup_todo_syntax()
+	end, 300)
+end
+
+-- Update static categories list (for new category additions)
+function M.update_static_categories(new_category)
+	-- Check if category already exists
+	for _, cat in ipairs(M.config.categories) do
+		if cat == new_category then
+			return false, "Category '" .. new_category .. "' already exists"
+		end
+	end
+	
+	-- Add new category to config
+	table.insert(M.config.categories, new_category)
+	return true, "Category '" .. new_category .. "' added successfully"
+end
+
+-- Remove category with safety checks
+function M.remove_category_with_checks(category)
+	-- Check if category exists
+	local found = false
+	for i, cat in ipairs(M.config.categories) do
+		if cat == category then
+			found = true
+			break
+		end
+	end
+	
+	if not found then
+		return false, "Category '" .. category .. "' not found"
+	end
+	
+	-- Check for active todos in this category
+	local active_todos = M.get_active_todos()
+	local active_count = 0
+	for _, todo in ipairs(active_todos) do
+		if todo.category == category then
+			active_count = active_count + 1
+		end
+	end
+	
+	-- Check for scheduled todos in this category
+	local scheduled_todos = M.get_scheduled_todos()
+	local scheduled_count = 0
+	for _, todo in ipairs(scheduled_todos) do
+		if todo.category == category then
+			scheduled_count = scheduled_count + 1
+		end
+	end
+	
+	-- Prevent removal if active or scheduled todos exist
+	if active_count > 0 or scheduled_count > 0 then
+		local message = "Cannot remove category '" .. category .. "'. "
+		if active_count > 0 then
+			message = message .. "Complete " .. active_count .. " active todos"
+		end
+		if scheduled_count > 0 then
+			if active_count > 0 then
+				message = message .. " and "
+			end
+			message = message .. "Complete " .. scheduled_count .. " scheduled todos"
+		end
+		message = message .. " first."
+		return false, message
+	end
+	
+	-- Safe to remove category
+	for i, cat in ipairs(M.config.categories) do
+		if cat == category then
+			table.remove(M.config.categories, i)
+			break
+		end
+	end
+	
+	-- Handle active filter state
+	if M.current_filter == category then
+		M.current_filter = nil  -- Auto-clear filter
+		M.apply_category_filter_to_current_view()
+		return true, "Category '" .. category .. "' removed. Filter cleared, showing all todos."
+	end
+	
+	return true, "Category '" .. category .. "' removed successfully"
+end
+
+-- Add a new category with icon
+function M.add_new_category(name, icon)
+	-- Use the new static category system
+	local success, message = M.update_static_categories(name)
+	if not success then
+		print("✗ " .. message)
+		return false
+	end
+	
+	-- Add icon to config
+	M.config.category_icons[name] = icon
+	print("✓ Category '" .. name .. "' (" .. icon .. ") added successfully")
+	print("  Available in TodoFilter, TodoBuilder, and all filtering options")
+	return true
+end
+
+-- ========================================
 -- DATE PICKER CONSOLIDATION UTILITIES (PHASE 2)
 -- ========================================
 
@@ -1465,16 +1754,28 @@ end
 
 -- Refresh filtered view if it exists and is open
 function M.refresh_filtered_view_if_open()
-	local buf_name = "Active Todos (Filtered View)"
-	local existing_buf = vim.fn.bufnr(buf_name)
+	-- Find any buffer with "Active Todos" in the name (handles both filtered and unfiltered)
+	local target_buf = nil
+	local buffers = vim.api.nvim_list_bufs()
+	
+	for _, buf in ipairs(buffers) do
+		if vim.api.nvim_buf_is_valid(buf) then
+			local buf_name = vim.api.nvim_buf_get_name(buf)
+			local buf_basename = vim.fn.fnamemodify(buf_name, ":t")
+			if buf_basename:match("Active Todos") then
+				target_buf = buf
+				break
+			end
+		end
+	end
 
 	-- Check if the filtered view buffer exists and is displayed in any window
-	if existing_buf ~= -1 and vim.api.nvim_buf_is_valid(existing_buf) then
+	if target_buf then
 		-- Check if buffer is displayed in any window
 		local windows = vim.api.nvim_list_wins()
 		local is_displayed = false
 		for _, win in ipairs(windows) do
-			if vim.api.nvim_win_get_buf(win) == existing_buf then
+			if vim.api.nvim_win_get_buf(win) == target_buf then
 				is_displayed = true
 				break
 			end
@@ -1488,19 +1789,20 @@ function M.refresh_filtered_view_if_open()
 
 			-- Store cursor position from filtered view if it's the current buffer
 			local cursor_line = 1
-			if current_buf == existing_buf then
+			if current_buf == target_buf then
 				cursor_line = vim.api.nvim_win_get_cursor(current_win)[1]
 			end
 
 			-- Switch to filtered view window temporarily to refresh
 			for _, win in ipairs(windows) do
-				if vim.api.nvim_win_get_buf(win) == existing_buf then
+				if vim.api.nvim_win_get_buf(win) == target_buf then
 					vim.api.nvim_set_current_win(win)
-					M.open_filtered_active_view() -- This will refresh the content
+					-- Use filter-aware refresh instead of the old method
+					M.refresh_filtered_view_with_state()
 
 					-- Restore cursor position if we stored one
-					if current_buf == existing_buf then
-						local line_count = vim.api.nvim_buf_line_count(existing_buf)
+					if current_buf == target_buf then
+						local line_count = vim.api.nvim_buf_line_count(target_buf)
 						if cursor_line <= line_count then
 							vim.api.nvim_win_set_cursor(win, { cursor_line, 0 })
 						end
@@ -1518,29 +1820,46 @@ function M.refresh_filtered_view_if_open()
 	end
 end
 
--- Setup todo syntax highlighting
+-- Setup todo syntax highlighting as overlay on markdown
 function M.setup_todo_syntax()
-	-- Set up syntax highlighting for todo items
+	-- Only apply to markdown buffers (our todo buffers)
+	if vim.bo.filetype ~= "markdown" then
+		return false
+	end
+	
+	-- Don't clear existing syntax - keep markdown base
+	-- Add todo-specific patterns with higher priority
 	vim.cmd([[
-		syntax match TodoCheckbox /^- \[\s\?\]/
-		syntax match TodoCheckboxDone /^- \[x\]/
+		" Clear only previous todo syntax, keep markdown
+		silent! syntax clear TodoIcon
+		silent! syntax clear TodoTag  
+		silent! syntax clear TodoShowDate
+		silent! syntax clear TodoDueDate
+		silent! syntax clear TodoAddedDate
+		
+		" Todo-specific patterns with high priority
 		syntax match TodoIcon /💊\|🛠️\|🏡\|📝/
 		syntax match TodoTag /#\w\+/
 		syntax match TodoShowDate /\[Show: [0-9-]\+\]/
 		syntax match TodoDueDate /\[Due: [0-9-]\+\]/
 		syntax match TodoAddedDate /([0-9-]\+)$/
-		syntax match TodoCompleted /^- \[x\].*$/
+		
+		" Override markdown math syntax ONLY in todo lines to prevent teal $ coloring
+		syntax match TodoLineNoMath /^- \[\s\?\].*$/ contains=@NoSpell transparent
+		syntax match TodoLineDoneNoMath /^- \[x\].*$/ contains=@NoSpell transparent
+		
+		" Disable math highlighting in todo lines by clearing it in those contexts
+		syntax region mathIgnore matchgroup=todoMath start=/\$/ end=/\$/ contained containedin=TodoLineNoMath,TodoLineDoneNoMath concealends
 	]])
 
-	-- Set up highlight groups
+	-- Set up highlight groups - keep colors but don't override markdown checkbox colors
 	vim.cmd([[
-		highlight TodoCheckbox ctermfg=blue guifg=#528bff
-		highlight TodoCheckboxDone ctermfg=green guifg=#228B22
 		highlight TodoIcon ctermfg=yellow guifg=#ffd700
 		highlight TodoTag ctermfg=blue guifg=#569cd6
 		highlight TodoShowDate ctermfg=cyan guifg=#4EC9B0
 		highlight TodoAddedDate ctermfg=gray guifg=#767676
-		highlight TodoCompleted ctermfg=gray guifg=#767676 gui=strikethrough
+		highlight mathIgnore ctermfg=white guifg=#ffffff
+		highlight todoMath ctermfg=white guifg=#ffffff
 	]])
 
 	-- Set up due date color highlighting
@@ -1613,9 +1932,11 @@ function M.show_todo_modal(options)
 	options = options or {}
 
 	-- Form state with optional pre-population
+	-- Use filtered category if active, otherwise default to "Personal"
+	local default_category = M.current_filter or "Personal"
 	local form_data = {
 		description = options.description or "",
-		category = options.category or "Personal", --default
+		category = options.category or default_category,
 		category_index = 3, -- Will be updated based on category
 		show_date = options.show_date or "",
 		due_date = options.due_date or "",
@@ -1623,7 +1944,7 @@ function M.show_todo_modal(options)
 	}
 
 	-- Set correct category index for pre-populated data
-	local categories = { "Medicine", "OMS", "Personal" }
+	local categories = M.config.categories
 	for i, cat in ipairs(categories) do
 		if cat == form_data.category then
 			form_data.category_index = i
@@ -1687,15 +2008,42 @@ function M.show_todo_modal(options)
 	local function handle_input()
 		-- [i] Edit Description inline
 		vim.keymap.set("n", "i", function()
-			-- Position cursor at end of description text and enter insert mode
-			local desc_len = #form_data.description
+			-- Make buffer modifiable first
 			vim.api.nvim_buf_set_option(buf, "modifiable", true)
-			-- Use normal mode commands to position cursor at end of description
-			vim.cmd("normal! 0") -- Go to beginning of line
-			vim.cmd("normal! f:") -- Find the colon
-			vim.cmd("normal! 2l") -- Move 2 characters right (past the colon and spaces)
-			vim.cmd("normal! E") -- Move to end of current word (end of description)
-			vim.cmd("startinsert!") -- Enter insert mode at end
+			
+			-- Use a more reliable cursor positioning method
+			vim.schedule(function()
+				-- Get the current line content to calculate exact position
+				local current_line = vim.api.nvim_get_current_line()
+				local colon_pos = current_line:find(":")
+				
+				if colon_pos then
+					-- Position cursor after "Description: " (accounting for spaces)
+					local desc_start = current_line:find(":%s*", colon_pos)
+					if desc_start then
+						-- Find where the actual description text begins
+						local desc_text_start = desc_start + 1
+						-- Skip any spaces after colon
+						while desc_text_start <= #current_line and current_line:sub(desc_text_start, desc_text_start) == " " do
+							desc_text_start = desc_text_start + 1
+						end
+						
+						-- If there's existing text, go to the end of it
+						if form_data.description ~= "" then
+							vim.api.nvim_win_set_cursor(win, {1, #current_line})
+						else
+							-- If no existing text, position after the spaces following the colon
+							vim.api.nvim_win_set_cursor(win, {1, desc_text_start - 1})
+						end
+					else
+						-- Fallback: position at end of line
+						vim.api.nvim_win_set_cursor(win, {1, #current_line})
+					end
+				end
+				
+				-- Enter insert mode at current cursor position
+				vim.cmd("startinsert")
+			end)
 		end, { buffer = buf, silent = true })
 
 		-- Handle insert mode exit to capture new description
