@@ -623,29 +623,29 @@ vim.api.nvim_create_user_command("TodoHelp", function()
       ["<leader>tb"] = "Interactive todo builder modal (all fields on one screen)",
       ["<leader>th"] = "Show this help window",
       ["<leader>tr"] = "Open raw todos file (includes scheduled todos)",
-      ["<leader>tcc"] = "Open completed todos file",
+      ["<leader>tc"] = "Open completed todos file",
     },
     ["File-Specific Keybindings (in todo files only)"] = {
       ["tt"] = "Toggle todo completion (works in filtered view & raw files)",
-      ["<leader>tc"] = "Create zk note from todo",
+      ["<leader>tz"] = "Create or open zk note from todo (smart detection)",
+      ["<leader>tc"] = "Open completed todos file", 
       ["<leader>td"] = "Update due date with calendar picker",
       ["<leader>te"] = "Edit todo with pre-populated modal",
     },
-    ["View/Filter Keybindings (in todo files only)"] = {
-      ["<leader>tvm"] = "Filter Medicine todos",
-      ["<leader>tvo"] = "Filter OMS todos",
-      ["<leader>tvp"] = "Filter Personal todos",
-      ["<leader>tva"] = "Show all todos (remove filters)",
-      ["<leader>tvd"] = "Filter todos with due dates",
-      ["<leader>tvt"] = "Filter todos due today",
-      ["<leader>tvx"] = "Filter urgent todos (today + past due)",
-      ["<leader>tvq"] = "Close filter window",
+    ["Category Filtering"] = {
+      [":TodoFilter Medicine"] = "Filter current view to show only Medicine todos",
+      [":TodoFilter OMS"] = "Filter current view to show only OMS todos", 
+      [":TodoFilter Personal"] = "Filter current view to show only Personal todos",
+      [":TodoFilter Clear"] = "Remove filter and show all todos",
+      ["<leader>tf"] = "Interactive filter menu with category selection",
+      ["Smart Integration"] = "TodoBuilder pre-selects filtered category",
+      ["Filter Persistence"] = "Filters maintained during todo operations",
     },
-    ["TodoBuild Modal Controls (<leader>tb)"] = {
-      ["i"] = "Edit description inline (cursor positioned after space)",
+    ["TodoBuild Modal Controls (<leader>tb & <leader>te)"] = {
+      ["i"] = "Edit description inline with proper cursor positioning",
       ["j/k"] = "Navigate category selection (Medicine/OMS/Personal)",
-      ["Enter"] = "Context-sensitive: set dates on date fields, submit otherwise",
-      ["Tab"] = "Navigate between form fields",
+      ["Enter"] = "Context-sensitive: date picker on dates, submit on other fields",
+      ["Tab"] = "Navigate between fields: Description → Category → Show → Due",
       ["s"] = "Submit form from anywhere",
       ["ESC/q"] = "Cancel and close modal",
     },
@@ -673,12 +673,23 @@ vim.api.nvim_create_user_command("TodoHelp", function()
       ["tt on completed todo line"] = "Toggle back to incomplete (moves to active)",
       [":TodoCompleted"] = "List completed todos for reference",
     },
+    ["ZK Integration (Zettelkasten Notes)"] = {
+      ["<leader>tz"] = "Smart note integration: duplicate detection, open existing or create new",
+      ["Duplicate detection"] = "Searches frontmatter for todo_id to find existing notes",
+      ["Existing note found"] = "Opens existing note automatically, prompts for todo completion",
+      ["No existing note"] = "Creates new note with structured template and unique todo_id",
+      ["Note template includes"] = "Category, tags, dates, and original todo reference",
+      ["After note interaction"] = "Optional prompt to mark todo as completed",
+      ["Requirements"] = "zk command must be installed (brew install zk)",
+    },
     ["Daily Workflow"] = {
       ["Morning"] = "<leader>to (filtered view for current todos)",
-      ["Add todos"] = "<leader>ta or :Todo task /show date /due date",
+      ["Add todos"] = "<leader>tb (interactive builder) or <leader>ta",
+      ["Filter focus"] = "<leader>tf (select category to focus on)",
+      ["Edit todos"] = "<leader>te (edit current todo inline)",
+      ["Create notes"] = "<leader>tz (create/open zk note from todo)",
       ["Complete"] = "tt on any todo line",
       ["Check upcoming"] = ":TodoScheduled or :TodoUpcoming",
-      ["Reactivate"] = "<leader>tcc then tt",
       ["Quick help"] = "<leader>th (show this help)",
     },
     ["Calendar Picker"] = {
@@ -878,12 +889,22 @@ vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
       silent = true,
     })
 
-    -- Create zk note from todo on current line
-    vim.keymap.set("n", "<leader>tc", function()
-      todo_manager.create_note_from_todo()
+    -- Create or open zk note from todo on current line  
+    vim.keymap.set("n", "<leader>tz", function()
+      todo_manager.create_or_open_note_from_todo()
     end, {
       buffer = true,
-      desc = "Create zk note from todo",
+      desc = "Create or open zk note from todo",
+      silent = true,
+    })
+
+    -- Open completed todos file
+    vim.keymap.set("n", "<leader>tc", function()
+      local file_path = todo_manager.config.todo_dir .. "/" .. todo_manager.config.completed_file
+      vim.cmd("edit " .. file_path)
+    end, {
+      buffer = true,
+      desc = "Open completed todos file",
       silent = true,
     })
 
@@ -956,8 +977,8 @@ end, { desc = "Show category filter menu" })
 -- Additional file access keybindings - these need supporting commands
 vim.keymap.set("n", "<leader>tr", ":TodoOpenRaw<CR>", { desc = "Open raw todos file (with scheduled)" })
 
--- For completed todos, we'll use a different pattern to avoid conflict with create note
-vim.keymap.set("n", "<leader>tcc", ":TodoOpenCompleted<CR>", { desc = "Open completed todos file" })
+-- Open completed todos file (moved from buffer-specific to global for convenience)
+vim.keymap.set("n", "<leader>tc", ":TodoOpenCompleted<CR>", { desc = "Open completed todos file" })
 
 -- ===============================
 -- SUPPORTING COMMANDS FOR KEYBINDINGS

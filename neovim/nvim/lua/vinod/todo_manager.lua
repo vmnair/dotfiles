@@ -396,6 +396,17 @@ function M.open_filtered_active_view()
 	end, 300)
 
 	-- Set up keybindings for filtered view
+	M.setup_todo_buffer_keybindings(buf)
+
+	print("✓ Opened filtered active todos view")
+end
+
+-- ========================================
+-- KEYBINDING SETUP UTILITIES
+-- ========================================
+
+-- Set up common keybindings for todo buffers (filtered views, etc.)
+function M.setup_todo_buffer_keybindings(buf)
 	vim.keymap.set("n", "tt", function()
 		M.toggle_todo_in_filtered_view()
 	end, { buffer = buf, desc = "Toggle todo completion in filtered view" })
@@ -404,7 +415,14 @@ function M.open_filtered_active_view()
 		M.edit_todo_modal()
 	end, { buffer = buf, desc = "Edit todo on current line" })
 
-	print("✓ Opened filtered active todos view")
+	vim.keymap.set("n", "<leader>tz", function()
+		M.create_or_open_note_from_todo()
+	end, { buffer = buf, desc = "Create or open zk note from todo" })
+
+	vim.keymap.set("n", "<leader>tc", function()
+		local file_path = M.config.todo_dir .. "/" .. M.config.completed_file
+		vim.cmd("edit " .. file_path)
+	end, { buffer = buf, desc = "Open completed todos file" })
 end
 
 -- ========================================
@@ -1827,22 +1845,33 @@ function M.setup_todo_syntax()
 		return false
 	end
 	
+	-- Apply todo syntax overlays to markdown base
+	
 	-- Don't clear existing syntax - keep markdown base
-	-- Add todo-specific patterns with higher priority
+	-- Add todo-specific patterns with explicit containedin to override markdown
 	vim.cmd([[
 		" Clear only previous todo syntax, keep markdown
 		silent! syntax clear TodoIcon
+		silent! syntax clear TodoIconMedicine
+		silent! syntax clear TodoIconOMS
+		silent! syntax clear TodoIconPersonal
+		silent! syntax clear TodoIconDefault
 		silent! syntax clear TodoTag  
 		silent! syntax clear TodoShowDate
 		silent! syntax clear TodoDueDate
 		silent! syntax clear TodoAddedDate
 		
-		" Todo-specific patterns with high priority
-		syntax match TodoIcon /💊\|🛠️\|🏡\|📝/
-		syntax match TodoTag /#\w\+/
-		syntax match TodoShowDate /\[Show: [0-9-]\+\]/
-		syntax match TodoDueDate /\[Due: [0-9-]\+\]/
-		syntax match TodoAddedDate /([0-9-]\+)$/
+		" Todo-specific patterns with high priority (using containedin=ALL)
+		syntax match TodoTag /#\w\+/ containedin=ALL
+		syntax match TodoShowDate /\[Show: [0-9-]\+\]/ containedin=ALL
+		syntax match TodoDueDate /\[Due: [0-9-]\+\]/ containedin=ALL  
+		syntax match TodoAddedDate /([0-9-]\+)$/ containedin=ALL
+		
+		" Handle emoji icons separately (they can cause issues in syntax patterns)
+		syntax match TodoIconMedicine /💊/ containedin=ALL
+		syntax match TodoIconOMS /🛠️/ containedin=ALL  
+		syntax match TodoIconPersonal /🏡/ containedin=ALL
+		syntax match TodoIconDefault /📝/ containedin=ALL
 		
 		" Override markdown math syntax ONLY in todo lines to prevent teal $ coloring
 		syntax match TodoLineNoMath /^- \[\s\?\].*$/ contains=@NoSpell transparent
@@ -1852,14 +1881,19 @@ function M.setup_todo_syntax()
 		syntax region mathIgnore matchgroup=todoMath start=/\$/ end=/\$/ contained containedin=TodoLineNoMath,TodoLineDoneNoMath concealends
 	]])
 
-	-- Set up highlight groups - keep colors but don't override markdown checkbox colors
+	-- Set up highlight groups with explicit priority
 	vim.cmd([[
-		highlight TodoIcon ctermfg=yellow guifg=#ffd700
-		highlight TodoTag ctermfg=blue guifg=#569cd6
-		highlight TodoShowDate ctermfg=cyan guifg=#4EC9B0
-		highlight TodoAddedDate ctermfg=gray guifg=#767676
-		highlight mathIgnore ctermfg=white guifg=#ffffff
-		highlight todoMath ctermfg=white guifg=#ffffff
+		highlight! TodoTag ctermfg=blue guifg=#569cd6 gui=bold
+		highlight! TodoShowDate ctermfg=cyan guifg=#4EC9B0
+		highlight! TodoAddedDate ctermfg=gray guifg=#767676
+		highlight! mathIgnore ctermfg=white guifg=#ffffff
+		highlight! todoMath ctermfg=white guifg=#ffffff
+		
+		" Emoji icon highlights  
+		highlight! TodoIconMedicine ctermfg=yellow guifg=#ffd700
+		highlight! TodoIconOMS ctermfg=yellow guifg=#ffd700
+		highlight! TodoIconPersonal ctermfg=yellow guifg=#ffd700
+		highlight! TodoIconDefault ctermfg=yellow guifg=#ffd700
 	]])
 
 	-- Set up due date color highlighting
@@ -2302,87 +2336,6 @@ function M.show_todo_modal(options)
 	end
 end
 
--- ========================================
--- TEST COMMANDS
--- ========================================
-
--- Create test commands for our refactored functions
-vim.api.nvim_create_user_command("TestFilterDue", function()
-	M.filter_buffer_by_due_dates()
-end, { desc = "Test filter by due dates" })
-
-vim.api.nvim_create_user_command("TestFilterMedicine", function()
-	M.filter_buffer_by_category("Medicine")
-end, { desc = "Test filter by Medicine category" })
-
-vim.api.nvim_create_user_command("TestFilterOMS", function()
-	M.filter_buffer_by_category("OMS")
-end, { desc = "Test filter by OMS category" })
-
-vim.api.nvim_create_user_command("TestFilterPersonal", function()
-	M.filter_buffer_by_category("Personal")
-end, { desc = "Test filter by Personal category" })
-
-vim.api.nvim_create_user_command("TestShowAll", function()
-	M.show_all_todos()
-end, { desc = "Test show all todos" })
-
-vim.api.nvim_create_user_command("TestFilterToday", function()
-	M.filter_buffer_by_today()
-end, { desc = "Test filter today's todos" })
-
-vim.api.nvim_create_user_command("TestFilterPastDue", function()
-	M.filter_buffer_by_past_due()
-end, { desc = "Test filter past due todos" })
-
-vim.api.nvim_create_user_command("TestFilterUrgent", function()
-	M.filter_buffer_by_today_and_past_due()
-end, { desc = "Test filter urgent todos" })
-
--- ========================================
--- PHASE 2 DATE PICKER TEST COMMANDS
--- ========================================
-
-vim.api.nvim_create_user_command("TestDatePicker", function()
-	print("Testing basic date picker utility...")
-	M.get_date_with_action({
-		on_success = function(date)
-			print("✅ Selected date: " .. date)
-		end,
-		on_cancel = function()
-			print("❌ Date selection cancelled")
-		end,
-		cancel_message = "No date selected",
-	})
-end, { desc = "Test basic date picker utility" })
-
-vim.api.nvim_create_user_command("TestDatePickerFallback", function()
-	print("Testing date picker with fallback to today...")
-	M.get_date_with_action({
-		on_success = function(date)
-			print("✅ Using date: " .. date)
-		end,
-		fallback_date = "today",
-		auto_fallback = true,
-	})
-end, { desc = "Test date picker with auto-fallback" })
-
-vim.api.nvim_create_user_command("TestCreateTodo", function()
-	print("Testing todo creation with date picker...")
-	M.create_todo_with_date(
-		{
-			description = "Test todo from Phase 2",
-			category = "Personal",
-			tags = { "test" },
-			due_date = "",
-			show_date = "",
-		},
-		"due_date",
-		function(success)
-			print("Todo creation " .. (success and "succeeded" or "failed"))
-		end
-	)
-end, { desc = "Test todo creation with date picker" })
 
 -- ========================================
 -- PHASE 3: CONTINUATION WORKFLOW CONSOLIDATION UTILITIES
@@ -2519,41 +2472,6 @@ function M.process_show_continuation(input)
 	})
 end
 
--- ========================================
--- PHASE 3 TEST COMMANDS
--- ========================================
-
-vim.api.nvim_create_user_command("TestContinuationDue", function()
-	-- Simulate continuation after due date selection
-	M._continuation_state = {
-		active = true,
-		description = "Test due continuation",
-		category = "Personal",
-		tags = "",
-		due_date = "2025-09-15",
-		show_date = "2025-09-15",
-	}
-
-	print("Testing due continuation workflow. Enter '/show' for show date or Enter to finish:")
-	local input = vim.fn.input("Continuation: ")
-	M.process_continuation(input)
-end, { desc = "Test Phase 3 due continuation workflow" })
-
-vim.api.nvim_create_user_command("TestContinuationShow", function()
-	-- Simulate continuation after show date selection
-	M._continuation_state = {
-		active = true,
-		description = "Test show continuation",
-		category = "Work",
-		tags = "",
-		due_date = "2025-09-20",
-		show_date = "2025-09-10",
-	}
-
-	print("Testing show continuation workflow. Enter '/due' for due date or Enter to finish:")
-	local input = vim.fn.input("Continuation: ")
-	M.process_show_continuation(input)
-end, { desc = "Test Phase 3 show continuation workflow" })
 
 -- ========================================
 -- TODO EDITING FUNCTIONALITY
@@ -2621,6 +2539,194 @@ function M.edit_todo_modal()
 		due_date = current_todo.due_date or "",
 		tags = current_todo.tags or {},
 	})
+end
+
+-- ========================================
+-- ZK INTEGRATION FUNCTIONALITY
+-- ========================================
+
+-- Generate unique ID for todo item
+local function generate_todo_id(todo)
+	-- Create stable ID from description + category + added_date
+	-- For older todos without added_date, use current date as fallback
+	local added_date = todo.added_date
+	if not added_date or added_date == "" then
+		added_date = os.date("%m-%d-%Y")
+	end
+	
+	local base_string = (todo.description or "") .. "|" .. (todo.category or "Personal") .. "|" .. added_date
+	-- Simple hash function to create shorter ID
+	local hash = 0
+	for i = 1, #base_string do
+		hash = (hash * 31 + string.byte(base_string, i)) % 1000000
+	end
+	return "todo_" .. hash
+end
+
+-- Create or open zk note from current todo with smart detection
+function M.create_or_open_note_from_todo()
+	local current_todo = M.get_current_todo()
+	if not current_todo then
+		print("Current line is not a todo item")
+		return
+	end
+
+	-- Check if zk command is available
+	local zk_check = io.popen("which zk 2>/dev/null")
+	local zk_path = zk_check:read("*a")
+	zk_check:close()
+	
+	if not zk_path or zk_path == "" then
+		print("✗ zk command not found. Please install zk: brew install zk")
+		return
+	end
+
+	local note_title = current_todo.description
+	local todo_id = generate_todo_id(current_todo)
+	
+	-- Safe search for existing notes using grep (zk --match doesn't search frontmatter)
+	local search_command = string.format('cd ~/notebook && timeout 5s grep -r "todo_id: %s" . --include="*.md" 2>/dev/null | head -1', todo_id)
+	local search_handle = io.popen(search_command)
+	local search_result = search_handle:read("*a")
+	search_handle:close()
+
+	-- If we found an existing note, extract path and open it
+	if search_result and search_result ~= "" then
+		local existing_path = search_result:match("^%.?/?([^:]+):")
+		if existing_path and existing_path ~= "" then
+			-- Convert to absolute path
+			local full_path = vim.fn.expand("~/notebook/" .. existing_path)
+			print("📖 Opening existing note: " .. vim.fn.fnamemodify(existing_path, ":t"))
+			vim.cmd("edit " .. vim.fn.fnameescape(full_path))
+			
+			-- Ask user if they want to mark todo as completed
+			local choice = vim.fn.input("Mark todo as completed? (y/N): ")
+			if choice:lower() == "y" then
+				M.toggle_todo_completion()
+			end
+			return
+		end
+	end
+
+	print("📝 Creating new note for: " .. note_title .. " (ID: " .. todo_id .. ")")
+	
+	-- No existing note found, create new one
+	local current_date = os.date("%Y-%m-%d")
+	
+	-- Create note using zk new command first
+	local create_command = string.format('zk new --title "%s" --print-path', note_title)
+	local create_handle = io.popen(create_command .. " 2>&1")
+	local create_result = create_handle:read("*a")
+	create_handle:close()
+	
+	if not create_result or create_result == "" then
+		print("✗ Failed to create zk note - check if zk repo is initialized")
+		return
+	end
+	
+	-- Extract note path from zk output
+	local note_path = create_result:match("([^\n\r]+)")
+	if not note_path then
+		print("✗ Could not determine created note path")
+		return
+	end
+	
+	-- Trim any whitespace from path
+	note_path = vim.trim(note_path)
+	
+	-- Build note content with frontmatter and template
+	local note_content = {}
+	
+	-- Add YAML frontmatter with todo_id for permanent linking
+	table.insert(note_content, "---")
+	table.insert(note_content, "todo_id: " .. todo_id)
+	table.insert(note_content, "category: " .. (current_todo.category or "Personal"))
+	table.insert(note_content, "created: " .. current_date)
+	
+	-- Add tags to frontmatter if present
+	if current_todo.tags and type(current_todo.tags) == "table" and #current_todo.tags > 0 then
+		table.insert(note_content, "tags: [" .. table.concat(current_todo.tags, ", ") .. "]")
+	end
+	
+	-- Add dates to frontmatter if present
+	if current_todo.due_date and current_todo.due_date ~= "" then
+		table.insert(note_content, "due_date: " .. current_todo.due_date)
+	end
+	if current_todo.show_date and current_todo.show_date ~= "" and current_todo.show_date ~= current_todo.due_date then
+		table.insert(note_content, "show_date: " .. current_todo.show_date)
+	end
+	
+	table.insert(note_content, "---")
+	table.insert(note_content, "")
+	table.insert(note_content, "# " .. note_title)  -- H1 heading with todo description
+	table.insert(note_content, "")
+	table.insert(note_content, "**Category**: " .. (current_todo.category or "Personal"))
+	
+	-- Add tags if present
+	if current_todo.tags and type(current_todo.tags) == "table" and #current_todo.tags > 0 then
+		table.insert(note_content, "**Tags**: #" .. table.concat(current_todo.tags, " #"))
+	end
+	
+	-- Add due date if present
+	if current_todo.due_date and current_todo.due_date ~= "" then
+		table.insert(note_content, "**Due Date**: " .. current_todo.due_date)
+	end
+	
+	-- Add show date if present and different from due date
+	if current_todo.show_date and current_todo.show_date ~= "" and current_todo.show_date ~= current_todo.due_date then
+		table.insert(note_content, "**Show Date**: " .. current_todo.show_date)
+	end
+	
+	table.insert(note_content, "**Created**: " .. current_date)
+	table.insert(note_content, "")
+	table.insert(note_content, "## Notes")
+	table.insert(note_content, "")
+	table.insert(note_content, "") -- Empty line for cursor positioning
+	table.insert(note_content, "")
+	table.insert(note_content, "## Original Todo")
+	table.insert(note_content, "```")
+	table.insert(note_content, M.format_todo_line(current_todo, "storage"))
+	table.insert(note_content, "```")
+	
+	-- Write content directly to the created note file
+	local file = io.open(note_path, "w")
+	if not file then
+		print("✗ Failed to open created note file for writing: " .. note_path)
+		return
+	end
+	
+	for _, line in ipairs(note_content) do
+		file:write(line .. "\n")
+	end
+	file:close()
+	
+	-- Open the newly created note
+	vim.cmd("edit " .. vim.fn.fnameescape(note_path))
+	
+	-- Position cursor in the Notes section
+	vim.schedule(function()
+		-- Search for the "## Notes" section and position cursor after it
+		if vim.fn.search("^## Notes$") > 0 then
+			vim.cmd("normal! 2j") -- Move 2 lines down from "## Notes"
+			vim.cmd("startinsert") -- Enter insert mode for immediate note-taking
+		end
+	end)
+	
+	print("✓ Created new note: " .. note_title)
+	
+	-- Ask if user wants to mark todo as completed
+	vim.defer_fn(function()
+		vim.ui.input({
+			prompt = "Mark todo as completed? (y/N): ",
+			default = "n"
+		}, function(input)
+			if input and input:lower() == "y" then
+				-- Switch back to todo buffer and toggle completion
+				vim.cmd("wincmd p") -- Go to previous window
+				M.toggle_todo_on_line()
+			end
+		end)
+	end, 1000) -- Longer delay to let file load and cursor position
 end
 
 return M
