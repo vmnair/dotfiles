@@ -2571,6 +2571,10 @@ function M.create_or_open_note_from_todo()
 		return
 	end
 
+	-- Store cursor position in todo list for return navigation
+	local todo_cursor_line = vim.fn.line('.')
+	local todo_cursor_col = vim.fn.col('.')
+
 	-- Check if zk command is available
 	local zk_check = io.popen("which zk 2>/dev/null")
 	local zk_path = zk_check:read("*a")
@@ -2599,11 +2603,22 @@ function M.create_or_open_note_from_todo()
 			print("📖 Opening existing note: " .. vim.fn.fnamemodify(existing_path, ":t"))
 			vim.cmd("edit " .. vim.fn.fnameescape(full_path))
 			
-			-- Ask user if they want to mark todo as completed
-			local choice = vim.fn.input("Mark todo as completed? (y/N): ")
-			if choice:lower() == "y" then
-				M.toggle_todo_completion()
-			end
+			-- Set up autocmd to return to original todo line on save/exit
+			vim.schedule(function()
+				vim.api.nvim_create_autocmd({"BufWritePost", "WinClosed", "BufDelete"}, {
+					buffer = 0,
+					once = true,
+					callback = function()
+						vim.schedule(function()
+							local todo_file = M.config.todo_dir .. "/" .. M.config.active_file
+							if vim.fn.filereadable(todo_file) == 1 then
+								vim.cmd("edit " .. vim.fn.fnameescape(todo_file))
+								pcall(vim.fn.cursor, todo_cursor_line, todo_cursor_col)
+							end
+						end)
+					end
+				})
+			end)
 			return
 		end
 	end
@@ -2703,13 +2718,40 @@ function M.create_or_open_note_from_todo()
 	-- Open the newly created note
 	vim.cmd("edit " .. vim.fn.fnameescape(note_path))
 	
-	-- Position cursor in the Notes section
+	-- Position cursor after last content for immediate note-taking
 	vim.schedule(function()
-		-- Search for the "## Notes" section and position cursor after it
-		if vim.fn.search("^## Notes$") > 0 then
-			vim.cmd("normal! 2j") -- Move 2 lines down from "## Notes"
-			vim.cmd("startinsert") -- Enter insert mode for immediate note-taking
+		-- Find the last line with actual content
+		local last_line = vim.fn.line('$')
+		local content_line = 1
+		
+		for i = last_line, 1, -1 do
+			local line_content = vim.fn.getline(i)
+			if line_content:match("%S") then -- Found non-whitespace
+				content_line = i
+				break
+			end
 		end
+		
+		-- Go to the last content line and position cursor at end
+		vim.cmd(content_line .. "G")  -- Go to specific line number
+		vim.cmd("normal! A")          -- Go to end of line
+		vim.cmd("normal! o")          -- Open new line below
+		vim.cmd("startinsert")        -- Enter insert mode
+		
+		-- Set up autocmd to return to original todo line on save/exit
+		vim.api.nvim_create_autocmd({"BufWritePost", "WinClosed", "BufDelete"}, {
+			buffer = 0,
+			once = true,
+			callback = function()
+				vim.schedule(function()
+					local todo_file = M.config.todo_dir .. "/" .. M.config.active_file
+					if vim.fn.filereadable(todo_file) == 1 then
+						vim.cmd("edit " .. vim.fn.fnameescape(todo_file))
+						pcall(vim.fn.cursor, todo_cursor_line, todo_cursor_col)
+					end
+				end)
+			end
+		})
 	end)
 	
 	print("✓ Created new note: " .. note_title)

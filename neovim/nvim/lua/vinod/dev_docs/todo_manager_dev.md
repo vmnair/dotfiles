@@ -2,11 +2,13 @@
 
 ## System Overview
 
-Comprehensive task management system for Neovim with category-based todos, future scheduling, and interactive editing.
+Comprehensive task management system for Neovim with category-based todos, future scheduling, interactive editing, and ZK integration.
 
-## ✅ CURRENT STATUS (2025-09-06)
-**ZK Integration**: FULLY FUNCTIONAL - Note creation and duplicate detection working correctly.
-**Status**: All features operational, no known issues.
+## ✅ CURRENT STATUS (2025-09-08)
+
+**Core Functionality**: All major features working correctly.
+**ZK Integration**: Basic functionality working - creates/opens notes from todos.
+**Return Navigation**: Fixed - returns to original todo line after ZK note editing.
 
 **Core Files**:
 - **Main Logic**: `todo_manager.lua` - Core functionality
@@ -59,7 +61,7 @@ Comprehensive task management system for Neovim with category-based todos, futur
 ### File-Specific Keybindings (in todo files)
 - `tt` - Toggle completion
 - `<leader>te` - Edit current todo
-- `<leader>tz` - Create or open zk note from todo (smart detection)
+- `<leader>tz` - Create or open zk note from todo
 - `<leader>tc` - Open completed todos file
 - `<leader>td` - Update due date with calendar picker
 
@@ -96,8 +98,12 @@ Comprehensive task management system for Neovim with category-based todos, futur
 - **Existing Notes**: Opens found note for editing and continuation
 - **New Notes**: Creates structured note with todo metadata and template
 - **Note Template**: Includes category, tags, dates, and original todo reference
-- **Optional Completion**: Prompts to mark todo completed after note interaction
+- **Return Navigation**: Returns to original todo line after saving/exiting ZK note
 - **Requirements**: zk command-line tool must be installed (`brew install zk`)
+
+**Known Limitations**:
+- Cursor positioning in ZK notes goes to top of buffer (not after last content)
+- Attempted fixes caused functionality regressions, so kept basic working version
 
 ## Daily Workflow
 
@@ -111,35 +117,10 @@ Comprehensive task management system for Neovim with category-based todos, futur
 
 ## Recent Major Updates
 
-### **Syntax Highlighting System** ✅
-- **Hybrid Approach**: Markdown base + todo overlays
-- **Immediate Highlighting**: Keywords appear on first load
-- **Proper Checkboxes**: Beautiful markdown checkbox rendering
-- **Fixed `$text$`**: No more teal math syntax coloring
-
-### **Category Filtering System** ✅
-- **In-Place Filtering**: No scratch buffers, updates current view
-- **Smart Integration**: TodoBuilder respects active filter
-- **Menu Interface**: Interactive category selection
-- **Dynamic Categories**: Add/remove categories safely
-
-### **Interactive Editing** ✅
-- **TodoBuilder Fix**: Description editing works reliably
-- **Cursor Positioning**: Proper positioning in all contexts
-- **Filter Persistence**: Edits maintain active category filters
-- **Auto-refresh**: Changes appear immediately in filtered views
-
-### **Command Workflows** ✅
-- **Date Logic**: Show-only sets both, due-only requires show
-- **Continuation**: Interactive prompts for incomplete commands
-- **Keyboard Shortcuts**: All date shortcuts working (`tomorrow`, `next week`, etc.)
-- **Error Handling**: Proper validation with helpful messages
-
 ### **ZK Integration System** ✅ (Complete)
-- **Basic Functionality**: `<leader>tz` creates notes from todos ✅
+- **Basic Functionality**: `<leader>tz` creates/opens notes from todos ✅
 - **Duplicate Detection**: Finds and opens existing notes by todo_id ✅
-- **Keybinding**: `<leader>tz` for ZK note creation/opening ✅  
-- **Frontmatter System**: Notes include `todo_id` for permanent linking ✅
+- **Return Navigation**: Returns to original todo line after note editing ✅
 - **Template Structure**: H1 heading, metadata, cursor positioning ✅
 - **Error Handling**: zk installation checks, graceful failures ✅
 
@@ -147,42 +128,8 @@ Comprehensive task management system for Neovim with category-based todos, futur
 - **Search Method**: Uses `grep -r "todo_id: <id>" ~/notebook/` with 5s timeout
 - **Path Resolution**: Converts relative paths to absolute for vim editing
 - **Duplicate Prevention**: Opens existing notes instead of creating duplicates
-- **User Workflow**: Optional todo completion prompt after opening existing notes
-- **Fallback**: Creates new note if no existing note found
-
-#### **Technical Notes**
 - **Todo ID Generation**: Uses `description + category + added_date` hash for consistent IDs
 - **Frontmatter Format**: YAML with `todo_id: todo_123456`
-- **Search Strategy**: Searches frontmatter metadata (zk --match doesn't search YAML frontmatter)
 - **Notebook Location**: Searches in `~/notebook/` directory (actual zk repository location)
-- **Safety**: 5-second timeout prevents system hanging
 
-#### **Troubleshooting Issues Resolved**
-- **Issue**: zk --match parameter doesn't search YAML frontmatter
-- **Solution**: Use grep to search frontmatter directly instead of zk native search
-- **Issue**: Wrong search path (~/.zk/ vs ~/notebook/)
-- **Solution**: Updated to use correct notebook directory where zk stores notes
-- **Issue**: Duplicate note creation on repeated `<leader>tz` invocation
-- **Solution**: Proper frontmatter search now detects existing notes and opens them
-
-## Technical Notes
-
-### **Syntax System**
-- **Filetype**: `markdown` for proper checkbox rendering
-- **Overlays**: Todo-specific patterns with `containedin=ALL`
-- **Timing**: Multiple application strategies for reliability
-- **Emoji Handling**: Separate patterns for each icon
-
-### **Filter Architecture**
-- **State**: `M.current_filter` tracks active category
-- **Buffer Names**: Dynamic updating to reflect filter
-- **Integration**: All operations respect filter context
-- **Persistence**: Filter maintained across todo operations
-
-### **Date Handling**
-- **Shortcuts**: `today`, `tomorrow`, `next week`, `5 days`, etc.
-- **Validation**: Proper mm-dd-yyyy format checking
-- **Logic**: Smart defaults and continuation workflows
-- **Calendar**: Interactive date picker integration
-
-System is feature-complete with all major functionality working reliably. ZK integration now fully operational with duplicate detection and existing note opening capabilities.
+System is feature-complete with all major functionality working reliably. ZK integration fully operational with duplicate detection and existing note opening capabilities.
