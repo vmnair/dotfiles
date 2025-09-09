@@ -13,8 +13,8 @@ fi
 NVIM_CONFIG_PATH="/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua"
 
 if [ -f "$NVIM_CONFIG_PATH" ] && [ -r "$NVIM_CONFIG_PATH" ]; then
-    # Extract the model value from the config file
-    model=$(grep -E '^\s*model\s*=' "$NVIM_CONFIG_PATH" 2>/dev/null | sed -E 's/.*model[[:space:]]*=[[:space:]]*"([^"]*)".*$/\1/' 2>/dev/null)
+    # Extract the model value from the opts section only (not embedding model)
+    model=$(grep -A 20 '^\s*opts\s*=' "$NVIM_CONFIG_PATH" 2>/dev/null | grep -E '^\s*model\s*=' | head -1 | sed -E 's/.*model[[:space:]]*=[[:space:]]*"([^"]*)".*$/\1/' 2>/dev/null)
     
     if [ -n "$model" ]; then
         echo "[Copilot: $model]"
