@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Script to get battery status with dynamic icons for tmux status bar
+# Script to get battery status with dynamic icons and color coding for tmux status bar
+# Colors: <50% yellow, <20% red
 # Shows appropriate icon based on power source and battery percentage
 
 # Check if we're in a tmux session
@@ -16,8 +17,9 @@ if [ -z "$battery_info" ]; then
     exit 0
 fi
 
-# Extract percentage
-percentage=$(echo "$battery_info" | grep -o '[0-9]*%' | head -1)
+# Extract percentage (remove % sign for comparison)
+percentage_raw=$(echo "$battery_info" | grep -o '[0-9]*%' | head -1)
+percentage_num=$(echo "$percentage_raw" | sed 's/%//')
 
 # Determine power source and charging state
 if echo "$battery_info" | grep -q "AC Power"; then
@@ -37,9 +39,15 @@ else
     icon="▼"
 fi
 
-# Output icon and percentage
-if [ -n "$percentage" ]; then
-    echo "${icon} ${percentage}"
+# Apply color coding and output
+if [ -n "$percentage_num" ]; then
+    if [ "$percentage_num" -lt 20 ]; then
+        echo "#[fg=red]${icon} ${percentage_raw}#[fg=white]"
+    elif [ "$percentage_num" -lt 50 ]; then
+        echo "#[fg=yellow]${icon} ${percentage_raw}#[fg=white]"
+    else
+        echo "${icon} ${percentage_raw}"
+    fi
 else
     echo "${icon} N/A"
 fi
