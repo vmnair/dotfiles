@@ -14,11 +14,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a personal dotfiles repository containing configuration files for various development tools and environments. The repository supports both Linux (Debian-based) and macOS setups.
 
+## Git Commit Style
+
+- Clean commit messages without AI-generated footers
+- No "Generated with Claude Code" or "Co-Authored-By" lines
+
 ## Project-Specific Development Documentation
 
 For detailed project-specific information, refer to the development documentation in:
+
 - **Todo Manager**: `neovim/nvim/lua/vinod/dev_docs/todo_manager_dev.md`
-- **Readwise Integration**: `neovim/nvim/lua/vinod/dev_docs/readwise_dev.md`  
+- **Readwise Integration**: `neovim/nvim/lua/vinod/dev_docs/readwise_dev.md`
 - **Ollama Integration**: `neovim/nvim/lua/vinod/dev_docs/ollama_dev.md`
 - **General Analysis**: `neovim/nvim/lua/vinod/dev_docs/todo_dev.md`
 
@@ -61,15 +67,12 @@ For detailed project-specific information, refer to the development documentatio
 
 - **Development plugins**: `neovim/nvim/dev-plugins/readwise.nvim/` - Custom plugin for Readwise integration
 
-
 ### Shell and Terminal Configuration
 
 - **Zsh**: Separate configs for Linux (`zshrc_linux`) and macOS (`zshrc_mac`)
 - **Tmux**: Configuration with project-specific session files (`.proj` files)
 - **Terminal emulators**:
-  - Alacritty config in `alacritty/alacritty.toml`
   - Ghostty config in `ghostty/config`
-  - WezTerm config in `wezterm/wezterm.lua`
 
 ### Window Management (Linux)
 
@@ -129,9 +132,9 @@ For detailed project-specific information, refer to the development documentatio
 - Located in `tmux/` directory
 - Examples: `c.proj`, `neovim.proj`, `lua.proj`, `readwise.proj`
 
-
 # important-instruction-reminders
+
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.
 ALWAYS prefer editing an existing file to creating a new one.
-NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+NEVER proactively create documentation files (\*.md) or README files. Only create documentation files if explicitly requested by the User.

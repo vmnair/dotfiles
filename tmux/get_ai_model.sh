@@ -17,7 +17,7 @@ detect_copilot_model() {
     local nvim_config="/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua"
     
     if [ ! -f "$nvim_config" ] || [ ! -r "$nvim_config" ]; then
-        echo "[AI: No Config]"
+        echo "◉ No Config"
         return
     fi
     
@@ -42,7 +42,7 @@ detect_copilot_model() {
     fi
     
     if [ -z "$active_model" ]; then
-        echo "[AI: Unknown]"
+        echo "◉ Unknown"
         return
     fi
     
@@ -50,23 +50,23 @@ detect_copilot_model() {
     case "$active_model" in
         # OpenAI models (Online)
         gpt-3.5*|gpt-4*|text-*|davinci*|curie*|babbage*|ada*)
-            echo "[AI: $active_model (Online)]"
+            echo "◉ $active_model (Online)"
             ;;
         # Anthropic models (Online)  
         claude-*|claude_*)
-            echo "[AI: $active_model (Online)]"
+            echo "◉ $active_model (Online)"
             ;;
         # Common Ollama local models (Local)
         llama*|mistral*|codellama*|qwen*|phi*|gemma*|neural-chat*|orca*|vicuna*|alpaca*)
-            echo "[AI: $active_model (Local)]"
+            echo "◉ $active_model (Local)"
             ;;
         # Generic patterns for local models
         *:*b|*:*B)  # Models with size indicators like "llama3.2:3b"
-            echo "[AI: $active_model (Local)]"
+            echo "◉ $active_model (Local)"
             ;;
         # Default to Online for unknown models (safer assumption)
         *)
-            echo "[AI: $active_model (Online)]"
+            echo "◉ $active_model (Online)"
             ;;
     esac
 }

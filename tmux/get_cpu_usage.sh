@@ -12,8 +12,8 @@ fi
 cpu_usage=$(timeout 2 sh -c "top -l 1 | grep 'CPU usage' | awk '{print \$3}' | sed 's/,//' | sed 's/%//'" 2>/dev/null)
 
 if [ -n "$cpu_usage" ] && [ "$cpu_usage" != "" ]; then
-    # Format as fixed width: " 12.3%"
-    printf "%5.1f%%" "$cpu_usage"
+    # Format with single decimal precision: "12.3%"
+    printf "%.1f%%" "$cpu_usage"
 else
-    echo " N/A%"
+    echo "N/A%"
 fi
