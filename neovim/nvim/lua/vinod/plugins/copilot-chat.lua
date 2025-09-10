@@ -30,21 +30,22 @@ return {
 
       -- Function to update tmux status with current model
       local function update_tmux_status()
-        local copilot_chat = require("CopilotChat")
         local current_model = nil
         
-        -- Try to get the actual runtime model being used
-        if copilot_chat and copilot_chat.config then
-          current_model = copilot_chat.config.model
-        end
+        -- Primary source: Use the global variable (updated by model selection)
+        current_model = vim.g.copilot_chat_model
         
-        -- Fallback to global variable if config model not available
+        -- Fallback: If no global variable, use the default from config
         if not current_model then
-          current_model = vim.g.copilot_chat_model or "gpt-oss:20b"
+          local copilot_chat = require("CopilotChat")
+          if copilot_chat and copilot_chat.config then
+            current_model = copilot_chat.config.model or "gpt-oss:20b"
+          else
+            current_model = "gpt-oss:20b"
+          end
+          -- Update global variable with fallback value
+          vim.g.copilot_chat_model = current_model
         end
-        
-        -- Update global variable
-        vim.g.copilot_chat_model = current_model
         
         -- Update tmux variable directly using tmux command
         local cmd = string.format('tmux setenv -g copilot_model "%s" && tmux refresh-client -S', current_model)
@@ -65,8 +66,15 @@ return {
           wrapped_on_choice = function(item, idx)
             -- Call original callback first
             on_choice(item, idx)
-            -- If a selection was made, update tmux status after a brief delay
+            -- If a selection was made, update global variable and tmux status
             if item then
+              -- Update global variable immediately with selected model
+              if type(item) == "table" and item.name then
+                vim.g.copilot_chat_model = item.name
+              elseif type(item) == "string" then
+                vim.g.copilot_chat_model = item
+              end
+              -- Update tmux status after a brief delay to allow CopilotChat to process
               vim.defer_fn(update_tmux_status, 200)
             end
           end
