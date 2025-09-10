@@ -836,4 +836,83 @@ active_model=$(tmux showenv -g copilot_model 2>/dev/null | cut -d'=' -f2)
 
 ---
 
-_Last Updated: 2025-08-24_
+## Session Summary (2025-09-11) - TMUX STATUS BAR ICONS & FIXES ✅
+
+### Major Improvements Completed
+
+**✅ Enhanced Tmux Status Bar with Icons**
+- **Added Icons**: AI (◉), CPU (▣), RAM (▤), Battery (⚡/▼/■) for visual distinction
+- **Icon Design**: Used black/white Unicode symbols for consistent terminal compatibility
+- **Layout**: AI | CPU | RAM | Battery | Date/Time with proper spacing
+- **Battery States**: 
+  - `▲` - Charging (AC power, actively charging)
+  - `■` - Maintenance (AC power, not charging/full)
+  - `▼` - Discharging (running on battery)
+
+**✅ Fixed Model Change Detection Regression**
+- **Root Cause**: Timer was calling `debug_current_model()` instead of `update_tmux_status()`
+- **Timer Fix**: Changed periodic timer to call correct update function every 3 seconds
+- **Immediate Detection**: Added vim.ui.select wrapper to catch CopilotChat model selections
+- **Code Cleanup**: Removed non-working autocmd events and complex polling logic
+
+**✅ Status Bar Stability Improvements**
+- **CPU Precision**: Fixed to single decimal (4.9% vs 4.93%) to prevent status bar movement
+- **Battery Script**: Created dedicated battery status script for reliable detection
+- **Spacing Consistency**: Ensured exactly one space between all icons and values
+
+### Technical Implementation Details
+
+**vim.ui.select Wrapper for Immediate Updates:**
+```lua
+local original_ui_select = vim.ui.select
+vim.ui.select = function(items, opts, on_choice)
+  local is_copilot_models = opts and opts.prompt and 
+    (string.find(opts.prompt:lower(), "model") or string.find(opts.prompt:lower(), "copilot"))
+  
+  local wrapped_on_choice = on_choice
+  if is_copilot_models and on_choice then
+    wrapped_on_choice = function(item, idx)
+      on_choice(item, idx)
+      if item then
+        vim.defer_fn(function()
+          update_tmux_status()
+          vim.notify("Model changed, tmux status updated", vim.log.levels.INFO)
+        end, 200)
+      end
+    end
+  end
+  
+  return original_ui_select(items, opts, wrapped_on_choice)
+end
+```
+
+**Battery Status Script Logic:**
+```bash
+# Determine power source and charging state
+if echo "$battery_info" | grep -q "AC Power"; then
+  if echo "$battery_info" | grep -q "not charging"; then
+    icon="■"  # AC attached but not charging (full/maintenance)
+  elif echo "$battery_info" | grep -q "charging"; then
+    icon="▲"  # Actively charging
+  else
+    icon="■"  # AC attached, other state
+  fi
+else
+  icon="▼"  # On battery power (discharging)
+fi
+```
+
+### Current Status: FULLY WORKING
+
+**What's Working:**
+- ✅ **Icon Status Bar**: Clean visual indicators for all status elements
+- ✅ **Model Change Detection**: Both immediate (vim.ui.select wrapper) and periodic (3-second timer)
+- ✅ **Battery Icons**: Dynamic icons based on actual power state
+- ✅ **Stable Display**: Single decimal CPU prevents status bar jumping
+- ✅ **Consistent Spacing**: Exactly one space between all icons and values
+
+**Key Insight**: The regression was caused by a simple function call error in the timer mechanism, not complex architectural issues. The fix involved proper function calls and immediate feedback through vim.ui.select wrapper.
+
+---
+
+_Last Updated: 2025-09-11_
