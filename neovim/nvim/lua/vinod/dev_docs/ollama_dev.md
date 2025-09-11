@@ -508,6 +508,123 @@ The fix was surprisingly simple once the root cause was identified: use CopilotC
 
 ---
 
+## Session Summary (2025-09-12) - TMUX STATUS BAR FLASHING FIX ✅
+
+### Critical Issue Fixed
+
+**✅ Tmux Status Bar Model Flashing - RESOLVED**
+- **Problem**: Intermittent flashing between old/new model names when switching models via `<leader>ccm`
+- **Root Cause**: Race conditions between 3 different data sources:
+  1. Tmux environment variable (updated by Neovim)
+  2. Lua script fallback (reading CopilotChat state)
+  3. Config file parsing (static default)
+- **Symptoms**: Status bar would flicker showing old model name briefly before updating to new model
+- **Impact**: Confusing user experience, especially during rapid model switching
+
+### Solution Implemented
+
+**Single Source of Truth Architecture:**
+- **Primary Source**: Tmux environment variable only (`tmux showenv -g copilot_model`)
+- **Fallback**: Show "Loading..." instead of stale/wrong data
+- **Eliminated**: Lua script fallback and config file parsing that caused race conditions
+
+**Enhanced Model Change Validation:**
+- **Old Logic**: Updated tmux on every vim.ui.select call (200ms delay)
+- **New Logic**: Only updates when model actually changes (100ms delay)
+- **Comparison**: Stores old model, compares with new selection before updating
+- **Benefit**: Eliminates unnecessary updates that caused flashing
+
+**Simplified Detection Script:**
+- **Before**: 50+ lines with multiple fallback methods
+- **After**: 25 lines with single data source
+- **Removed**: Complex timeout mechanisms, file reading, error-prone parsing
+- **Result**: Reliable, fast model detection without race conditions
+
+### Technical Implementation
+
+**File Changes:**
+
+1. **`/Users/vinodnair/dotfiles/tmux/get_ai_model.sh` - Simplified Detection**
+   ```bash
+   # Single source of truth: tmux environment variable
+   active_model=$(tmux showenv -g copilot_model 2>/dev/null | cut -d'=' -f2)
+   
+   # Show loading state instead of wrong/stale data
+   if [ -z "$active_model" ] || [ "$active_model" = "nil" ]; then
+       echo "◉ Loading..."
+       return
+   fi
+   ```
+
+2. **`/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua` - Enhanced Validation**
+   ```lua
+   -- Store the old model for comparison
+   local old_model = vim.g.copilot_chat_model
+   
+   -- Only update if the model actually changed
+   if new_model and new_model ~= old_model then
+       vim.g.copilot_chat_model = new_model
+       vim.defer_fn(update_tmux_status, 100) -- Reduced from 200ms
+   end
+   ```
+
+3. **Removed File**: `/Users/vinodnair/dotfiles/tmux/get_current_ai_model.lua`
+   - **Reason**: Complex Lua script fallback was causing race conditions
+   - **Replacement**: Simple tmux environment variable approach
+
+**Removed Components:**
+- **Periodic Timer**: Eliminated 3-second polling that could interfere with updates
+- **Multiple Fallback Methods**: Removed config parsing and Lua script execution
+- **Complex Error Handling**: Simplified to single data source validation
+
+### Testing Results
+
+**Before Fix:**
+- Model switching showed flickering: "gpt-4o" → "gpt-oss:20b" → "gpt-4o" → "gpt-oss:20b"
+- Race conditions between data sources caused inconsistent display
+- 200ms delay allowed old data to show briefly
+
+**After Fix:**
+- Clean model switching: "gpt-4o" → "gpt-oss:20b" (no flickering)
+- Single data source eliminates race conditions
+- Model change validation prevents unnecessary updates
+- 100ms delay provides responsive feedback
+
+### Current Status: PRODUCTION READY
+
+**What's Working:**
+- ✅ **No More Flashing**: Model changes are clean and immediate
+- ✅ **Single Source**: Tmux environment variable is authoritative
+- ✅ **Change Validation**: Only updates when model actually changes
+- ✅ **Simplified Architecture**: 25 lines vs 50+ lines of detection code
+- ✅ **Faster Response**: 100ms delay vs 200ms delay
+
+**Benefits Achieved:**
+- **User Experience**: Clean, professional model switching without visual glitches
+- **System Reliability**: Eliminated race conditions and timing issues
+- **Code Maintainability**: Simpler architecture with fewer failure points
+- **Performance**: Reduced unnecessary updates and system calls
+
+### Files Modified This Session
+
+**Core Fix:**
+- `/Users/vinodnair/dotfiles/tmux/get_ai_model.sh` - Simplified to single data source
+- `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua` - Enhanced model change validation
+
+**Cleanup:**
+- **Deleted**: `/Users/vinodnair/dotfiles/tmux/get_current_ai_model.lua` - No longer needed
+
+### Architecture Decision
+
+**From**: Multiple fallback data sources with complex error handling  
+**To**: Single authoritative source with loading states for missing data
+
+This approach eliminates race conditions by having only one source of truth (tmux environment variable) and showing appropriate loading states rather than potentially incorrect fallback data.
+
+---
+
+_Last Updated: 2025-09-12_
+
 ## Session Summary (2025-09-09) - MAJOR CLEANUP ✅
 
 ### Critical Issues Identified and Fixed

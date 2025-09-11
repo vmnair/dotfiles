@@ -17,69 +17,56 @@ return {
       -- Initialize global variable for tmux status bar
       vim.g.copilot_chat_model = vim.g.copilot_chat_model or "gpt-oss:20b"
 
-      -- -- Function to update tmux status with current model
-      -- local function update_tmux_status()
-      -- 	local copilot_chat = require('CopilotChat')
-      -- 	if copilot_chat and copilot_chat.config and copilot_chat.config.model then
-      -- 		vim.g.copilot_chat_model = copilot_chat.config.model
-      -- 		-- Write to temp file for tmux status bar
-      -- 		vim.fn.system('echo "' .. copilot_chat.config.model .. '" > /tmp/copilot_current_model')
-      -- 	end
-      -- end
-      --
-
       -- Function to update tmux status with current model
       local function update_tmux_status()
-        local current_model = nil
-        
-        -- Primary source: Use the global variable (updated by model selection)
-        current_model = vim.g.copilot_chat_model
-        
-        -- Fallback: If no global variable, use the default from config
-        if not current_model then
-          local copilot_chat = require("CopilotChat")
-          if copilot_chat and copilot_chat.config then
-            current_model = copilot_chat.config.model or "gpt-oss:20b"
-          else
-            current_model = "gpt-oss:20b"
-          end
-          -- Update global variable with fallback value
-          vim.g.copilot_chat_model = current_model
-        end
+        local current_model = vim.g.copilot_chat_model or "gpt-oss:20b"
         
         -- Update tmux variable directly using tmux command
         local cmd = string.format('tmux setenv -g copilot_model "%s" && tmux refresh-client -S', current_model)
         vim.fn.system(cmd)
-        
       end
 
       -- Wrapper for vim.ui.select to detect CopilotChat model changes
       local original_ui_select = vim.ui.select
       vim.ui.select = function(items, opts, on_choice)
         -- Check if this is a CopilotChat model selection
-        local is_copilot_models = opts and opts.prompt and 
-          (string.find(opts.prompt:lower(), "model") or string.find(opts.prompt:lower(), "copilot"))
-        
+        local is_copilot_models = opts
+            and opts.prompt
+            and (string.find(opts.prompt:lower(), "model") or string.find(opts.prompt:lower(), "copilot"))
+
         -- Create wrapped on_choice callback
         local wrapped_on_choice = on_choice
         if is_copilot_models and on_choice then
           wrapped_on_choice = function(item, idx)
-            -- Call original callback first
+            -- Store the old model for comparison
+            local old_model = vim.g.copilot_chat_model
+            
+            -- Call original callback first (this updates CopilotChat internally)
             on_choice(item, idx)
+            
             -- If a selection was made, update global variable and tmux status
             if item then
-              -- Update global variable immediately with selected model
+              -- Extract the new model name
+              local new_model
               if type(item) == "table" and item.name then
-                vim.g.copilot_chat_model = item.name
+                new_model = item.name
               elseif type(item) == "string" then
-                vim.g.copilot_chat_model = item
+                new_model = item
               end
-              -- Update tmux status after a brief delay to allow CopilotChat to process
-              vim.defer_fn(update_tmux_status, 200)
+              
+              -- Only update if the model actually changed
+              if new_model and new_model ~= old_model then
+                vim.g.copilot_chat_model = new_model
+                
+                -- Wait briefly for CopilotChat to process, then update tmux
+                vim.defer_fn(function()
+                  update_tmux_status()
+                end, 100)
+              end
             end
           end
         end
-        
+
         -- Call original vim.ui.select with wrapped callback
         return original_ui_select(items, opts, wrapped_on_choice)
       end
@@ -155,25 +142,14 @@ return {
         },
       })
 
-
-      -- Initialize the temp file with current model
+      -- Initialize tmux status with current model
       update_tmux_status()
 
-      -- Create a manual command to update status
+      -- Create a manual command to update status (for troubleshooting)
       vim.api.nvim_create_user_command("CopilotUpdateStatus", function()
         update_tmux_status()
         vim.notify("Updated tmux status bar with current model", vim.log.levels.INFO)
       end, { desc = "Update tmux status bar with current CopilotChat model" })
-      
-
-
-      -- Set up a timer to periodically check and update
-      local function periodic_update()
-        update_tmux_status()
-      end
-
-      -- Check every 3 seconds
-      vim.fn.timer_start(3000, periodic_update, { ["repeat"] = -1 })
     end,
 
     -- Lazy-loaded keymaps
@@ -184,7 +160,7 @@ return {
       { "<leader>ccr", ":CopilotChatReset<CR>",    desc = "Reset Current Chat" },
       { "<leader>ccs", ":CopilotChatSave ",        desc = "Save Chat" },
       { "<leader>ccl", ":CopilotChatLoad ",        desc = "Load Chat" },
-      { "<leader>ccm", ":CopilotChatModels<CR>", desc = "Select Chat Model" },
+      { "<leader>ccm", ":CopilotChatModels<CR>",   desc = "Select Chat Model" },
       { "<leader>ccu", ":CopilotUpdateStatus<CR>", desc = "Update Tmux Status" },
     },
   },
