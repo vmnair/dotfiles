@@ -14,35 +14,13 @@ fi
 
 # Function to detect CopilotChat active model and provider
 detect_copilot_model() {
-    local nvim_config="/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua"
-    
-    if [ ! -f "$nvim_config" ] || [ ! -r "$nvim_config" ]; then
-        echo "◉ No Config"
-        return
-    fi
-    
-    # Try to get active model from multiple sources
-    local active_model=""
-    
-    # Method 1: Try to read from tmux environment variable (updated by Neovim)
+    # Single source of truth: tmux environment variable (updated by Neovim)
+    local active_model
     active_model=$(tmux showenv -g copilot_model 2>/dev/null | cut -d'=' -f2)
     
-    # Method 2: Try to get current model from CopilotChat if tmux variable fails
-    if [ -z "$active_model" ] && command -v nvim >/dev/null 2>&1; then
-        local lua_script="$(dirname "$0")/get_current_ai_model.lua"
-        if [ -f "$lua_script" ]; then
-            active_model=$(timeout 2 nvim --headless -l "$lua_script" 2>/dev/null | tail -1 | tr -d '\n')
-        fi
-    fi
-    
-    # Fallback to default model from config if no active model found
+    # If no model is set, show loading state instead of wrong/stale data
     if [ -z "$active_model" ] || [ "$active_model" = "nil" ]; then
-        # Updated pattern to match the current config structure
-        active_model=$(grep -A 30 'CopilotChat.*setup' "$nvim_config" 2>/dev/null | grep -E '^\s*model\s*=' | head -1 | sed -E 's/.*model[[:space:]]*=[[:space:]]*"([^"]*)".*$/\1/' 2>/dev/null)
-    fi
-    
-    if [ -z "$active_model" ]; then
-        echo "◉ Unknown"
+        echo "◉ Loading..."
         return
     fi
     
