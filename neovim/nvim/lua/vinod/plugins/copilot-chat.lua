@@ -142,8 +142,13 @@ return {
         },
       })
 
-      -- Initialize tmux status with current model
+      -- Initialize tmux status with current model immediately
       update_tmux_status()
+      
+      -- Also set it with a small delay to ensure tmux is ready
+      vim.defer_fn(function()
+        update_tmux_status()
+      end, 500)
 
       -- Create a manual command to update status (for troubleshooting)
       vim.api.nvim_create_user_command("CopilotUpdateStatus", function()

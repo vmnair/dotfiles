@@ -18,10 +18,11 @@ detect_copilot_model() {
     local active_model
     active_model=$(tmux showenv -g copilot_model 2>/dev/null | cut -d'=' -f2)
     
-    # If no model is set, show loading state instead of wrong/stale data
+    # If no model is set, fall back to default model (gpt-oss:20b)
     if [ -z "$active_model" ] || [ "$active_model" = "nil" ]; then
-        echo "◉ Loading..."
-        return
+        active_model="gpt-oss:20b"
+        # Set the tmux variable to persist the default
+        tmux setenv -g copilot_model "$active_model" 2>/dev/null
     fi
     
     # Determine provider type based on model name patterns
