@@ -167,6 +167,7 @@ return {
       { "<leader>ccl", ":CopilotChatLoad ",        desc = "Load Chat" },
       { "<leader>ccm", ":CopilotChatModels<CR>",   desc = "Select Chat Model" },
       { "<leader>ccu", ":CopilotUpdateStatus<CR>", desc = "Update Tmux Status" },
+      { "<leader>cce", "<Esc>:CopilotChatExplain<CR>",  desc = "Explain Code", mode = { "n", "v" } },
     },
   },
 }
