@@ -1,7 +1,7 @@
 # ghostty configuration
 # Vinod Nair MD Start as an interactive shell. As login shell will show message 
 font-size = 16 
-theme = "tokyonight-storm" 
+theme = "tokyonight night" 
 macos-auto-secure-input = true
 macos-secure-input-indication = true 
 macos-titlebar-style = "transparent" 

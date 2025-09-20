@@ -4,7 +4,6 @@
 
 A comprehensive ollama chat integration system for Neovim that provides seamless AI assistance within the development workflow. The system supports model management, persistent conversations, and unified behavior across tmux and terminal environments.
 
-
 ## System Architecture
 
 ### Core Design Principles
@@ -108,7 +107,7 @@ A comprehensive ollama chat integration system for Neovim that provides seamless
 ## Error Handling
 
 - Model validation with fallback selection
-- Service down detection with retry guidance  
+- Service down detection with retry guidance
 - Pane recovery on external kills
 - Independent Neovim instances
 - Progress feedback and silent loading
@@ -141,7 +140,7 @@ All core functionality implemented including model management, session persisten
 - **Use Case**: When context strategies fail and models continue running despite user attempts to stop them
 - **Location**: `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/ollama_chat.lua:490-528`
 - **Commands Updated**: Added `:OllamaForceTerminate` to command set
-- **Help Updated**: Added force termination to `:OllamaHelp` documentation  
+- **Help Updated**: Added force termination to `:OllamaHelp` documentation
 - **Status**: **Implementation complete, pending user testing**
 
 ## Session Summary (2025-08-24)
@@ -150,13 +149,14 @@ All core functionality implemented including model management, session persisten
 
 1. **Root Cause Analysis**: Identified that original 3 context strategies were too polite/conversational, causing models trained to be helpful to ignore stop instructions and analyze code anyway
 
-2. **Enhanced Context Strategy System**: 
+2. **Enhanced Context Strategy System**:
+
    - **Expanded from 3 → 5 strategies** with more aggressive, system-level approaches
    - **Strategy targets**: System commands, programming constructs, minimal formats, function calls, and chat mode overrides
    - **Updated strategy cycling**: Now cycles through 5 strategies instead of 3
    - **Updated help documentation**: All strategy names and descriptions updated
 
-3. **Added Force Termination**: 
+3. **Added Force Termination**:
    - **New command**: `<leader>oK` for nuclear option when all strategies fail
    - **Process cleanup**: `kill -9`, jobstop, forced buffer/pane closure
    - **Session state reset**: Complete cleanup of tracking variables
@@ -198,7 +198,7 @@ All core functionality implemented including model management, session persisten
 - **Problem**: API functions were using hardcoded fallback model "llama3.2:3b" instead of respecting active session model or dynamic model switching
 - **Solution**: Implemented intelligent model selection hierarchy
   - **Priority 1**: Use `ollama_session.model` if there's an active session with switched model
-  - **Priority 2**: Use configured default model from `ollama_config.lua`  
+  - **Priority 2**: Use configured default model from `ollama_config.lua`
   - **Priority 3**: Show error if no model available (no hardcoded fallbacks)
 - **New Function**: `get_current_model()` - Smart model resolution for API calls
 - **Integration**: API functions now respect model switching via `<leader>om` and persistent configuration
@@ -211,29 +211,34 @@ All core functionality implemented including model management, session persisten
 #### Current Issues Identified
 
 **1. Buffer Naming Problem**
+
 - **Symptom**: API response buffer shows as "No Name" instead of expected "Ollama-API-Response-HHMMSS"
 - **Attempted Fix**: Added error handling around `nvim_buf_set_name()` and changed to hyphenated name format
 - **Status**: Still investigating - may need different naming approach
 
 **2. Streaming Response Not Displaying**
+
 - **Symptom**: API request succeeds (200 OK), but streaming content doesn't appear in buffer
 - **Evidence**: Manual curl test works fine, buffer shows "Waiting for response..." but never updates
 - **Investigation**: Added debug callbacks to track stream chunks and completion
 - **Status**: Request succeeds but stream callback may not be firing
 
 **3. API vs Session Independence Issue**
+
 - **Resolved**: API functions now properly work without requiring active chat session
 - **Fixed**: Dynamic model selection uses session model → config default → error (no hardcoded fallbacks)
 
 #### Current Function Behavior
 
 **`<leader>ob` (Send Buffer via API):**
+
 - ✅ Creates buffer with waiting message
 - ✅ API request sent successfully (200 OK notification)
 - ❌ Buffer remains named "No Name" (naming fails silently)
 - ❌ Streaming response never appears (stream callback issue)
 
 **Manual API Test:**
+
 - ✅ `curl` to `http://localhost:11434/api/chat` works perfectly
 - ✅ Model `qwen2.5:7b` responds correctly
 - ✅ Both streaming and non-streaming modes work via curl
@@ -241,6 +246,7 @@ All core functionality implemented including model management, session persisten
 #### Code Changes Made This Session
 
 **Files Modified:**
+
 - `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/ollama_chat.lua`
   - Lines 305-318: Added `get_current_model()` helper for dynamic model selection
   - Lines 328-340, 456-468: Updated API functions to use current model instead of hardcoded
@@ -254,23 +260,27 @@ All core functionality implemented including model management, session persisten
 **IMPORTANT: API-ONLY APPROACH** - We are committed to using only the Ollama API with streaming. No terminal-based approaches or non-streaming fallbacks will be considered.
 
 **Immediate Debugging Priorities:**
+
 1. **Stream Callback Investigation**: The `stream = function(chunk)` callback may not be executing
+
    - Check if plenary.curl streaming works correctly in this context
    - Debug callback execution with enhanced logging
    - Test with simple stream callback that just logs chunks
 
-2. **Buffer Naming Fix**: 
+2. **Buffer Naming Fix**:
    - **RESOLVED**: Added comprehensive debug logging to track buffer creation and naming
    - Enhanced verification shows actual buffer names vs expected names
    - Debug output includes full buffer list after operations
 
 **Testing Commands:**
+
 - `<leader>ob` - Test buffer context API (main issue)
 - `<leader>os` - Test visual selection API (likely same streaming issue)
 - `:messages` - Check for error notifications
 - `:ls` - Verify buffer names and count
 
 **Manual Verification:**
+
 ```bash
 # Test API directly (known working)
 curl -X POST http://localhost:11434/api/chat \
@@ -279,8 +289,9 @@ curl -X POST http://localhost:11434/api/chat \
 ```
 
 #### Key Context for Resume
+
 - **Root Issue**: Stream callback not executing despite successful API request
-- **Model Selection**: Now properly dynamic (session → config → error)  
+- **Model Selection**: Now properly dynamic (session → config → error)
 - **Independence**: API functions work without chat session
 - **Manual Testing**: Ollama API confirmed working with curl
 - **Buffer Creation**: Working (shows waiting message)
@@ -289,7 +300,7 @@ curl -X POST http://localhost:11434/api/chat \
 ### Testing Required Next Session
 
 1. **Debug stream callback**: Add logging to verify if stream function executes
-2. **Test buffer naming**: Check for naming error notifications  
+2. **Test buffer naming**: Check for naming error notifications
 3. **Try non-streaming fallback**: If streaming fails, implement synchronous approach
 4. **Test visual selection**: `<leader>os` (likely same streaming issue)
 5. **Update documentation**: Mark issues as resolved once fixed
@@ -325,7 +336,7 @@ curl -X POST http://localhost:11434/api/chat \
 - **Lightweight Integration**: Created `ollama_integration.lua` (60 lines) to replace 600+ lines of custom code
 - **Provider Configuration**: Added complete Ollama provider to CopilotChat with:
   - Model discovery via `http://localhost:11434/v1/models`
-  - Chat completions via `http://localhost:11434/v1/chat/completions` 
+  - Chat completions via `http://localhost:11434/v1/chat/completions`
   - Embedding support with `all-minilm` model
 - **Enhanced Keybindings**:
   - `<leader>ob` - Send buffer context to CopilotChat
@@ -340,28 +351,32 @@ curl -X POST http://localhost:11434/api/chat \
 **Root Cause Identified:** The integration was bypassing CopilotChat.nvim's proper selection system and manually formatting context, which caused models to not receive/retain context properly.
 
 **Key Issues Resolved:**
+
 1. **Manual Context Formatting**: Replaced custom string formatting with CopilotChat's built-in selection system
-2. **Timing Issues**: Removed arbitrary 500ms delays that were unreliable  
+2. **Timing Issues**: Removed arbitrary 500ms delays that were unreliable
 3. **API Compatibility**: Now uses proper `require('CopilotChat').ask()` with selection parameters
 4. **Selection Handling**: Eliminated manual visual mode handling - CopilotChat handles it properly
 
 **Implementation Changes:**
+
 - **Buffer Context**: Now uses `require('CopilotChat.select').buffer` for proper buffer selection
-- **Visual Context**: Now uses `require('CopilotChat.select').visual` for proper visual selection  
+- **Visual Context**: Now uses `require('CopilotChat.select').visual` for proper visual selection
 - **Simplified Code**: Reduced from complex manual handling to clean API usage
 - **No Delays**: Removed vim.defer_fn() calls - CopilotChat handles initialization
 
 **Code Before (Problematic):**
-```lua
+
+````lua
 -- Manual context formatting - WRONG
 local context_message = string.format("```%s\n%s\n```", filetype, content)
 vim.defer_fn(function()
   require('CopilotChat').ask(context_message) -- No selection!
 end, 500)
-```
+````
 
 **Code After (Fixed):**
-```lua  
+
+```lua
 -- Proper selection system - CORRECT
 require('CopilotChat').ask(prompt, {
   selection = require('CopilotChat.select').buffer
@@ -369,6 +384,7 @@ require('CopilotChat').ask(prompt, {
 ```
 
 **Benefits:**
+
 - Uses CopilotChat's battle-tested selection system
 - No timing issues or arbitrary delays
 - Works correctly with both Copilot and Ollama providers
@@ -378,43 +394,50 @@ require('CopilotChat').ask(prompt, {
 ### 🔧 Testing Session Results (2025-08-28)
 
 **What Was Fixed:**
+
 - ✅ **Context Loading System**: Completely rewritten to use CopilotChat's proper API
 - ✅ **Buffer Context**: `<leader>ob` now uses `CopilotChat.select.buffer`
-- ✅ **Visual Selection**: `<leader>os` now uses `CopilotChat.select.visual`  
+- ✅ **Visual Selection**: `<leader>os` now uses `CopilotChat.select.visual`
 - ✅ **Integration Module**: Simplified from 96 lines to 47 lines
 - ✅ **API Usage**: Proper selection parameter usage instead of manual formatting
 
 **What Still Works:**
+
 - ✅ **Ollama Provider**: Successfully configured in CopilotChat.nvim
 - ✅ **Model Selection**: `<leader>ccm` shows Ollama models alongside Copilot models
 - ✅ **Chat Interface**: CopilotChat opens and displays properly
 
 **Current Testing Status:**
+
 - **Integration Fix**: COMPLETED - proper selection system implemented
 - **Context Loading**: PENDING TESTING - needs verification with actual Ollama models
 - **Built-in Commands**: NEEDS TESTING - evaluate if `:CopilotChatExplain`, etc. work better
 - **Conflict Resolution**: COMPLETED - removed old Ollama system causing errors
 
 **Next Session Tasks:**
+
 1. **Restart Neovim**: Required to fully load clean CopilotChat integration
 2. **Test fixed integration**: Verify `<leader>ob` and `<leader>os` work with Ollama models
-3. **Compare approaches**: Test built-in commands vs our fixed integration  
+3. **Compare approaches**: Test built-in commands vs our fixed integration
 4. **Final approach decision**: Keep fixed integration or switch to built-in commands
 
 **Files Modified This Session:**
+
 - `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/ollama_integration.lua` - Fixed selection system usage
-- `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua` - Fixed deprecation warnings  
+- `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua` - Fixed deprecation warnings
 - `/Users/vinodnair/dotfiles/neovim/nvim/init.lua` - Disabled conflicting old Ollama system
 - `/Users/vinodnair/dotfiles/neovim/nvim/OLLAMA_PLAN.md` - Updated documentation
 
 ### ✅ Conflict Resolution & Cleanup (2025-08-28)
 
 **Problem Identified:** The old custom Ollama chat system was still loading and conflicting with CopilotChat.nvim integration, causing the error:
+
 ```
 Error executing vim.schedule lua callback: /Users/vinodnair/.config/nvim/lua/vinod/ollama_chat.lua:589: attempt to call global 'update_chat_display' (a nil value)
 ```
 
 **Resolution:**
+
 1. **Disabled Old System**: Commented out `require("vinod.config.ollama_commands")` in init.lua
 2. **Fixed API Deprecation**: Updated CopilotChat provider to use `CopilotChat.utils.curl.get/post` instead of deprecated methods
 3. **Clean Integration**: Now only CopilotChat.nvim integration is active
@@ -427,37 +450,42 @@ Error executing vim.schedule lua callback: /Users/vinodnair/.config/nvim/lua/vin
 
 1. **✅ Root Cause Analysis**: Identified that original CopilotChat integration was bypassing proper selection system
 2. **✅ Integration Rewrite**: Completely rewrote `ollama_integration.lua` to use CopilotChat's proper API
-3. **✅ Conflict Resolution**: Discovered and fixed conflict with old custom Ollama system  
+3. **✅ Conflict Resolution**: Discovered and fixed conflict with old custom Ollama system
 4. **✅ API Deprecation Fix**: Updated CopilotChat provider to use modern API methods
 5. **✅ Clean Environment**: Disabled conflicting old system, now only CopilotChat integration active
 
 ### Technical Fixes Applied
 
 **Integration Fix - ollama_integration.lua:**
+
 - **Before**: Manual context formatting with `vim.defer_fn()` delays and custom string templates
 - **After**: Proper `require('CopilotChat').ask(prompt, { selection = require('CopilotChat.select').buffer })`
 - **Result**: Uses CopilotChat's battle-tested selection system instead of fighting against it
 
 **Conflict Resolution - init.lua:**
+
 - **Problem**: Old `require("vinod.config.ollama_commands")` was still loading, causing function conflicts
 - **Fix**: Commented out old system - `-- require("vinod.config.ollama_commands")`
 - **Result**: Clean environment with only CopilotChat integration active
 
 **API Updates - copilot-chat.lua:**
+
 - **Fixed**: Updated deprecated `CopilotChat.utils.curl_get/curl_post` to modern `CopilotChat.utils.curl.get/post`
 - **Result**: No more deprecation warnings
 
 ### Current Status: READY FOR TESTING
 
 **What's Working:**
+
 - ✅ **CopilotChat Integration**: Completely rewritten with proper selection system
 - ✅ **Ollama Provider**: Configured in CopilotChat.nvim with modern API
 - ✅ **Clean Environment**: No conflicting systems loaded
 - ✅ **Keybindings**: `<leader>ob`, `<leader>os`, `<leader>ccm` configured
 
 **What Needs Testing After Restart:**
+
 - 🔄 **Buffer Context Loading**: `<leader>ob` should work without errors
-- 🔄 **Visual Selection Loading**: `<leader>os` should work in visual mode  
+- 🔄 **Visual Selection Loading**: `<leader>os` should work in visual mode
 - 🔄 **Model Selection**: `<leader>ccm` should show Ollama models
 - 🔄 **Chat Interface**: Should be able to ask questions after context loading
 - 🔄 **Commands**: `:CopilotChat`, `:CopilotChatExplain`, etc. should be available
@@ -465,34 +493,32 @@ Error executing vim.schedule lua callback: /Users/vinodnair/.config/nvim/lua/vin
 ### Files Modified This Session
 
 **Core Integration:**
+
 - `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/ollama_integration.lua` - Rewritten to use proper CopilotChat API
 - `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua` - Fixed API deprecations, formatting cleanup
 
-**Configuration:**  
+**Configuration:**
+
 - `/Users/vinodnair/dotfiles/neovim/nvim/init.lua` - Disabled conflicting old Ollama system
 
 **Documentation:**
+
 - `/Users/vinodnair/dotfiles/neovim/nvim/OLLAMA_PLAN.md` - Updated with session progress
 
 ### Next Session Tasks (Tonight)
 
 **PRIORITY 1: Testing Phase**
+
 1. **Restart Neovim** - Essential to load clean configuration
 2. **Test Basic Flow**:
    - Open a code file
-   - `<leader>ob` - Load buffer context 
+   - `<leader>ob` - Load buffer context
    - `<leader>ccm` - Select Ollama model
    - Ask questions in chat interface
 
-**PRIORITY 2: Validation**
-3. **Verify Commands**: Check that `:CopilotChat <question>` works
-4. **Test Visual Selection**: Try `<leader>os` with selected code
-5. **Compare Approaches**: Test built-in `:CopilotChatExplain` vs our integration
+**PRIORITY 2: Validation** 3. **Verify Commands**: Check that `:CopilotChat <question>` works 4. **Test Visual Selection**: Try `<leader>os` with selected code 5. **Compare Approaches**: Test built-in `:CopilotChatExplain` vs our integration
 
-**PRIORITY 3: Decision & Cleanup**
-6. **Make Final Approach Decision**: Keep fixed integration vs switch to built-in commands
-7. **Execute Cleanup Plan**: Delete 1100+ lines of old custom Ollama code if integration works
-8. **Update Documentation**: Mark implementation as COMPLETE
+**PRIORITY 3: Decision & Cleanup** 6. **Make Final Approach Decision**: Keep fixed integration vs switch to built-in commands 7. **Execute Cleanup Plan**: Delete 1100+ lines of old custom Ollama code if integration works 8. **Update Documentation**: Mark implementation as COMPLETE
 
 ### Code Reduction Achieved So Far
 
@@ -513,6 +539,7 @@ The fix was surprisingly simple once the root cause was identified: use CopilotC
 ### Critical Issue Fixed
 
 **✅ Tmux Status Bar Model Flashing - RESOLVED**
+
 - **Problem**: Intermittent flashing between old/new model names when switching models via `<leader>ccm`
 - **Root Cause**: Race conditions between 3 different data sources:
   1. Tmux environment variable (updated by Neovim)
@@ -524,17 +551,20 @@ The fix was surprisingly simple once the root cause was identified: use CopilotC
 ### Solution Implemented
 
 **Single Source of Truth Architecture:**
+
 - **Primary Source**: Tmux environment variable only (`tmux showenv -g copilot_model`)
 - **Fallback**: Show "Loading..." instead of stale/wrong data
 - **Eliminated**: Lua script fallback and config file parsing that caused race conditions
 
 **Enhanced Model Change Validation:**
+
 - **Old Logic**: Updated tmux on every vim.ui.select call (200ms delay)
 - **New Logic**: Only updates when model actually changes (100ms delay)
 - **Comparison**: Stores old model, compares with new selection before updating
 - **Benefit**: Eliminates unnecessary updates that caused flashing
 
 **Simplified Detection Script:**
+
 - **Before**: 50+ lines with multiple fallback methods
 - **After**: 25 lines with single data source
 - **Removed**: Complex timeout mechanisms, file reading, error-prone parsing
@@ -545,10 +575,11 @@ The fix was surprisingly simple once the root cause was identified: use CopilotC
 **File Changes:**
 
 1. **`/Users/vinodnair/dotfiles/tmux/get_ai_model.sh` - Simplified Detection**
+
    ```bash
    # Single source of truth: tmux environment variable
    active_model=$(tmux showenv -g copilot_model 2>/dev/null | cut -d'=' -f2)
-   
+
    # Show loading state instead of wrong/stale data
    if [ -z "$active_model" ] || [ "$active_model" = "nil" ]; then
        echo "◉ Loading..."
@@ -557,10 +588,11 @@ The fix was surprisingly simple once the root cause was identified: use CopilotC
    ```
 
 2. **`/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua` - Enhanced Validation**
+
    ```lua
    -- Store the old model for comparison
    local old_model = vim.g.copilot_chat_model
-   
+
    -- Only update if the model actually changed
    if new_model and new_model ~= old_model then
        vim.g.copilot_chat_model = new_model
@@ -573,6 +605,7 @@ The fix was surprisingly simple once the root cause was identified: use CopilotC
    - **Replacement**: Simple tmux environment variable approach
 
 **Removed Components:**
+
 - **Periodic Timer**: Eliminated 3-second polling that could interfere with updates
 - **Multiple Fallback Methods**: Removed config parsing and Lua script execution
 - **Complex Error Handling**: Simplified to single data source validation
@@ -580,11 +613,13 @@ The fix was surprisingly simple once the root cause was identified: use CopilotC
 ### Testing Results
 
 **Before Fix:**
+
 - Model switching showed flickering: "gpt-4o" → "gpt-oss:20b" → "gpt-4o" → "gpt-oss:20b"
 - Race conditions between data sources caused inconsistent display
 - 200ms delay allowed old data to show briefly
 
 **After Fix:**
+
 - Clean model switching: "gpt-4o" → "gpt-oss:20b" (no flickering)
 - Single data source eliminates race conditions
 - Model change validation prevents unnecessary updates
@@ -593,6 +628,7 @@ The fix was surprisingly simple once the root cause was identified: use CopilotC
 ### Current Status: PRODUCTION READY
 
 **What's Working:**
+
 - ✅ **No More Flashing**: Model changes are clean and immediate
 - ✅ **Single Source**: Tmux environment variable is authoritative
 - ✅ **Change Validation**: Only updates when model actually changes
@@ -600,6 +636,7 @@ The fix was surprisingly simple once the root cause was identified: use CopilotC
 - ✅ **Faster Response**: 100ms delay vs 200ms delay
 
 **Benefits Achieved:**
+
 - **User Experience**: Clean, professional model switching without visual glitches
 - **System Reliability**: Eliminated race conditions and timing issues
 - **Code Maintainability**: Simpler architecture with fewer failure points
@@ -608,10 +645,12 @@ The fix was surprisingly simple once the root cause was identified: use CopilotC
 ### Files Modified This Session
 
 **Core Fix:**
+
 - `/Users/vinodnair/dotfiles/tmux/get_ai_model.sh` - Simplified to single data source
 - `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua` - Enhanced model change validation
 
 **Cleanup:**
+
 - **Deleted**: `/Users/vinodnair/dotfiles/tmux/get_current_ai_model.lua` - No longer needed
 
 ### Architecture Decision
@@ -628,6 +667,7 @@ This approach eliminates race conditions by having only one source of truth (tmu
 ### Critical Issue Fixed
 
 **✅ Tmux Status Bar Default Model Loading - RESOLVED**
+
 - **Problem**: Status bar showed "Loading..." on tmux startup instead of default model
 - **Root Cause**: Race condition between tmux status bar initialization and Neovim CopilotChat plugin loading
 - **Impact**: Users saw "Loading..." instead of expected default model on fresh tmux sessions
@@ -635,11 +675,13 @@ This approach eliminates race conditions by having only one source of truth (tmu
 ### Solution Implemented
 
 **Enhanced Default Model Fallback:**
+
 - **Updated `get_ai_model.sh`**: Added fallback to default model `gpt-oss:20b` when tmux variable is empty
 - **Persistent Variable Setting**: Script now sets tmux variable when falling back to default
 - **Immediate Display**: Status bar shows default model immediately, then updates if Neovim changes it
 
 **Improved CopilotChat Initialization:**
+
 - **Immediate Update**: Calls `update_tmux_status()` immediately when plugin loads
 - **Delayed Retry**: Added 500ms delayed retry to ensure tmux is ready to receive the variable
 - **Robust Initialization**: Covers edge cases where tmux might not be fully initialized
@@ -649,6 +691,7 @@ This approach eliminates race conditions by having only one source of truth (tmu
 **File Changes:**
 
 1. **`/Users/vinodnair/dotfiles/tmux/get_ai_model.sh` - Default Model Fallback**
+
    ```bash
    # If no model is set, fall back to default model (gpt-oss:20b)
    if [ -z "$active_model" ] || [ "$active_model" = "nil" ]; then
@@ -659,10 +702,11 @@ This approach eliminates race conditions by having only one source of truth (tmu
    ```
 
 2. **`/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua` - Enhanced Initialization**
+
    ```lua
    -- Initialize tmux status with current model immediately
    update_tmux_status()
-   
+
    -- Also set it with a small delay to ensure tmux is ready
    vim.defer_fn(function()
      update_tmux_status()
@@ -672,10 +716,12 @@ This approach eliminates race conditions by having only one source of truth (tmu
 ### Testing Results
 
 **Before Fix:**
+
 - Fresh tmux session: Status bar showed `◉ Loading...` indefinitely
 - Required manual Neovim startup or `:CopilotUpdateStatus` to show model
 
 **After Fix:**
+
 - Fresh tmux session: Status bar shows `◉ gpt-oss:20b (Local)` immediately
 - Neovim initialization updates seamlessly if model changes
 - No user intervention required
@@ -683,12 +729,14 @@ This approach eliminates race conditions by having only one source of truth (tmu
 ### Current Status: PRODUCTION READY
 
 **What's Working:**
+
 - ✅ **Immediate Default Model Display**: Shows `gpt-oss:20b (Local)` on fresh tmux sessions
 - ✅ **Persistent Variable Setting**: Script sets tmux variable for future updates
 - ✅ **Neovim Integration**: Plugin initialization updates status with proper timing
 - ✅ **Model Classification**: `gpt-oss:20b` correctly identified as Local model
 
 **Benefits Achieved:**
+
 - **User Experience**: No more confusing "Loading..." state on startup
 - **System Reliability**: Robust fallback handling for initialization race conditions
 - **Consistent Behavior**: Status bar always shows meaningful information
@@ -696,6 +744,7 @@ This approach eliminates race conditions by having only one source of truth (tmu
 ### Files Modified This Session
 
 **Core Fix:**
+
 - `/Users/vinodnair/dotfiles/tmux/get_ai_model.sh` - Added default model fallback with persistent setting
 - `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua` - Enhanced initialization with delayed retry
 
@@ -713,13 +762,15 @@ This approach ensures the status bar always shows meaningful information while m
 ### Work Completed This Session
 
 **✅ Code Cleanup and Documentation Update**
+
 - **Documentation Updated**: Added comprehensive session summary with technical implementation details
 - **Code Review**: Verified no debugging code, temporary implementations, or cleanup needed
 - **Production Ready**: All fixes are clean and follow established patterns
 
-**✅ Final State Verification**  
+**✅ Final State Verification**
+
 - **Tmux Status Bar**: Shows default model immediately on startup, no more "Loading..." state
-- **Model Switching**: Seamless updates when changing models via `<leader>ccm`  
+- **Model Switching**: Seamless updates when changing models via `<leader>ccm`
 - **CopilotChat Integration**: Enhanced initialization with proper timing and fallback handling
 - **Cross-Platform Compatibility**: Works on both macOS and Debian Linux systems
 
@@ -734,6 +785,7 @@ The tmux status bar default model initialization issue has been completely resol
 ### Current Status: PRODUCTION READY
 
 **All Core Functionality Working:**
+
 - ✅ **Immediate Default Display**: Shows `gpt-oss:20b (Local)` on fresh tmux sessions
 - ✅ **Model Change Detection**: Automatic updates via vim.ui.select wrapper and periodic timer
 - ✅ **Persistent Configuration**: Status bar always shows current model state
@@ -743,22 +795,26 @@ The tmux status bar default model initialization issue has been completely resol
 ### Files Modified This Session
 
 **Final Implementation:**
+
 - `/Users/vinodnair/dotfiles/tmux/get_ai_model.sh` - Enhanced with default model fallback
 - `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua` - Enhanced initialization timing
 - `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/dev_docs/ollama_dev.md` - Updated documentation
 
 **Additional Changes:**
+
 - `lazy-lock.json` - Plugin updates from lazy.nvim
 - `lua/vinod/config/autocmds.lua` - Formatting consistency improvements
 
 ### Testing Verification
 
 **Startup Behavior:**
+
 - Fresh tmux session: Status bar immediately shows `◉ gpt-oss:20b (Local)`
 - Neovim launch: Status updates seamlessly if model differs
 - Model switching: Clean transitions with vim.ui.select wrapper
 
 **Error Recovery:**
+
 - Tmux variable missing: Automatic fallback and variable setting
 - Plugin load delay: Delayed retry ensures proper initialization
 - Race conditions: Eliminated through single-source-of-truth architecture
@@ -779,14 +835,16 @@ This approach ensures the status bar is always meaningful while maintaining the 
 ### Critical Cleanup Completed
 
 **✅ Redundant Ollama Code Elimination - COMPLETE**
+
 - **Achievement**: Removed 1,100+ lines of redundant custom Ollama implementation
-- **Files Deleted**: 5 complete ollama_*.lua files that were never loaded
+- **Files Deleted**: 5 complete ollama\_\*.lua files that were never loaded
 - **Rationale**: CopilotChat.nvim integration provides superior functionality
 - **Impact**: Massive code reduction with zero functionality loss
 
 ### Files Removed This Session
 
 **Core Implementation Files (1,100+ lines deleted):**
+
 1. **`lua/vinod/ollama_manager.lua`** (~267 lines) - Model discovery, validation, config management
 2. **`lua/vinod/ollama_ui.lua`** (~215 lines) - Context-aware model selection UI
 3. **`lua/vinod/ollama_session.lua`** (~296 lines) - Chat saving/loading functionality
@@ -794,12 +852,14 @@ This approach ensures the status bar is always meaningful while maintaining the 
 5. **`lua/vinod/config/ollama_commands.lua`** (~275 lines) - Commands and keybindings
 
 **User Configuration Cleanup:**
+
 - **`~/.config/nvim/ollama_config.lua`** - Auto-created user configuration file
 - **`~/.local/share/nvim/ollama/`** - Data directory with saved chat conversations
 
 ### Validation Performed
 
 **✅ Safety Verification:**
+
 - **Not Loading**: `init.lua` already had `-- require("vinod.config.ollama_commands")` (commented out)
 - **No Dependencies**: Only internal cross-references between deleted files
 - **Working Replacement**: CopilotChat.nvim integration confirmed functional
@@ -808,6 +868,7 @@ This approach ensures the status bar is always meaningful while maintaining the 
 ### Current Status: STREAMLINED ARCHITECTURE
 
 **What's Working After Cleanup:**
+
 - ✅ **AI Model Selection**: `<leader>ccm` - Select between Copilot and Ollama models
 - ✅ **Buffer Context Loading**: `:CopilotChat #buffer [question]` - Send buffer content
 - ✅ **Visual Selection Context**: Visual select + `:CopilotChatExplain` - Send selection
@@ -815,6 +876,7 @@ This approach ensures the status bar is always meaningful while maintaining the 
 - ✅ **Tmux Status Integration**: Shows current AI model with provider indicators
 
 **Code Reduction Achievement:**
+
 - **Before**: ~1,100+ lines custom implementation + CopilotChat integration
 - **After**: Only CopilotChat provider configuration (~50 lines)
 - **Reduction**: **95%+ decrease** in maintenance burden
@@ -830,6 +892,7 @@ This approach eliminates maintenance overhead while providing better functionali
 ### Files Modified This Session
 
 **Cleanup Actions:**
+
 - **Deleted**: All 5 `ollama_*.lua` files from codebase
 - **Deleted**: User config files (`~/.config/nvim/ollama_config.lua`, `~/.local/share/nvim/ollama/`)
 - **Updated**: Development documentation to reflect streamlined architecture
@@ -843,12 +906,14 @@ _Last Updated: 2025-09-12_
 ### Critical Issues Identified and Fixed
 
 **✅ Copilot Model Name Formatting Issue - RESOLVED**
-- **Problem**: Tmux status bar showing malformed `[Copilot: gpt-4o all-minilm]` instead of clean model name  
+
+- **Problem**: Tmux status bar showing malformed `[Copilot: gpt-4o all-minilm]` instead of clean model name
 - **Root Cause**: Regex in `get_copilot_model.sh` was matching both main model and embedding model configurations
 - **Fix**: Updated regex to only search within `opts` section, avoiding embedding model configuration
 - **Result**: Now correctly displays `[Copilot: gpt-4o]`
 
 **✅ Integration Architecture Decision - SIMPLIFIED**
+
 - **Problem**: Custom `<leader>ob`/`<leader>os` integration was redundant with CopilotChat's built-in functionality
 - **User Insight**: "If we're using CopilotChat, why not stick with its API rather than mix our own?"
 - **Decision**: **Eliminated custom integration entirely** - use pure CopilotChat approach
@@ -857,16 +922,19 @@ _Last Updated: 2025-09-12_
 ### Work Completed This Session
 
 **1. ✅ Fixed Copilot Model Script**
+
 - **File**: `/Users/vinodnair/dotfiles/tmux/get_copilot_model.sh`
 - **Change**: Updated regex from matching any `model =` to only matching within `opts` section
 - **Testing**: Verified output changed from `[Copilot: gpt-4o all-minilm]` to `[Copilot: gpt-4o]`
 
-**2. ✅ Updated Ollama Provider Configuration**  
+**2. ✅ Updated Ollama Provider Configuration**
+
 - **File**: `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua`
 - **Change**: Replaced Copilot's `prepare_input` with custom Ollama-specific input preparation
 - **Purpose**: Ensure `#buffer` and `#selection` resources work properly with Ollama models
 
 **3. ✅ Eliminated Custom Integration Code**
+
 - **Deleted**: `lua/vinod/ollama_integration.lua` (91 lines)
 - **Removed**: `<leader>ob` and `<leader>os` keybindings
 - **Deleted**: `test_ollama_context.lua`
@@ -875,9 +943,11 @@ _Last Updated: 2025-09-12_
 ### New User Workflow (Simplified)
 
 **Model Selection:**
+
 - `<leader>ccm` → Choose Copilot or Ollama model (unchanged)
 
 **Context Loading (NEW - Pure CopilotChat):**
+
 - `:CopilotChat #buffer What does this function do?` → Buffer context with any selected model
 - Visual select code → `:CopilotChatExplain` → Built-in command with selection context
 - `:CopilotChatReview`, `:CopilotChatOptimize` → All built-in commands work with selected model
@@ -891,10 +961,12 @@ _Last Updated: 2025-09-12_
 ### Files Modified This Session
 
 **Core Fixes:**
+
 - `/Users/vinodnair/dotfiles/tmux/get_copilot_model.sh` - Fixed regex pattern
 - `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua` - Fixed Ollama provider input preparation
 
 **Cleanup:**
+
 - **Deleted**: `lua/vinod/ollama_integration.lua`
 - **Deleted**: `test_ollama_context.lua`
 - **Updated**: `copilot-chat.lua` - Removed custom keybindings
@@ -902,6 +974,7 @@ _Last Updated: 2025-09-12_
 ### Current Status: READY FOR TESTING
 
 **What Should Work After Neovim Restart:**
+
 - ✅ **Model Selection**: `<leader>ccm` shows both Copilot and Ollama models
 - ✅ **Buffer Context**: `:CopilotChat #buffer [question]` works with any selected model
 - ✅ **Selection Context**: Visual select + `:CopilotChatExplain` works with any selected model
@@ -929,6 +1002,7 @@ This approach is cleaner, more maintainable, and gives access to all CopilotChat
 ### Testing Results - SUCCESS
 
 **✅ CopilotChat #buffer Integration Working**
+
 - **Fixed Issue**: Restored missing `prepare_input` function that was causing "attempt to call field 'prepare_input' (a nil value)" error
 - **Solution**: Used `require("CopilotChat.config.providers").copilot.prepare_input(chat_input, opts)` to delegate to default Copilot provider logic
 - **Result**: `:CopilotChat #buffer what does the build function do?` now works with Ollama models
@@ -937,7 +1011,7 @@ This approach is cleaner, more maintainable, and gives access to all CopilotChat
 ### Current Working Workflow
 
 1. **Model Selection**: `<leader>ccm` → Shows both Copilot and Ollama models ✅
-2. **Buffer Context**: `:CopilotChat #buffer [question]` → Works with selected Ollama model ✅  
+2. **Buffer Context**: `:CopilotChat #buffer [question]` → Works with selected Ollama model ✅
 3. **Chat Interface**: Standard CopilotChat commands work with Ollama ✅
 
 ### ✅ Tmux Status Bar Unified Display - RESOLVED
@@ -945,12 +1019,13 @@ This approach is cleaner, more maintainable, and gives access to all CopilotChat
 **Problem Resolved**: Tmux status bar now shows unified AI model display with provider type indicators and fixed-width CPU percentage to prevent flickering.
 
 **Implementation**:
+
 - **New Script**: `get_ai_model.sh` replaces both `get_copilot_model.sh` and `get_ollama_model.sh`
 - **Display Format**: `[AI: model-name (Online|Local)]`
   - Example: `[AI: gpt-4o (Online)]` for Copilot models
   - Example: `[AI: llama3.2:3b (Local)]` for Ollama models
 - **Provider Detection**: Automatic detection based on model name patterns
-  - Online: gpt-*, claude-*, text-*, etc.
+  - Online: gpt-_, claude-_, text-\*, etc.
   - Local: llama*, qwen*, models with size indicators (*:*b)
 - **Fixed Width CPU**: CPU percentage now displays as " 12.1%" (fixed 5-character width) preventing text shifting
 
@@ -959,20 +1034,24 @@ This approach is cleaner, more maintainable, and gives access to all CopilotChat
 ### Files Modified This Session
 
 **Core Fix:**
+
 - `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua` - Restored `prepare_input` function using Copilot provider delegation
 
 **Tmux Status Bar Improvements:**
+
 - `/Users/vinodnair/dotfiles/tmux/get_ai_model.sh` - **NEW**: Unified AI model detection with Online/Local indicators
 - `/Users/vinodnair/dotfiles/tmux/.tmux.conf` - Updated status bar to use new unified script and fixed-width CPU percentage
 
 ### Next Steps for Testing
 
-**PRIORITY 1: Complete Current Testing** ✅  
+**PRIORITY 1: Complete Current Testing** ✅
+
 - Buffer context loading: **WORKING**
-- Model selection: **WORKING** 
+- Model selection: **WORKING**
 - Chat functionality: **WORKING**
 
 **PRIORITY 2: Address Tmux Status Bar**
+
 - Investigate how CopilotChat stores selected model information
 - Update `/Users/vinodnair/dotfiles/tmux/get_copilot_model.sh` to detect Ollama models
 - Test status bar updates after model switching
@@ -982,19 +1061,22 @@ This approach is cleaner, more maintainable, and gives access to all CopilotChat
 ### Major Improvements Completed
 
 **✅ Unified AI Model Status Display**
+
 - **Problem Resolved**: Replaced dual model indicators (separate Ollama/Copilot) with single unified display
 - **New Format**: `[AI: model-name (Online|Local)]` with provider type indicators
 - **Smart Detection**: Automatic Online/Local classification based on model name patterns
-- **Files Created**: 
+- **Files Created**:
   - `get_ai_model.sh` - Unified model detection script
   - `get_cpu_usage.sh` - Fixed-width CPU percentage script
 
-**✅ CPU Percentage Flickering Fix**  
+**✅ CPU Percentage Flickering Fix**
+
 - **Problem**: CPU display caused status bar text shifting as values changed
 - **Solution**: Fixed-width format " 12.3%" (5 characters) prevents flickering
 - **Implementation**: Dedicated script with proper error handling and timeouts
 
 **✅ Model Change Detection & Updates**
+
 - **Architecture**: tmux environment variables instead of temp files
 - **Integration**: Neovim updates tmux directly with `setenv -g copilot_model`
 - **Detection Methods**:
@@ -1003,6 +1085,7 @@ This approach is cleaner, more maintainable, and gives access to all CopilotChat
   - **Fallback**: Config file parsing when tmux variable unavailable
 
 **✅ Default Model Configuration**
+
 - **Updated**: Default model changed from `gpt-4o` to `gpt-oss:20b`
 - **Persistence**: Local model now default on startup
 - **Switching**: Can still use `<leader>ccm` to switch between models
@@ -1010,6 +1093,7 @@ This approach is cleaner, more maintainable, and gives access to all CopilotChat
 ### Technical Implementation Details
 
 **Tmux Integration Approach:**
+
 ```lua
 -- Neovim updates tmux directly
 local cmd = string.format('tmux setenv -g copilot_model "%s" && tmux refresh-client -S', model)
@@ -1017,25 +1101,29 @@ vim.fn.system(cmd)
 ```
 
 **Status Bar Detection:**
+
 ```bash
 # Shell script reads tmux environment variable
 active_model=$(tmux showenv -g copilot_model 2>/dev/null | cut -d'=' -f2)
 ```
 
 **Provider Classification Logic:**
+
 - **Online**: `gpt-*`, `claude-*`, `text-*`, etc.
 - **Local**: `llama*`, `qwen*`, models with size indicators (`*:*b`)
 
 ### Current Status: WORKING INTEGRATION
 
 **What's Working:**
+
 - ✅ **Unified Display**: Single clean AI model indicator
-- ✅ **Provider Detection**: Accurate Online/Local classification  
+- ✅ **Provider Detection**: Accurate Online/Local classification
 - ✅ **Fixed CPU Display**: No more flickering status bar
 - ✅ **Model Persistence**: Starts with preferred local model
 - ✅ **Change Detection**: Automatic updates via timer + manual fallback
 
 **Available Commands:**
+
 - `<leader>ccm` - Select CopilotChat model
 - `<leader>ccu` - Manual status bar update
 - `<leader>cce` - Explain code (works in normal and visual mode)
@@ -1044,12 +1132,14 @@ active_model=$(tmux showenv -g copilot_model 2>/dev/null | cut -d'=' -f2)
 ### Files Modified This Session
 
 **Core Integration:**
+
 - `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua` - Enhanced model change detection with tmux integration
 - `/Users/vinodnair/dotfiles/tmux/get_ai_model.sh` - Unified model detection script
 - `/Users/vinodnair/dotfiles/tmux/get_cpu_usage.sh` - **NEW**: Fixed-width CPU display script
 - `/Users/vinodnair/dotfiles/tmux/.tmux.conf` - Updated status bar configuration
 
 **Architecture Improvements:**
+
 - **Eliminated**: Temp file approach, dual model scripts confusion
 - **Implemented**: Clean tmux environment variable integration
 - **Enhanced**: Robust fallback system for model detection
@@ -1058,16 +1148,19 @@ active_model=$(tmux showenv -g copilot_model 2>/dev/null | cut -d'=' -f2)
 ### Next Session Tasks
 
 **PRIORITY 1: Testing & Validation**
+
 - Test model switching workflow: `<leader>ccm` → automatic status update
 - Validate timer-based detection vs manual `<leader>ccu` updates
 - Verify persistent model selection across Neovim restarts
 
 **PRIORITY 2: Fine-Tuning (Optional)**
+
 - Consider reducing timer interval if 3 seconds feels too slow
 - Evaluate if additional model patterns need Online/Local classification
 - Test edge cases: ollama service down, network models, etc.
 
 **PRIORITY 3: Cleanup Opportunities**
+
 - Remove unused temp file helper scripts if confirmed working
 - Clean up old commented code sections
 - Consider consolidating debug/status update functions
@@ -1079,28 +1172,34 @@ active_model=$(tmux showenv -g copilot_model 2>/dev/null | cut -d'=' -f2)
 **Once CopilotChat.nvim integration is confirmed working, the following custom code can be deleted:**
 
 **Core Implementation Files (1100+ lines):**
+
 - `lua/vinod/ollama_manager.lua` - Model discovery, validation, config management (~150 lines)
-- `lua/vinod/ollama_ui.lua` - Context-aware model selection UI (~100 lines)  
+- `lua/vinod/ollama_ui.lua` - Context-aware model selection UI (~100 lines)
 - `lua/vinod/ollama_chat.lua` - Chat session management, terminal integration, API functions (~700+ lines)
 - `lua/vinod/ollama_session.lua` - Chat saving/loading functionality (~100 lines)
 - `lua/vinod/config/ollama_commands.lua` - Commands and keybindings (~80 lines)
 
 **Configuration Files:**
+
 - `~/.config/nvim/ollama_config.lua` - Auto-created user configuration file
 - `~/.local/share/nvim/ollama/` - Data directory with saved chats
 
 **Init.lua Changes:**
+
 - Remove any `require('vinod.config.ollama_commands')` or similar Ollama-related loads
 
 **Potential Deletion (if built-in commands suffice):**
+
 - `lua/vinod/ollama_integration.lua` - Our 60-line integration module
 
 **What We Keep:**
+
 - CopilotChat.nvim configuration with Ollama provider (in copilot-chat.lua)
 - Enhanced keybindings for model selection and chat management
 - All CopilotChat functionality (save/load, model switching, etc.)
 
 **Code Reduction Summary:**
+
 - **Before**: ~1100+ lines of custom Ollama implementation
 - **After**: ~60 lines of integration code (or 0 if built-in commands work)
 - **Reduction**: 95%+ decrease in code complexity
@@ -1148,22 +1247,22 @@ active_model=$(tmux showenv -g copilot_model 2>/dev/null | cut -d'=' -f2)
 
 ### Complete Keybinding Reference
 
-| Keybinding   | Action       | Description                     |
-| ------------ | ------------ | ------------------------------- |
-| `<leader>od` | Set Default  | Set/change default model        |
-| `<leader>oo` | Open Chat    | Open chat with default model    |
-| `<leader>om` | Switch Model | Switch model in current session |
-| `<leader>ot` | Toggle       | Show/hide chat pane             |
-| `<leader>oc` | Close        | Close chat session              |
-| `<leader>oH` | Horizontal   | Set horizontal split preference |
-| `<leader>oV` | Vertical     | Set vertical split preference   |
-| `<leader>ow` | Save         | Save current chat with name     |
-| `<leader>ol` | Load         | Load saved chat                 |
-| `<leader>ox` | Clear        | Clear all saved chats           |
-| `<leader>oi` | Info         | Show model and session info     |
-| `<leader>oh` | Help         | Show comprehensive help dialog  |
-| `<leader>ob` | Buffer       | Send current buffer to Ollama via API    |
-| `<leader>os` | Selection    | Send visual selection to Ollama via API  |
+| Keybinding   | Action       | Description                             |
+| ------------ | ------------ | --------------------------------------- |
+| `<leader>od` | Set Default  | Set/change default model                |
+| `<leader>oo` | Open Chat    | Open chat with default model            |
+| `<leader>om` | Switch Model | Switch model in current session         |
+| `<leader>ot` | Toggle       | Show/hide chat pane                     |
+| `<leader>oc` | Close        | Close chat session                      |
+| `<leader>oH` | Horizontal   | Set horizontal split preference         |
+| `<leader>oV` | Vertical     | Set vertical split preference           |
+| `<leader>ow` | Save         | Save current chat with name             |
+| `<leader>ol` | Load         | Load saved chat                         |
+| `<leader>ox` | Clear        | Clear all saved chats                   |
+| `<leader>oi` | Info         | Show model and session info             |
+| `<leader>oh` | Help         | Show comprehensive help dialog          |
+| `<leader>ob` | Buffer       | Send current buffer to Ollama via API   |
+| `<leader>os` | Selection    | Send visual selection to Ollama via API |
 
 ---
 
@@ -1172,21 +1271,24 @@ active_model=$(tmux showenv -g copilot_model 2>/dev/null | cut -d'=' -f2)
 ### Major Improvements Completed
 
 **✅ Enhanced Tmux Status Bar with Icons**
+
 - **Added Icons**: AI (◉), CPU (▣), RAM (▤), Battery (⚡/▼/■) for visual distinction
 - **Icon Design**: Used black/white Unicode symbols for consistent terminal compatibility
 - **Layout**: AI | CPU | RAM | Battery | Date/Time with proper spacing
-- **Battery States**: 
+- **Battery States**:
   - `▲` - Charging (AC power, actively charging)
   - `■` - Maintenance (AC power, not charging/full)
   - `▼` - Discharging (running on battery)
 
 **✅ Fixed Model Change Detection Regression**
+
 - **Root Cause**: Timer was calling `debug_current_model()` instead of `update_tmux_status()`
 - **Timer Fix**: Changed periodic timer to call correct update function every 3 seconds
 - **Immediate Detection**: Added vim.ui.select wrapper to catch CopilotChat model selections
 - **Code Cleanup**: Removed non-working autocmd events and complex polling logic
 
 **✅ Status Bar Stability Improvements**
+
 - **CPU Precision**: Fixed to single decimal (4.9% vs 4.93%) to prevent status bar movement
 - **Battery Script**: Created dedicated battery status script for reliable detection
 - **Spacing Consistency**: Ensured exactly one space between all icons and values
@@ -1194,12 +1296,13 @@ active_model=$(tmux showenv -g copilot_model 2>/dev/null | cut -d'=' -f2)
 ### Technical Implementation Details
 
 **vim.ui.select Wrapper for Immediate Updates:**
+
 ```lua
 local original_ui_select = vim.ui.select
 vim.ui.select = function(items, opts, on_choice)
-  local is_copilot_models = opts and opts.prompt and 
+  local is_copilot_models = opts and opts.prompt and
     (string.find(opts.prompt:lower(), "model") or string.find(opts.prompt:lower(), "copilot"))
-  
+
   local wrapped_on_choice = on_choice
   if is_copilot_models and on_choice then
     wrapped_on_choice = function(item, idx)
@@ -1212,12 +1315,13 @@ vim.ui.select = function(items, opts, on_choice)
       end
     end
   end
-  
+
   return original_ui_select(items, opts, wrapped_on_choice)
 end
 ```
 
 **Battery Status Script Logic:**
+
 ```bash
 # Determine power source and charging state
 if echo "$battery_info" | grep -q "AC Power"; then
@@ -1236,6 +1340,7 @@ fi
 ### Current Status: FULLY WORKING
 
 **What's Working:**
+
 - ✅ **Icon Status Bar**: Clean visual indicators for all status elements
 - ✅ **Model Change Detection**: Both immediate (vim.ui.select wrapper) and periodic (3-second timer)
 - ✅ **Battery Icons**: Dynamic icons based on actual power state
@@ -1251,6 +1356,7 @@ fi
 ### Enhancement Completed
 
 **✅ Added CopilotChatExplain Keymap - IMPLEMENTED**
+
 - **New Keymap**: `<leader>cce` for quick code explanation
 - **Functionality**: Triggers `:CopilotChatExplain<CR>` command
 - **Mode Support**: Works in both normal and visual mode
@@ -1260,14 +1366,17 @@ fi
 ### Technical Implementation
 
 **File Modified:**
+
 - `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua`
 
 **Code Added:**
+
 ```lua
 { "<leader>cce", "<Esc>:CopilotChatExplain<CR>",  desc = "Explain Code", mode = { "n", "v" } },
 ```
 
 **Key Features:**
+
 - **Mode Specification**: Explicitly supports both normal (`n`) and visual (`v`) modes
 - **Visual Mode Fix**: `<Esc>` prefix ensures clean exit from visual selection before command execution
 - **Unified Behavior**: Works consistently with the existing CopilotChat integration and model switching
@@ -1275,12 +1384,14 @@ fi
 ### Current Status: PRODUCTION READY
 
 **What's Working:**
+
 - ✅ **Normal Mode**: `<leader>cce` explains code around cursor
 - ✅ **Visual Mode**: Select code, press `<leader>cce` to explain selection
 - ✅ **Model Integration**: Works with currently selected model (Copilot or Ollama)
 - ✅ **Clean Implementation**: Uses built-in CopilotChat command, no custom wrapper needed
 
 **User Workflow:**
+
 1. **Normal Mode Explanation**: Position cursor in function/code block, press `<leader>cce`
 2. **Visual Selection Explanation**: Select specific code lines, press `<leader>cce`
 3. **Model Selection**: Use `<leader>ccm` to choose between Copilot and Ollama models
@@ -1295,9 +1406,11 @@ fi
 ### Files Modified This Session
 
 **Enhancement:**
+
 - `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/plugins/copilot-chat.lua` - Added `<leader>cce` keymap
 
 **Documentation:**
+
 - `/Users/vinodnair/dotfiles/neovim/nvim/lua/vinod/dev_docs/ollama_dev.md` - Updated with new keymap information
 
 ### Implementation Summary

@@ -5,26 +5,26 @@
 -- noremap and silent.
 --]]
 local map = function(mode, lhs, rhs, opts)
-	local options = { noremap = true, silent = true }
-	if opts then
-		options = vim.tbl_extend("force", options, opts)
-	end
-	vim.api.nvim_set_keymap(mode, lhs, rhs, options)
+  local options = { noremap = true, silent = true }
+  if opts then
+    options = vim.tbl_extend("force", options, opts)
+  end
+  vim.api.nvim_set_keymap(mode, lhs, rhs, options)
 end
 
 --This function adds ability to add keymaps to different modes
 local map_for_modes = function(modes, lhs, rhs, opts)
-	local options = { noremap = true, silent = true }
-	if opts then
-		options = vim.tbl_extend("force", options, opts)
-	end
-	for _, mode in ipairs(modes) do
-		local rhs_command = rhs
-		if mode == "t" then
-			rhs_command = [[<C-\><C-n>]] .. rhs
-		end
-		vim.api.nvim_set_keymap(mode, lhs, rhs_command, opts)
-	end
+  local options = { noremap = true, silent = true }
+  if opts then
+    options = vim.tbl_extend("force", options, opts)
+  end
+  for _, mode in ipairs(modes) do
+    local rhs_command = rhs
+    if mode == "t" then
+      rhs_command = [[<C-\><C-n>]] .. rhs
+    end
+    vim.api.nvim_set_keymap(mode, lhs, rhs_command, opts)
+  end
 end
 
 map("i", "jk", "<ESC>", { desc = "Exit insert mode with jk" })
@@ -59,6 +59,14 @@ map("n", "]b", ":bnext<CR>", { desc = "Move to next buffer" })
 map("n", "[b", ":bprevious<CR>", { desc = "Move to previous buffer" })
 map("n", "]B", ":blast<CR>", { desc = "Move to last buffer" })
 map("n", "[B", ":bfirst<CR>", { desc = "Move to first buffer" })
+
+-- Quickfix navigation keymaps  <-- ADD HERE
+map("n", "]q", ":cnext<CR>", { desc = "Move to next quickfix item" })
+map("n", "[q", ":cprevious<CR>", { desc = "Move to previous quickfix item" })
+map("n", "]Q", ":clast<CR>", { desc = "Move to last quickfix item" })
+map("n", "[Q", ":cfirst<CR>", { desc = "Move to first quickfix item" })
+map("n", "<leader>qo", ":copen<CR>", { desc = "Open quickfix window" })
+map("n", "<leader>qc", ":cclose<CR>", { desc = "Close quickfix window" })
 
 -- Windows movement
 map_for_modes({ "n", "t", "v" }, "<C-h>", "<C-w>h", { desc = "Move to Left Window" })

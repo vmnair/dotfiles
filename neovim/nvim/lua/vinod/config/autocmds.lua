@@ -1,5 +1,21 @@
 -- autocmds.lua
 
+-- open Quickfix window after we run grep command
+vim.api.nvim_create_autocmd("QuickFixCmdPost", {
+	pattern = "*",
+	callback = function()
+		local qf_list = vim.fn.getqflist()
+		local qf_count = #qf_list
+
+		if qf_count > 0 then
+			vim.cmd("copen")
+			vim.notify(string.format("Found %d result%s", qf_count, qf_count == 1 and "" or "s"), vim.log.levels.INFO)
+		else
+			vim.notify("No search results found", vim.log.levels.WARN)
+		end
+	end,
+})
+
 -- Markdown configuration
 local MarkdownConfig = vim.api.nvim_create_augroup("MarkdownConfig", { clear = true })
 
@@ -12,7 +28,16 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.opt_local.textwidth = 80
 	end,
 })
-
+-- Alternative: Use formatoptions for automatic wrapping
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = "markdown",
+	callback = function()
+		vim.opt_local.textwidth = 80
+		vim.opt_local.formatoptions:append("t") -- Auto-wrap text using textwidth
+		vim.opt_local.formatoptions:append("c") -- Auto-wrap comments
+		vim.opt_local.formatoptions:append("a") -- Automatic formatting of paragraphs
+	end,
+})
 -- Move the help file to the right insted of the bottom
 vim.api.nvim_create_autocmd("BufWinEnter", {
 	pattern = "*.txt",
@@ -148,3 +173,5 @@ vim.keymap.set("i", "<M-l>", "<cmd>Copilot accept<cr>", { desc = "Accept Copilot
 vim.keymap.set("i", "<M-d>", "<cmd>Copilot dismiss<cr>", { desc = "Dismiss Copilot Suggestion" })
 -- Refresh Copilot Suggestions
 vim.keymap.set("i", "<M-r>", "<cmd>Copilot refresh<cr>", { desc = "Refresh Copilot Suggestions" })
+-- Auto format paragraph
+vim.keymap.set("n", "<leader>gq", "gqap", { desc = "Format current paragraph" })

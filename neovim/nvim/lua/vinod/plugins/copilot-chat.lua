@@ -20,7 +20,7 @@ return {
       -- Function to update tmux status with current model
       local function update_tmux_status()
         local current_model = vim.g.copilot_chat_model or "gpt-oss:20b"
-        
+
         -- Update tmux variable directly using tmux command
         local cmd = string.format('tmux setenv -g copilot_model "%s" && tmux refresh-client -S', current_model)
         vim.fn.system(cmd)
@@ -40,10 +40,10 @@ return {
           wrapped_on_choice = function(item, idx)
             -- Store the old model for comparison
             local old_model = vim.g.copilot_chat_model
-            
+
             -- Call original callback first (this updates CopilotChat internally)
             on_choice(item, idx)
-            
+
             -- If a selection was made, update global variable and tmux status
             if item then
               -- Extract the new model name
@@ -53,11 +53,11 @@ return {
               elseif type(item) == "string" then
                 new_model = item
               end
-              
+
               -- Only update if the model actually changed
               if new_model and new_model ~= old_model then
                 vim.g.copilot_chat_model = new_model
-                
+
                 -- Wait briefly for CopilotChat to process, then update tmux
                 vim.defer_fn(function()
                   update_tmux_status()
@@ -144,7 +144,7 @@ return {
 
       -- Initialize tmux status with current model immediately
       update_tmux_status()
-      
+
       -- Also set it with a small delay to ensure tmux is ready
       vim.defer_fn(function()
         update_tmux_status()
@@ -159,15 +159,15 @@ return {
 
     -- Lazy-loaded keymaps
     keys = {
-      { "<leader>cco", ":CopilotChat<CR>",         desc = "Open Copilot Chat" },
-      { "<leader>cct", ":CopilotChatToggle<CR>",   desc = "Toggle Copilot Chat" },
-      { "<leader>ccx", ":CopilotChatClose<CR>",    desc = "Close Copilot Chat" },
-      { "<leader>ccr", ":CopilotChatReset<CR>",    desc = "Reset Current Chat" },
-      { "<leader>ccs", ":CopilotChatSave ",        desc = "Save Chat" },
-      { "<leader>ccl", ":CopilotChatLoad ",        desc = "Load Chat" },
-      { "<leader>ccm", ":CopilotChatModels<CR>",   desc = "Select Chat Model" },
-      { "<leader>ccu", ":CopilotUpdateStatus<CR>", desc = "Update Tmux Status" },
-      { "<leader>cce", "<Esc>:CopilotChatExplain<CR>",  desc = "Explain Code", mode = { "n", "v" } },
+      { "<leader>cco", ":CopilotChat<CR>",             desc = "Open Copilot Chat" },
+      { "<leader>cct", ":CopilotChatToggle<CR>",       desc = "Toggle Copilot Chat" },
+      { "<leader>ccx", ":CopilotChatClose<CR>",        desc = "Close Copilot Chat" },
+      { "<leader>ccr", ":CopilotChatReset<CR>",        desc = "Reset Current Chat" },
+      { "<leader>ccs", ":CopilotChatSave ",            desc = "Save Chat" },
+      { "<leader>ccl", ":CopilotChatLoad ",            desc = "Load Chat" },
+      { "<leader>ccm", ":CopilotChatModels<CR>",       desc = "Select Chat Model" },
+      { "<leader>ccu", ":CopilotUpdateStatus<CR>",     desc = "Update Tmux Status" },
+      { "<leader>cce", "<Esc>:CopilotChatExplain<CR>", desc = "Explain Code",       mode = { "n", "v" } },
     },
   },
 }

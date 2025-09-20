@@ -16,7 +16,7 @@ tmux send-keys -t Readwise 'vim readwise.lua' C-m
 tmux split-window -h -t Readwise:1
 tmux send-keys -t Readwise:1.2 'cd ~/dotfiles/neovim/nvim/' C-m
 tmux send-keys -t Readwise:1.3  'clear' C-m
-tmux send-keys -t Readwise:1.2 'claude code' C-m
+tmux send-keys -t Readwise:1.2 'claude' C-m
 
 
 # Console Window
