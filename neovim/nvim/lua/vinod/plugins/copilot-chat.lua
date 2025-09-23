@@ -42,7 +42,7 @@ return {
             local old_model = vim.g.copilot_chat_model
 
             -- Call original callback first (this updates CopilotChat internally)
-            on_choice(item, idx)
+            on_choice(idx, item)
 
             -- If a selection was made, update global variable and tmux status
             if item then

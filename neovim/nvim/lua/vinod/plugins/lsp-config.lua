@@ -30,11 +30,9 @@ return {
     config = function()
       local map = vim.keymap.set
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
-      local lspconfig = require("lspconfig")
-      local util = require("lspconfig.util")
 
-      -- Lua Lsp setup
-      lspconfig.lua_ls.setup({
+      -- Lua language server configuration
+      vim.lsp.config('lua_ls', {
         capabilities = capabilities,
         settings = {
           Lua = {
@@ -45,22 +43,24 @@ return {
           },
         },
       })
-      -- clangd lsp setup
-      -- We will check if CMakeLists.text is present or build/compile_commands
+      vim.lsp.enable('lua_ls')
+      -- clangd language server configuration
+      -- We will check if CMakeLists.txt is present or build/compile_commands
       -- to determine the root directory
       local function clangd_custom_root_dir(fname)
-        return util.root_pattern("CMakeLists.txt")(fname)
-            or util.root_pattern("build/compile_commands.json")(fname)
+        return vim.fs.root(fname, "CMakeLists.txt")
+            or vim.fs.root(fname, "build/compile_commands.json")
       end
-      lspconfig.clangd.setup({
+      vim.lsp.config('clangd', {
         capabilities = capabilities,
         cmd = { "clangd", "--compile-commands-dir=build" },
         filetypes = { "c", "cpp" },
         root_dir = clangd_custom_root_dir,
       })
+      vim.lsp.enable('clangd')
 
-      -- gopls lsp setup
-      lspconfig.gopls.setup({
+      -- gopls language server configuration with auto-formatting
+      vim.lsp.config('gopls', {
         capabilities = capabilities,
         on_attach = function(_, bufnr)
           -- Enable formatting on save
@@ -73,7 +73,9 @@ return {
         end,
         cmd = { "gopls" },
         filetypes = { "go", "gomod", "gowork", "gotmpl" },
-        root_dir = util.root_pattern("go.work", "go.mod", ".git"),
+        root_dir = function(fname)
+          return vim.fs.root(fname, { "go.work", "go.mod", ".git" })
+        end,
         settings = {
           gopls = {
             completeUnimported = true,
@@ -84,21 +86,25 @@ return {
           },
         },
       })
+      vim.lsp.enable('gopls')
 
-      -- bash scripts LSP
-      lspconfig.cmake.setup({
+      -- cmake language server configuration
+      vim.lsp.config('cmake', {
         capabilities = capabilities,
         filetypes = { "cmake", "CMakeLists.txt" },
       })
+      vim.lsp.enable('cmake')
 
-      -- bash scripts LSP
-      lspconfig.bashls.setup({
+      -- bash language server configuration
+      vim.lsp.config('bashls', {
         capabilities = capabilities,
         filetypes = { "sh", "bash", "zsh", "zshrc", "proj" },
       })
+      vim.lsp.enable('bashls')
 
-      -- texlab configuration
-      lspconfig.texlab.setup({
+      -- texlab language server configuration (LaTeX)
+      vim.lsp.config('texlab', {
+        capabilities = capabilities,
         settings = {
           texlab = {
             build = {
@@ -113,10 +119,14 @@ return {
           },
         },
       })
-      -- configure marksman language server
-      -- lspconfig.marksman.setup({
-      -- 	settings = {},
+      vim.lsp.enable('texlab')
+
+      -- marksman language server (markdown) - commented out
+      -- vim.lsp.config('marksman', {
+      --   capabilities = capabilities,
+      --   settings = {},
       -- })
+      -- vim.lsp.enable('marksman')
       -- Diagnostic floating window should have rounded borders
       vim.diagnostic.config({
         float = {
