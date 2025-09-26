@@ -60,13 +60,18 @@ map("n", "[b", ":bprevious<CR>", { desc = "Move to previous buffer" })
 map("n", "]B", ":blast<CR>", { desc = "Move to last buffer" })
 map("n", "[B", ":bfirst<CR>", { desc = "Move to first buffer" })
 
--- Quickfix navigation keymaps  <-- ADD HERE
+-- Quickfix navigation keymaps
 map("n", "]q", ":cnext<CR>", { desc = "Move to next quickfix item" })
 map("n", "[q", ":cprevious<CR>", { desc = "Move to previous quickfix item" })
 map("n", "]Q", ":clast<CR>", { desc = "Move to last quickfix item" })
 map("n", "[Q", ":cfirst<CR>", { desc = "Move to first quickfix item" })
 map("n", "<leader>qo", ":copen<CR>", { desc = "Open quickfix window" })
 map("n", "<leader>qc", ":cclose<CR>", { desc = "Close quickfix window" })
+
+-- Markdown formatting keymaps
+map("v", "<leader>mb", 'c**<C-r>"**<Esc>', { desc = "Markdown bold" })
+map("v", "<leader>mi", 'c*<C-r>"*<Esc>', { desc = "Markdown italic" })
+map("v", "<leader>mc", 'c`<C-r>"`<Esc>', { desc = "Markdown code" })
 
 -- Windows movement
 map_for_modes({ "n", "t", "v" }, "<C-h>", "<C-w>h", { desc = "Move to Left Window" })

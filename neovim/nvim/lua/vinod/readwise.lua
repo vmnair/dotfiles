@@ -8,7 +8,7 @@ M.config = {
   base_url = "https://readwise.io/api/v2/",
 
   -- File Storage
-  -- TODO: Need to implement settings to add file storge path
+  -- TODO: Add user configuration option for custom cache directory path
   cache_dir = "/Users/vinodnair/Library/CloudStorage/Dropbox/notebook/readwise/",
 
   -- Cache duration (in seconds)
@@ -49,11 +49,12 @@ function M.setup(opts)
 
   -- Create cache directory if it doesn't exist.
   local cache_dir = M.config.cache_dir
-  if not vim.fn.isdirectory(cache_dir) then
-    vim.fn.mkdir(cache_dir, "p")
-    if M.config.debug then
-      print("Created cache_directory: " .. cache_dir)
+  if cache_dir and cache_dir ~= "" then     -- validate cache_dir
+    if not vim.fn.isdirectory(cache_dir) then -- check if directory exists.
+      vim.fn.mkdir(cache_dir, "p")
     end
+  else
+    vim.notify("Cache directory is not configured ...", vim.log.levels.ERROR)
   end
 
   -- Validate API token
@@ -71,7 +72,7 @@ end
 -- API Functions
 function M.get_highlights()
   --
-  -- TODO: Add error handling and authentication
+  -- TODO: Replace with async plenary.job implementation with authentication headers
   local cmd = { "curl", "-s", M.config.base_url .. "export/" }
   local response = vim.fn.system(cmd)
   return vim.json.decode(response)
