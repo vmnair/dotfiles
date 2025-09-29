@@ -91,11 +91,21 @@ end)
 
 describe("Readwise Async API Functions", function()
   local original_job
+  local original_getenv
 
   before_each(function()
     -- Reset module state
     package.loaded["lua.vinod.readwise"] = nil
     readwise = require("lua.vinod.readwise")
+
+    -- Mock os.getenv to provide test token
+    original_getenv = os.getenv
+    os.getenv = function(var)
+      if var == "READWISE_TOKEN" then
+        return "test_token_123"
+      end
+      return original_getenv(var)
+    end
 
     -- Mock plenary.job for async tests
     local job = require("plenary.job")
@@ -123,7 +133,7 @@ describe("Readwise Async API Functions", function()
             -- Call the on_exit callback with success
             opts.on_exit({
               result = function()
-                return mock_response
+                return {mock_response}  -- Return as array of lines
               end,
               stderr_result = function()
                 return {}
@@ -136,9 +146,12 @@ describe("Readwise Async API Functions", function()
   end)
 
   after_each(function()
-    -- Restore original job.new function
+    -- Restore original functions
     if original_job then
       require("plenary.job").new = original_job
+    end
+    if original_getenv then
+      os.getenv = original_getenv
     end
   end)
 

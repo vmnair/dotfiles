@@ -1,6 +1,8 @@
 -- readwise.lua
 -- author: Vinod M. Nair MD
 local M = {}
+-- import for plenary job
+local job = require("plenary.job")
 
 M.config = {
   -- API Configuration
@@ -64,18 +66,76 @@ function M.setup(opts)
 
   -- Debug output
   if M.config.debug then
-    print("Readwise Setup Complete!")
-    print(vim.inspect(M.config))
+    vim.notify("Readwise Setup Complete!", vim.log.levels.INFO)
   end
 end
 
--- API Functions
+-- Function to get API token from environment variable or config
+local function get_api_token()
+  -- Try environment variable first
+  local token = os.getenv("READWISE_TOKEN")
+
+  -- Fallback to config value
+  if not token or token == "" then
+    token = M.config.api_token
+  end
+
+  -- validate we have a token
+  if not token or token == "" then
+    return nil, "Readwise API token not found.  Set READWISE_TOKEN env variable or configure in setup."
+  end
+
+  return token, nil
+end
+
+-- Legacy synchronous function (deprecated - use get_highlights_async instead)
 function M.get_highlights()
-  --
-  -- TODO: Replace with async plenary.job implementation with authentication headers
+  -- NOTE: This function is deprecated in favor of get_highlights_async()
+  -- Kept for backward compatibility during development
   local cmd = { "curl", "-s", M.config.base_url .. "export/" }
   local response = vim.fn.system(cmd)
   return vim.json.decode(response)
+end
+
+-- Async function to get highlights from Readwise API using Plenary.job
+function M.get_highlights_async(callback)
+  -- Get and valicate API token
+  local token, token_err = get_api_token()
+  if token_err then
+    callback(nil, token_err)
+    return
+  end
+
+  -- Set up Job configuration
+  job.new({
+    command = "curl",
+    args = {
+      "-s",                          -- silent mode
+      "-H",
+      "Authorization: Token " .. token, -- auth header
+      "-H",
+      "Content-Type: application/json", -- content type
+      M.config.base_url .. "export/", -- API endpoint
+    },
+    -- Handle job completion
+    on_exit = function(job_instance, exit_code)
+      if exit_code == 0 then
+        -- parse JSON response
+        local output = table.concat(job_instance:result(), "\n")
+        local success, parsed_data = pcall(vim.json.decode, output)
+
+        if success then
+          callback(parsed_data, nil)
+        else
+          callback(nil, "Failed to parse JSON response")
+        end
+      else
+        -- Handle HTTP errors
+        local error_output = table.concat(job_instance:stderr_result(), "\n")
+        callback(nil, "API request failed: " .. error_output)
+      end
+    end,
+  }):start() -- Start the async job
 end
 
 return M
