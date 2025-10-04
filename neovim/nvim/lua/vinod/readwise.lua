@@ -2,7 +2,7 @@
 -- author: Vinod M. Nair MD
 local M = {}
 -- import for plenary job
-local job = require("plenary.job")
+local Job = require("plenary.job")
 
 M.config = {
   -- API Configuration
@@ -107,7 +107,7 @@ function M.get_highlights_async(callback)
   end
 
   -- Set up Job configuration
-  job.new({
+  Job:new({
     command = "curl",
     args = {
       "-s",                          -- silent mode
@@ -118,6 +118,14 @@ function M.get_highlights_async(callback)
       M.config.base_url .. "export/", -- API endpoint
     },
     -- Handle job completion
+    -- `on_exit` is a hook supplied to the `job.new` constructor.
+    -- When the external process (`curl`) finishes, Neovim calls
+    -- this function with **two** arguments:
+    -- @params:
+    -- `job_instance`: The `Job` object that was created by
+    --  `job.new`. It exposes methods such as `:result()` and `
+    -- :stderr_result()` to retrieve the stdout and stderr buffers.
+    -- `exit_code`:  The numeric exit status returned by the child process. A value of `0` indicates success, any other value signals an error.
     on_exit = function(job_instance, exit_code)
       if exit_code == 0 then
         -- parse JSON response

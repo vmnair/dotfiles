@@ -112,7 +112,7 @@ describe("Readwise Async API Functions", function()
     original_job = job.new
 
     -- Mock job.new to simulate successful response
-    job.new = function(opts)
+    job.new = function(self, opts)
       return {
         start = function()
           -- Simulate successful job completion
@@ -133,7 +133,7 @@ describe("Readwise Async API Functions", function()
             -- Call the on_exit callback with success
             opts.on_exit({
               result = function()
-                return {mock_response}  -- Return as array of lines
+                return { mock_response } -- Return as array of lines
               end,
               stderr_result = function()
                 return {}
