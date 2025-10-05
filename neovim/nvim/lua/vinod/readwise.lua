@@ -10,13 +10,17 @@ M.config = {
   base_url = "https://readwise.io/api/v2/",
 
   -- File Storage
-  -- TODO: Add user configuration option for custom cache directory path
-  cache_dir = "/Users/vinodnair/Library/CloudStorage/Dropbox/notebook/readwise/",
+  -- Default to standard Neovim data directory (portable across systems)
+  -- Users can override this to use Dropbox, iCloud, or any custom path:
+  -- setup({ cache_dir = "~/Dropbox/notebook/readwise/" })
+  cache_dir = vim.fn.stdpath("data") .. "/readwise/",
 
   -- Cache duration (in seconds)
+  -- Safe to be aggressive - API limit is 240 req/min, not daily
+  -- Users can override: setup({ cache_duration = { highlights = 60*60 } })
   cache_duration = {
-    highlights = 24 * 60 * 60, -- 24 hours
-    books = 7 * 24 * 60 * 60, -- 7 days
+    highlights = 4 * 60 * 60,  -- 4 hours (fresh data, still efficient)
+    books = 24 * 60 * 60,      -- 24 hours (books change less frequently)
   },
 
   -- UI Configuration (FZF-lua integration)
@@ -86,15 +90,6 @@ local function get_api_token()
   end
 
   return token, nil
-end
-
--- Legacy synchronous function (deprecated - use get_highlights_async instead)
-function M.get_highlights()
-  -- NOTE: This function is deprecated in favor of get_highlights_async()
-  -- Kept for backward compatibility during development
-  local cmd = { "curl", "-s", M.config.base_url .. "export/" }
-  local response = vim.fn.system(cmd)
-  return vim.json.decode(response)
 end
 
 -- Async function to get highlights from Readwise API using Plenary.job

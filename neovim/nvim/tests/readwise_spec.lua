@@ -34,61 +34,6 @@ describe("Readwise Configuration", function()
   end)
 end)
 
-describe("Readwise API Functions", function()
-  local original_system
-
-  before_each(function()
-    -- Reset module state
-    package.loaded["lua.vinod.readwise"] = nil
-    readwise = require("lua.vinod.readwise")
-
-    -- Mock vim.fn.system to avoid real HTTP calls
-    original_system = vim.fn.system
-    vim.fn.system = function(cmd)
-      if type(cmd) == "table" and cmd[1] == "curl" then
-        return vim.json.encode({
-          results = {
-            {
-              id = 1,
-              text = "This is a test highlight",
-              book_id = 123,
-              author = "Test Author",
-              title = "Test Book",
-            },
-          },
-          next = nil,
-        })
-      end
-      return "" -- Fallback in case of other commands than curl
-    end
-  end)
-
-  after_each(function()
-    -- Restore original system function
-    vim.fn.system = original_system
-  end)
-
-  it("should fetch highlights from Readwise API", function()
-    local highlights = readwise.get_highlights()
-
-    assert.is_not_nil(highlights, "Should return highlights data")
-    assert.is_table(highlights.results, "Should have results array")
-    assert.equals(1, highlights.results[1].id, "Should have highlight ID")
-    assert.equals("This is a test highlight", highlights.results[1].text, "Should have correct text")
-  end)
-
-  it("should handle API errors gracefully", function()
-    -- Mock error response
-    vim.fn.system = function(cmd)
-      return "curl: (6) Could not resolve host"
-    end
-
-    -- Test graceful error handling
-    local success, result = pcall(readwise.get_highlights)
-    assert.is_false(success, "Should fail gracefully on network error")
-  end)
-end)
-
 describe("Readwise Async API Functions", function()
   local original_job
   local original_getenv

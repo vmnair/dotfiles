@@ -1011,3 +1011,188 @@ function M.get_highlights_async(callback) -- Non-blocking HTTP with plenary.job
 - Foundation is solid for building upon
 - TDD methodology proven effective
 - All Day 2 objectives successfully completed
+
+---
+
+## 📋 **Day 3 Preparation - Architectural Decisions**
+**Date**: 2025-10-05
+**Status**: Planning complete, ready for implementation
+
+### ✅ **Architecture Decisions Made**
+
+#### **1. Testing Approach: Test-After Development (TAD)**
+**Decision**: Switch from strict TDD to Test-After for Day 3
+
+**Rationale:**
+- Focus on learning cache logic without test complexity overhead
+- Understand implementation first, then formalize with tests
+- Tests become documentation of learned concepts
+- Still get regression protection and confidence for refactoring
+
+**New Workflow:**
+1. Write function skeleton (understand signature)
+2. Implement logic (make it work in Neovim)
+3. Test manually with `:lua` commands
+4. Write comprehensive tests once logic is clear
+5. Refactor with confidence (tests catch breaks)
+
+**Benefits for Learning:**
+- ✅ Learn one concept at a time
+- ✅ Focus on business logic without distraction
+- ✅ Tests solidify understanding
+- ✅ Natural learning progression
+
+#### **2. Cache Location: Portable Default with User Override**
+**Decision**: Use `vim.fn.stdpath("data")` as default, allow configuration override
+
+**Implementation:**
+```lua
+-- Default (portable, no cloud dependency)
+cache_dir = vim.fn.stdpath("data") .. "/readwise/"
+-- Expands to:
+--   macOS: ~/.local/share/nvim/readwise/
+--   Linux: ~/.local/share/nvim/readwise/
+```
+
+**User Override Examples:**
+```lua
+-- Personal dotfiles can override to Dropbox
+require("vinod.readwise").setup({
+  cache_dir = "~/Library/CloudStorage/Dropbox/notebook/readwise/"
+})
+
+-- Or iCloud (macOS)
+require("vinod.readwise").setup({
+  cache_dir = "~/Library/Mobile Documents/com~apple~CloudDocs/readwise/"
+})
+```
+
+**Advantages:**
+- ✅ Works out-of-box (no cloud account required)
+- ✅ Follows Neovim conventions
+- ✅ Cross-platform compatible
+- ✅ Users opt-in to cloud sync if desired
+- ✅ Personal config can use Dropbox easily
+
+#### **3. Cache Duration: Aggressive Refresh Strategy**
+**Decision**: 4-hour highlights cache, 24-hour books cache
+
+**Implementation:**
+```lua
+cache_duration = {
+  highlights = 4 * 60 * 60,  -- 4 hours (fresh data)
+  books = 24 * 60 * 60,      -- 24 hours (rarely changes)
+}
+```
+
+**API Limit Analysis:**
+- Readwise limit: 240 requests/minute = 345,600 requests/day
+- With 4-hour cache: Max 6 auto-refreshes/day
+- Usage: 6 / 345,600 = 0.002% of daily capacity
+- Even 1-hour cache (24/day) = 0.007% usage
+- **Conclusion**: API limits are NOT a constraint
+
+**Real Bottleneck:**
+- Network latency: 500ms - 2 seconds per API call
+- Cache read: <10ms
+- **User experience** drives the decision, not API limits
+
+**User Benefits:**
+- Fresh highlights within 4 hours of reading session
+- Instant responses for repeated access (cache)
+- Manual `:ReadwiseRefresh` for immediate updates
+- Configurable for personal workflow
+
+**User Override:**
+```lua
+require("vinod.readwise").setup({
+  cache_duration = {
+    highlights = 1 * 60 * 60,  -- 1 hour (very fresh)
+    books = 7 * 24 * 60 * 60,  -- 1 week (stable)
+  }
+})
+```
+
+---
+
+### ⚠️ **FUTURE: Plugin Conversion Reminders**
+
+#### **Cache Directory User Documentation**
+When converting to public plugin, add to README:
+
+**Configuration Examples:**
+```lua
+-- Default - Works everywhere (no setup needed)
+-- Uses: ~/.local/share/nvim/readwise/
+
+-- Dropbox sync (macOS)
+require("readwise").setup({
+  cache_dir = "~/Library/CloudStorage/Dropbox/notebook/readwise/"
+})
+
+-- Dropbox sync (Linux)
+require("readwise").setup({
+  cache_dir = "~/Dropbox/notebook/readwise/"
+})
+
+-- iCloud sync (macOS only)
+require("readwise").setup({
+  cache_dir = "~/Library/Mobile Documents/com~apple~CloudDocs/readwise/"
+})
+```
+
+**Future Enhancement Ideas:**
+- Auto-detect common cloud storage locations
+- `:ReadwiseSetup` interactive wizard for first-time setup
+- `:ReadwiseInfo` to show current cache location and stats
+- Cloud sync status indicator
+
+---
+
+### 🔄 **READY FOR: Day 3 Implementation**
+**Approach**: Test-After Development (TAD)
+
+**Day 3 Goals:**
+1. **Cache file I/O** - Save/load JSON data with error handling
+2. **Data transformation** - Parse API responses for UI consumption
+3. **Cache validation** - Timestamp-based staleness detection
+4. **Manual refresh** - `:ReadwiseRefresh` command implementation
+5. **Error recovery** - Handle corrupt cache, missing files
+
+**Implementation Order:**
+1. Build `cache_data()` - Write JSON to file
+2. Build `load_cached_data()` - Read JSON from file
+3. Build `is_cache_valid()` - Timestamp validation
+4. Build `get_highlights_cached()` - Smart cache-or-fetch
+5. Test manually in Neovim with all functions
+6. Write comprehensive test suite for all functions
+7. Refactor and optimize with test safety net
+
+---
+
+## ✅ **COMPLETED: Code Cleanup - Async-Only Architecture**
+**Date**: 2025-10-05
+**Status**: Cleanup successful, ready for Day 3
+
+### **Removed Legacy Synchronous Code**
+**Rationale**: Committed to async architecture, no need for sync scaffold code
+
+**Deletions:**
+1. ✅ Removed `M.get_highlights()` synchronous function from readwise.lua
+2. ✅ Removed "Readwise API Functions" test block from readwise_spec.lua
+3. ✅ Tests still passing: **3/3 tests** (2 config + 1 async API)
+
+**Benefits:**
+- Cleaner codebase with single approach (async-only)
+- No confusion about which function to use
+- Simplified test suite (from 5 tests to 3 tests)
+- Clean foundation for Day 3 caching layer
+
+**Current Test Coverage:**
+```
+✅ Readwise Configuration should have default configuration
+✅ Readwise Configuration should merge user options with defaults
+✅ Readwise Async API Functions should handle successful async API call
+```
+
+**Ready to start Day 3 development!**
