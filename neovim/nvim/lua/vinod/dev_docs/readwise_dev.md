@@ -533,10 +533,13 @@ end
 - **Claude's Role**: Explain concepts, provide instructions, verify user's code
 - **User's Role**: Write all code manually unless specifically asking Claude to implement
 - **Process**: Claude explains → User codes → Claude verifies
-- **Testing**: Claude verifies with headless testing after user writes code
+- **Testing**: Use proper test suite only - NO interactive REPL testing
 - **Documentation**: Updated as we modify plans
 
-**⚠️ REMINDER FOR CLAUDE**: Do NOT write code for the user unless explicitly asked. Always give instructions and let user implement.
+**⚠️ REMINDER FOR CLAUDE**:
+- Do NOT write code for the user unless explicitly asked. Always give instructions and let user implement.
+- Do NOT suggest interactive testing (`:lua` commands in Neovim) - local functions can't be tested this way
+- ALWAYS recommend proper test suite implementation using `./run_tests.sh`
 
 **Manual Refresh Feature Added:**
 - Discussed need for `:ReadwiseRefresh` commands for active reading sessions
@@ -1187,6 +1190,323 @@ require("readwise").setup({
 - No confusion about which function to use
 - Simplified test suite (from 5 tests to 3 tests)
 - Clean foundation for Day 3 caching layer
+
+---
+
+## ✅ **COMPLETED: Day 3 Session 1 - Cache I/O Implementation**
+**Date**: 2025-10-05
+**Status**: File I/O complete, cache validation next
+
+### **Major Accomplishments**
+
+#### **✅ Function 1: `cache_data()` - Write Cache to File**
+**Implementation Complete:**
+- Save API data to JSON file with timestamp metadata
+- Error handling for file operations
+- Proper cache structure: `{ timestamp, cache_type, data }`
+
+**Code Location:** `readwise.lua` lines 95-125
+
+**Test Coverage:**
+- Test: "should cache data to file" ✅ Passing
+- Verifies file creation, JSON structure, timestamp presence
+
+**Key Learning:**
+- File I/O with `io.open()`, `file:write()`, `file:close()`
+- JSON encoding with `vim.json.encode()`
+- Error returns: `return false, error_msg` pattern
+- Cache structure design with metadata
+
+#### **✅ Function 2: `load_cached_data()` - Read Cache from File**
+**Implementation Complete:**
+- Load JSON data from cache file
+- Safe JSON parsing with `pcall()`
+- File existence checking before reading
+- Comprehensive error handling
+
+**Code Location:** `readwise.lua` lines 127-159
+
+**Test Coverage:**
+- Test: "should load cached data" ✅ Passing
+- Verifies data round-trip (cache → load → verify)
+- Checks timestamp, cache_type, and data integrity
+
+**Key Learning:**
+- File reading with `file:read("*a")` (read all)
+- `vim.fn.filereadable()` for file existence checks
+- Safe JSON parsing: `pcall(vim.json.decode, content)`
+- Return pattern: `return data, nil` for success, `return nil, error` for failure
+
+#### **✅ Test Infrastructure Improvements**
+**Enhanced Test Suite:**
+- Better assertions checking actual data, not just execution
+- Proper test isolation with `/tmp/readwise_test_cache/`
+- Explicit directory creation in `before_each()`
+- Cleanup in `after_each()` with `vim.fn.delete()`
+
+**Test Helpers Added:**
+```lua
+M.test_cache_data(data, cache_type)
+M.test_load_cached_data(cache_type)
+```
+
+**Current Test Status:** ✅ **5/5 tests passing**
+
+#### **🎓 Learning Achieved**
+
+**Lua File I/O Mastery:**
+- Opening files: `io.open(path, mode)` where mode = "r" (read) or "w" (write)
+- Reading: `file:read("*a")` reads entire file
+- Writing: `file:write(string)` writes text
+- Cleanup: Always `file:close()` after operations
+
+**Error Handling Patterns:**
+- Multiple return values: `success, error = function()`
+- Nil checks: `if not value then return nil, "error" end`
+- Safe operations: `pcall()` for functions that might fail
+
+**Test-After Development:**
+- Implement function first, understand logic
+- Write comprehensive tests after
+- Verify with edge cases
+- Refactor with confidence
+
+**Process Isolation Understanding:**
+- `./run_tests.sh` runs in separate headless Neovim process
+- No contamination of interactive session
+- Module reloading with `package.loaded[...] = nil` gives fresh state
+
+---
+
+### 🔄 **NEXT SESSION: Function 3 - `is_cache_valid()`**
+**Status**: Ready to implement
+
+#### **Function Purpose**
+Decides whether to use cached data or fetch fresh from API based on cache age.
+
+#### **Function Signature**
+```lua
+-- Check if cached data is still valid (not expired)
+-- @param cache_type string: Type of cache ("highlights" or "books")
+-- @return boolean: true if cache is valid and fresh, false otherwise
+local function is_cache_valid(cache_type)
+  -- Implementation needed
+end
+```
+
+#### **Logic Flow**
+```
+1. Load cached data using load_cached_data()
+   ↓
+2. If load fails → return false (no valid cache)
+   ↓
+3. Verify cache has timestamp field
+   ↓
+4. Calculate age: os.time() - cache.timestamp
+   ↓
+5. Get max_age from M.config.cache_duration[cache_type]
+   ↓
+6. Return: cache_age < max_age
+```
+
+#### **Implementation Pattern**
+```lua
+local function is_cache_valid(cache_type)
+  -- 1. Load cached data
+  local cached, err = load_cached_data(cache_type)
+  if err then
+    return false  -- No cache or error loading
+  end
+
+  -- 2. Verify timestamp exists
+  if not cached.timestamp then
+    return false  -- Corrupt cache
+  end
+
+  -- 3. Calculate cache age
+  local current_time = os.time()
+  local cache_age = current_time - cached.timestamp
+
+  -- 4. Get max age from config
+  local max_age = M.config.cache_duration[cache_type]
+  if not max_age then
+    return false  -- Unknown cache type
+  end
+
+  -- 5. Return freshness check
+  return cache_age < max_age
+end
+```
+
+#### **Example Math**
+```lua
+-- Config: highlights cache lasts 4 hours
+M.config.cache_duration.highlights = 4 * 60 * 60  -- 14400 seconds
+
+-- Scenario 1: Cache is 2 hours old (FRESH)
+current_time = 1728140000
+cached.timestamp = 1728132800  -- 2 hours ago
+cache_age = 7200 seconds (2 hours)
+max_age = 14400 seconds (4 hours)
+Result: 7200 < 14400 = true ✅ Use cache!
+
+-- Scenario 2: Cache is 5 hours old (STALE)
+current_time = 1728140000
+cached.timestamp = 1728122000  -- 5 hours ago
+cache_age = 18000 seconds (5 hours)
+max_age = 14400 seconds (4 hours)
+Result: 18000 < 14400 = false ❌ Fetch fresh!
+```
+
+#### **Where to Add**
+**Location:** `readwise.lua` after `load_cached_data()` (around line 160)
+
+#### **Test Helper to Add**
+```lua
+-- In temporary functions section:
+function M.test_is_cache_valid(cache_type)
+  return is_cache_valid(cache_type)
+end
+```
+
+#### **Test Cases to Write**
+1. **Valid fresh cache** → returns `true`
+2. **No cache file** → returns `false`
+3. **Stale cache** (old timestamp) → returns `false`
+4. **Cache without timestamp** → returns `false`
+
+#### **Key Learning Points**
+- `os.time()` - Get current Unix timestamp
+- Time math - Subtraction gives elapsed seconds
+- Boolean logic for freshness decisions
+- Defensive programming - Always check for missing fields
+
+#### **Implementation Steps**
+1. Add `is_cache_valid()` function after `load_cached_data()`
+2. Add test helper `M.test_is_cache_valid()`
+3. Write comprehensive tests for all scenarios
+4. Verify all tests pass with `./run_tests.sh`
+
+---
+
+### ✅ **COMPLETED: Day 3 Session 2 - Cache Validation Implementation**
+**Date Completed**: 2025-10-11
+**Status**: 9/9 tests passing - Cache validation complete
+
+#### **Major Accomplishments**
+
+**✅ Function 3: `is_cache_valid()` - Cache Freshness Validation**
+**Implementation Complete:**
+- Time-based cache freshness checking with Unix timestamps
+- Defensive error handling for all edge cases
+- Configuration-driven duration limits (4 hours highlights, 24 hours books)
+- Boolean logic with early returns for any uncertainty
+
+**Code Location:** `readwise.lua` lines ~160-180
+
+**Test Coverage:**
+- Test: "should validate fresh cache as valid" ✅ Passing
+- Test: "should return false for non-existent cache" ✅ Passing
+- Test: "should return false for stale cache" ✅ Passing
+- Test: "should return false for cache without timestamp" ✅ Passing
+
+**Key Learning:**
+- Unix timestamps with `os.time()` for current time
+- Time arithmetic: `current_time - cached.timestamp` gives age in seconds
+- Defensive programming: Return `false` for ANY uncertainty (fail-safe approach)
+- Boolean validation with multiple checks and early returns
+
+**Debugging Experience:**
+- Function naming mismatch: `test_is_cache_valid` vs `test_is_valid_cache`
+- Case sensitivity error: lowercase `m` vs uppercase `M` module reference
+- Line-by-line error messages guided precise fixes
+- Test suite caught issues immediately with clear feedback
+
+**Current Test Status:** ✅ **9/9 tests passing**
+```
+✅ Readwise Configuration (2 tests)
+✅ Readwise Async API Functions (1 test)
+✅ Readwise Cache Functions (2 tests)
+✅ Readwise Cache Validation (4 tests)
+```
+
+---
+
+### 🔄 **NEXT SESSION: Function 4 - `get_highlights_cached()`**
+**Status**: Ready to implement - Final Day 3 function
+
+#### **Function Purpose**
+Public API that orchestrates cache-or-fetch logic. This is what UI/users will call.
+
+#### **Function Signature**
+```lua
+-- Get highlights with smart caching (async)
+-- @param callback function: Called with (data, error) when complete
+-- @param force_refresh boolean: If true, bypass cache and fetch fresh
+function M.get_highlights_cached(callback, force_refresh)
+  -- Implementation needed
+end
+```
+
+#### **Logic Flow**
+```
+1. Check: force_refresh OR cache invalid?
+   ↓ YES → Fetch from API + save to cache + callback
+   ↓ NO  → Load from cache + callback (fast path)
+```
+
+#### **Implementation Pattern**
+```lua
+function M.get_highlights_cached(callback, force_refresh)
+  force_refresh = force_refresh or false
+
+  -- Fast path: Use cache if valid
+  if not force_refresh and is_cache_valid("highlights") then
+    local cached_data, err = load_cached_data("highlights")
+    if not err then
+      callback(cached_data.data, nil)
+      return
+    end
+  end
+
+  -- Slow path: Fetch fresh data
+  M.get_highlights_async(function(api_data, api_err)
+    if api_err then
+      callback(nil, api_err)
+      return
+    end
+    cache_data(api_data, "highlights")
+    callback(api_data, nil)
+  end)
+end
+```
+
+#### **Test Cases to Write**
+1. Fresh cache → returns cached data (fast)
+2. Stale cache → fetches fresh from API
+3. Force refresh → bypasses cache
+4. API error → passes error to callback
+5. Cache save after API fetch
+
+---
+
+### **Current Status Summary**
+- ✅ **Day 1**: Configuration & setup complete
+- ✅ **Day 2**: Async API client complete (authentication, error handling)
+- 🔄 **Day 3**: Almost complete (3/4 functions done)
+  - ✅ Cache writing (`cache_data`)
+  - ✅ Cache reading (`load_cached_data`)
+  - ✅ Cache validation (`is_cache_valid`)
+  - 🔄 Next: Smart cache-or-fetch wrapper (`get_highlights_cached`)
+
+**Test Status:** 9/9 passing ✅
+
+**When resuming Day 3 completion:**
+1. Implement `get_highlights_cached()` function
+2. Write comprehensive tests (5 test cases listed above)
+3. Day 3 complete - ready for Day 4 UI implementation!
+
+**Achievement**: Cache validation layer complete with full test coverage!
 
 **Current Test Coverage:**
 ```
