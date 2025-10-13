@@ -1,4 +1,4 @@
-# Readwise Neovim Integration - Complete Learning & Development Plan
+# Readwise Neovim Integration - Development Documentation
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -6,7 +6,8 @@
 3. [Phase 1: Understanding the Foundation](#phase-1-understanding-the-foundation)
 4. [Phase 2: Single File Development (7-Day Plan)](#phase-2-single-file-development-7-day-plan)
 5. [Phase 3: Plugin Conversion Guide](#phase-3-plugin-conversion-guide)
-6. [Appendices](#appendices)
+6. [Progress Status](#progress-status)
+7. [Appendices](#appendices)
 
 ---
 
@@ -24,7 +25,7 @@ A Neovim integration for accessing Readwise highlights and books directly from y
 - **ZK Notes**: Create notes from highlights
 - **Todo Manager**: Convert highlights to todos
 - **FZF-lua**: Consistent picker interface
-- **Dropbox Sync**: Store cached data with your existing setup
+- **Portable Cache**: Store cached data with optional cloud sync
 
 ---
 
@@ -61,244 +62,130 @@ A Neovim integration for accessing Readwise highlights and books directly from y
 - Provides REST API for accessing your data
 - Rate-limited: 240 requests/minute (20 for lists)
 
-**Key Endpoints We'll Use:**
+**Key Endpoints:**
 ```
-GET /api/v2/export/          # Get all highlights
+GET /api/v2/export/          # Get all highlights (primary endpoint)
 GET /api/v2/books/           # Get books list
-GET /api/v2/highlights/      # Get highlights
 POST /api/v2/highlights/     # Create highlights
 ```
 
 **Authentication:**
-- Token-based (Bearer token in headers)
-- Need to store securely (not in config files)
+- Token-based: `Authorization: Token YOUR_TOKEN_HERE`
+- Get token from: https://readwise.io/access_token
+- Store in environment variable `READWISE_TOKEN` or config
 
-### 1.2 Your Existing Patterns Analysis
-
-**From your todo_manager.lua:**
-```lua
--- Configuration at top
-M.config = {
-    todo_dir = "path",
-    categories = { "Medicine", "OMS", "Personal" },
-    -- ... other settings
-}
-
--- Utility functions (local)
-local function get_current_date() end
-
--- Public API functions
-function M.add_todo() end
-function M.list_todos() end
-```
-
-**From your zk.lua:**
-```lua
--- FZF-lua integration pattern
-require("fzf-lua").fzf_exec(items, {
-    prompt = "ZK Aliases> ",
-    actions = {
-        ["default"] = function(selected, opts)
-            -- Handle selection
-        end,
-    },
-})
-```
+**Implementation Strategy:**
+- Use `/api/v2/export/` as main endpoint (240 req/min limit)
+- plenary.nvim for async HTTP requests (no blocking)
+- Cache with configurable refresh (default: 4 hours for highlights)
+- Portable default cache location: `~/.local/share/nvim/readwise/`
 
 ---
 
 ## Phase 2: Single File Development (7-Day Plan)
 
 ### Day 1: Foundation & Configuration
-**Learning Focus:** Lua modules, configuration patterns, basic setup
-
 **What We'll Build:**
-```lua
--- lua/vinod/readwise.lua structure
-local M = {}
+- Module structure (`local M = {}`, `return M`)
+- Configuration system with sensible defaults
+- `M.setup()` function for user customization
+- Cache directory with automatic creation
 
-M.config = {
-    -- API Configuration  
-    api_token = nil,
-    base_url = "https://readwise.io/api/v2",
-    
-    -- File Storage (following Dropbox pattern)
-    cache_dir = "/Users/vinodnair/Library/CloudStorage/Dropbox/notebook/readwise/",
-    
-    -- Cache Duration (in seconds)
-    cache_duration = {
-        highlights = 24 * 60 * 60,  -- 24 hours
-        books = 7 * 24 * 60 * 60,   -- 7 days  
-    },
-    
-    -- UI Configuration (for FZF-lua integration)
-    ui = {
-        preview_width = 80,
-        preview_height = 20,
-        fzf_opts = {
-            prompt = "Readwise> ",
-            height = 0.8,
-            width = 0.9,
-        }
-    },
-    
-    -- Integration with existing tools
-    integration = {
-        zk_enabled = true,      -- Create zk notes from highlights
-        todo_enabled = true,    -- Create todos from highlights  
-        auto_tag = true,        -- Auto-tag highlights by book/author
-    },
-    
-    -- Debug mode
-    debug = false,
-}
-
--- Basic module setup
-function M.setup(opts) end
-```
-
-**Key Learning Points:**
-- How Lua modules work (`local M = {}`, `return M`)
-- Table structures for configuration
-- The `setup()` pattern used by Neovim plugins
-- Cache duration strategies for API rate limiting
-- Integration patterns with existing dotfiles tools
-
-**Testing:** Basic module loading and configuration
-
-**Additional Features Planned:**
-- Manual refresh commands (`:ReadwiseRefresh`) for active reading sessions
-- Configurable cache durations for different usage patterns
-- Smart detection of reading/highlighting activity
+**Key Learning:**
+- Lua modules and tables
+- Configuration patterns
+- `vim.tbl_deep_extend()` for option merging
 
 ---
 
 ### Day 2: API Client Implementation
-**Learning Focus:** HTTP requests, JSON parsing, error handling
-
 **What We'll Build:**
-```lua
--- API client functions
-local function make_request(endpoint, params) end
-local function get_highlights() end  
-local function get_books() end
-```
+- Async API client using plenary.job
+- Token authentication (environment + config fallback)
+- JSON parsing and error handling
+- Complete test coverage with mocks
 
-**Key Learning Points:**
-- Using `vim.fn.system()` or `curl` for HTTP requests
-- JSON parsing with `vim.json.decode()`
-- Error handling with `pcall()`
-- Secure token storage
-
-**Testing:** Successfully fetch data from Readwise API
+**Key Learning:**
+- Async patterns with callbacks
+- plenary.job for non-blocking HTTP
+- Test-driven development (TDD)
 
 ---
 
 ### Day 3: Data Processing & Storage
-**Learning Focus:** File I/O, data transformation, caching
-
 **What We'll Build:**
-```lua
--- Data processing
-local function parse_highlights(raw_data) end
-local function cache_data(data, filename) end
-local function load_cached_data(filename) end
-```
+- `cache_data()` - Write JSON to disk with timestamp
+- `load_cached_data()` - Read and validate cached JSON
+- `is_cache_valid()` - Timestamp-based freshness check
+- `M.get_highlights()` - Smart orchestration (cache OR fetch)
 
-**Key Learning Points:**
-- File operations (`io.open`, `file:read`, `file:write`)
-- Data transformation and filtering
-- Caching strategies for API rate limiting
-
-**Testing:** Data persistence and retrieval
+**Key Learning:**
+- File I/O (`io.open`, `file:read`, `file:write`)
+- Cache validation with Unix timestamps
+- Orchestration patterns
+- Async callback chains
 
 ---
 
 ### Day 4: Basic UI with FZF-lua
-**Learning Focus:** FZF-lua integration, picker interfaces
-
 **What We'll Build:**
-```lua
--- UI functions
-function M.browse_books() end
-function M.browse_highlights() end
-local function show_highlight_picker() end
-```
-
-**Key Learning Points:**
-- FZF-lua picker configuration
+- `M.browse_highlights()` - Interactive picker
+- `M.browse_books()` - Book selection interface
+- Preview functionality
 - Action handlers for selections
-- Display formatting for readability
 
-**Testing:** Interactive book and highlight browsing
+**Key Learning:**
+- FZF-lua picker configuration
+- Display formatting
+- User interaction patterns
 
 ---
 
 ### Day 5: Advanced UI Features
-**Learning Focus:** Floating windows, preview functionality, advanced FZF features
-
 **What We'll Build:**
-```lua
--- Advanced UI
-local function create_preview_window() end
-local function show_highlight_detail() end
-function M.search_highlights() end
-```
-
-**Key Learning Points:**
-- Creating floating windows with `vim.api.nvim_open_win()`
-- Preview functionality in pickers
+- Floating windows for detailed views
 - Search and filtering capabilities
+- Preview enhancements
+- Keyboard navigation
 
-**Testing:** Rich preview and search experience
+**Key Learning:**
+- `vim.api.nvim_open_win()` for floating windows
+- Advanced FZF-lua features
+- UI polish and UX
 
 ---
 
 ### Day 6: Integration with ZK and Todo Manager
-**Learning Focus:** Cross-module communication, your existing APIs
-
 **What We'll Build:**
-```lua
--- Integration functions
-function M.create_zk_note_from_highlight() end
-function M.create_todo_from_highlight() end
-local function integrate_with_existing_tools() end
-```
+- `M.create_zk_note_from_highlight()` - ZK integration
+- `M.create_todo_from_highlight()` - Todo integration
+- Cross-module communication
+- Data transformation for integrations
 
-**Key Learning Points:**
-- Requiring and using your existing modules
-- Passing data between systems
-- Maintaining consistency in user experience
-
-**Testing:** End-to-end workflow from highlight to note/todo
+**Key Learning:**
+- Requiring existing modules
+- Data format conversion
+- Workflow integration
 
 ---
 
 ### Day 7: Polish, Keymaps, and Help System
-**Learning Focus:** User commands, keymaps, documentation
-
 **What We'll Build:**
-```lua
--- Commands and keymaps
-local function setup_commands() end
-local function setup_keymaps() end
-function M.show_help() end
-```
+- User commands (`:Readwise*`)
+- Key mappings
+- Help system (floating window with keybinds)
+- Documentation
 
-**Key Learning Points:**
-- Creating user commands with `vim.api.nvim_create_user_command()`
-- Setting up keymaps following your patterns
-- Help system with floating windows (like your zk help)
-
-**Testing:** Complete user experience with help and shortcuts
+**Key Learning:**
+- `vim.api.nvim_create_user_command()`
+- Keymap setup patterns
+- In-editor help systems
 
 ---
 
 ## Phase 3: Plugin Conversion Guide
 
-### 3.1 Understanding Neovim Plugin Structure
-
-**Standard Plugin Layout:**
+### Standard Plugin Layout
 ```
 readwise.nvim/
 ├── plugin/           # Auto-loaded files
@@ -314,64 +201,181 @@ readwise.nvim/
 └── README.md
 ```
 
-**Key Differences from Single File:**
-- **plugin/** directory: Auto-loaded when Neovim starts
-- **Modular structure**: Separate concerns into multiple files
-- **Documentation**: Proper vim help files
-- **Public API**: Clean interface for users
+### Migration Steps
+1. **Extract modules** - Separate concerns into focused files
+2. **Create plugin loader** - Auto-load commands and setup
+3. **Write documentation** - README and vim help files
+4. **Test across platforms** - macOS and Linux compatibility
 
-### 3.2 Migration Steps
+---
 
-**Step 1: Extract Modules**
-```lua
--- From single file sections to separate files
--- Configuration -> lua/readwise/config.lua
--- API functions -> lua/readwise/api.lua
--- UI functions -> lua/readwise/ui.lua
--- Utilities -> lua/readwise/utils.lua
+## Progress Status
+
+### ✅ **Day 1: Foundation & Configuration** (Completed 2025-08-09)
+
+**What We Built:**
+- Complete Lua module structure
+- Configuration system with all sections
+- `M.setup()` with option merging and validation
+- TDD framework with plenary.nvim
+
+**Key Learning:**
+- Lua module patterns
+- Configuration tables and nesting
+- `vim.tbl_deep_extend()` for merging
+- Test framework setup
+
+---
+
+### ✅ **Day 2: API Client Implementation** (Completed 2025-09-28)
+
+**What We Built:**
+- `M.get_highlights_async()` - Async API client with plenary.job
+- `get_api_token()` - Secure token management (env var + config fallback)
+- Complete authentication system
+- Comprehensive test coverage with mocks
+
+**Key Learning:**
+- plenary.job API and async patterns
+- Callback patterns (`callback(data, nil)` vs `callback(nil, error)`)
+- Test mocking for network isolation
+- ~/.secrets file for secure token storage
+
+**Final Status:** 3 tests passing (2 config + 1 async API)
+
+---
+
+### 🔄 **Day 3: Data Processing & Storage** (IN PROGRESS - Started 2025-10-05)
+
+**Implementation Complete:**
+- ✅ **Function 1**: `cache_data()` - Write JSON with timestamp metadata
+- ✅ **Function 2**: `load_cached_data()` - Read and parse cached JSON
+- ✅ **Function 3**: `is_cache_valid()` - Timestamp-based freshness validation
+- ✅ **Function 4**: `M.get_highlights()` - Smart cache orchestration
+
+**Test Status:** 10/10 passing ✅
+```
+✅ Configuration (2 tests)
+✅ Async API (1 test)
+✅ Cache I/O (2 tests)
+✅ Cache Validation (4 tests)
+✅ Smart Orchestration (1 test) ← Latest
 ```
 
-**Step 2: Create Plugin Loader**
-```lua
--- plugin/readwise.lua
-if vim.g.loaded_readwise then
-  return
-end
-vim.g.loaded_readwise = 1
+#### **Session 5 (Current) - First Orchestration Test** (2025-10-12)
 
--- Set up commands and keymaps
--- (Commands that users can call directly)
+**Major Accomplishments:**
+
+**✅ Shell Debugging Skills Mastered**
+- Grep pipelines: `./run_tests.sh 2>&1 | grep -A 10 "pattern"`
+- Stream redirection: Understanding stdout (1) vs stderr (2)
+- Verbose mode: `./run_tests.sh verbose` for detailed errors
+- Stack trace reading: Bottom-to-top call chain analysis
+
+**Common Grep Commands:**
+```bash
+# Show context
+./run_tests.sh 2>&1 | grep -B 5 -A 10 "test name"
+
+# Count matches
+./run_tests.sh 2>&1 | grep -c "Success"
+
+# Case-insensitive
+./run_tests.sh 2>&1 | grep -i "error"
 ```
 
-**Step 3: Public API Design**
+**✅ Async Test Pattern Debugging**
+
+**Error 1 - Missing callback parameter:**
 ```lua
--- lua/readwise/init.lua
--- Clean interface for users
-local M = {}
+-- Wrong (treats async as sync)
+local data, err = readwise.get_highlights()
 
-function M.setup(opts) end
-function M.browse_highlights() end
-function M.search(query) end
-
-return M
+-- Correct (async with callback)
+readwise.get_highlights(function(data, err)
+  callback_data = data
+  completed = true
+end, false)
 ```
 
-### 3.3 Publishing Preparation
+**Error 2 - Data structure mismatch:**
+- Problem: Double-wrapping data (test pre-wrapped, then cache_data() wrapped again)
+- Solution: Pass raw API data to `cache_data()`, not pre-wrapped data
+- Access pattern: `callback_data.data.text` (not `callback_data.text`)
 
-**Documentation:**
-- README.md with installation and usage
-- vim help files (doc/readwise.txt)
-- Code comments and examples
+**✅ Test Data Design Philosophy**
+**Principle:** Only include what you're testing!
 
-**Testing:**
-- Multiple Neovim versions
-- Different operating systems
-- Error scenarios and edge cases
+**Minimal (preferred for unit tests):**
+```lua
+local test_data = {
+  text = "Cached highlights"  -- Just what you're asserting on
+}
+```
 
-**Repository Setup:**
-- Git repository with proper .gitignore
-- Release tags and changelog
-- Issue templates and contributing guidelines
+**Realistic (for integration tests):**
+```lua
+local test_data = {
+  count = 2,
+  results = {...},
+  next = "url"
+}
+```
+
+**✅ First Orchestration Test Complete**
+- Test: "should return cached data when cache is fresh"
+- Validates cache hit scenario (fast path, no API call)
+- Confirms callback pattern and data structure correctness
+
+**Debugging Workflow Mastered:**
+1. Run `./run_tests.sh` → See which test failed
+2. Run `./run_tests.sh verbose` → See exact error and line numbers
+3. Read stack trace → Identify error location
+4. Fix issue → Re-run tests
+5. Iterate until green ✅
+
+---
+
+### 🔄 **Day 3 Remaining Work: 4 More Orchestration Tests**
+
+**Test Cases to Implement:**
+1. ✅ **Cache hit (fresh)** - DONE!
+2. ⏭️ **Stale cache** - Should fetch when cache expired
+3. ⏭️ **Force refresh** - Should bypass cache when `force_refresh=true`
+4. ⏭️ **API error handling** - Should propagate errors gracefully
+5. ⏭️ **Cache save after fetch** - Should save fresh data to cache
+
+**Expected Final Count:** 14 tests (10 existing + 4 new)
+
+**Test Pattern:**
+```lua
+it("should [behavior]", function()
+  -- Setup: Create test environment
+  -- Execute: Call function with callback
+  -- Wait: vim.wait() for async completion
+  -- Assert: Verify callback data
+  -- Cleanup: Delete test files
+end)
+```
+
+---
+
+### ⏭️ **Day 4: Basic UI with FZF-lua** (Not Started)
+- Interactive pickers for highlights and books
+- Preview functionality
+- Action handlers
+
+### ⏭️ **Day 5: Advanced UI Features** (Not Started)
+- Floating windows for detailed views
+- Search and filtering
+
+### ⏭️ **Day 6: Integration with ZK and Todo Manager** (Not Started)
+- Cross-module communication
+- Workflow integration
+
+### ⏭️ **Day 7: Polish, Keymaps, and Help System** (Not Started)
+- User commands and keymaps
+- Help system
 
 ---
 
@@ -379,108 +383,94 @@ return M
 
 ### Appendix A: Lua Quick Reference
 
-**Tables (Lua's primary data structure):**
+**Tables:**
 ```lua
--- Array-like
+-- Array-like (1-indexed!)
 local list = {"a", "b", "c"}
-print(list[1]) -- "a" (1-indexed!)
+print(list[1])  -- "a"
 
--- Object-like  
+-- Object-like
 local obj = {
-    name = "John",
-    age = 30,
-    greet = function(self)
-        print("Hello, " .. self.name)
-    end
+  name = "John",
+  greet = function(self)
+    print("Hello, " .. self.name)
+  end
 }
-obj:greet() -- "Hello, John"
+obj:greet()  -- "Hello, John"
 ```
 
 **Functions:**
 ```lua
 -- Basic function
 local function add(a, b)
-    return a + b
+  return a + b
 end
-
--- Function as value
-local operations = {
-    add = function(a, b) return a + b end,
-    multiply = function(a, b) return a * b end
-}
 
 -- Callback pattern
 local function process_data(data, callback)
-    local result = do_something(data)
-    callback(result)
+  local result = transform(data)
+  callback(result)
 end
 ```
 
 **Modules:**
 ```lua
--- Creating a module
 local M = {}
 
 function M.public_function()
-    return "accessible from outside"
+  return "accessible from outside"
 end
 
 local function private_function()
-    return "only accessible within this file"
+  return "only accessible within this file"
 end
 
 return M
 ```
 
+---
+
 ### Appendix B: Common Neovim API Functions
 
 **Buffer Operations:**
 ```lua
--- Get current buffer
 local buf = vim.api.nvim_get_current_buf()
-
--- Read lines
 local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
-
--- Write lines
 vim.api.nvim_buf_set_lines(buf, 0, -1, false, {"new content"})
 ```
 
 **Window Operations:**
 ```lua
--- Create floating window
 local win = vim.api.nvim_open_win(buf, true, {
-    relative = 'editor',
-    width = 50,
-    height = 20,
-    col = 10,
-    row = 10,
-    style = 'minimal',
-    border = 'rounded'
+  relative = 'editor',
+  width = 50,
+  height = 20,
+  col = 10,
+  row = 10,
+  style = 'minimal',
+  border = 'rounded'
 })
 ```
 
 **User Commands:**
 ```lua
 vim.api.nvim_create_user_command('MyCommand', function()
-    print("Command executed!")
-end, {
-    desc = "Description of the command"
-})
+  print("Command executed!")
+end, { desc = "Description" })
 ```
+
+---
 
 ### Appendix C: Debugging Tips
 
 **Print Debugging:**
 ```lua
--- Simple print
 print(vim.inspect(some_table))
 
--- Conditional printing
 local function debug_print(msg)
-    if M.config.debug then
-        print("[Readwise] " .. msg)
-    end
+  if M.config.debug then
+    print("[Readwise] " .. msg)
+  end
 end
 ```
 
@@ -488,1031 +478,73 @@ end
 ```lua
 local success, result = pcall(risky_function)
 if not success then
-    vim.notify("Error: " .. result, vim.log.levels.ERROR)
-    return
-end
-```
-
-**Testing Functions:**
-```lua
--- Test individual functions
-function M._test_api_call()
-    local result = get_highlights()
-    print(vim.inspect(result))
+  vim.notify("Error: " .. result, vim.log.levels.ERROR)
+  return
 end
 ```
 
 ---
 
-## Progress Status
+### Appendix D: Test Runner Usage
 
-### ✅ **COMPLETED: Day 1 - Foundation & Configuration**
-**Date Completed**: 2025-08-09
+**Quick Reference:**
+```bash
+# Normal mode (clean output)
+./run_tests.sh
 
-**What We Built:**
-- ✅ Basic Lua module structure in `lua/vinod/readwise.lua`
-- ✅ Complete configuration system with all sections:
-  - API settings (token, base_url) 
-  - File storage (Dropbox cache directory)
-  - Cache duration strategies (24h highlights, 7d books)
-  - UI preferences (FZF-lua integration)
-  - Integration flags (zk, todo_manager, auto-tagging)
-- ✅ Setup function with option merging, directory creation, validation
-- ✅ Full testing verified - all functionality working
+# Verbose mode (see all details)
+./run_tests.sh verbose
 
-**Key Learning Accomplished:**
-- Lua module pattern (`local M = {}`, `return M`)
-- Configuration table structures and nesting
-- The `setup()` pattern used by Neovim plugins
-- `vim.tbl_deep_extend()` for configuration merging
-- `nvim --headless -c` debugging technique
-- Cache duration strategies for API rate limiting
+# Watch mode (auto-run on changes)
+./run_tests.sh watch
 
-**Development Method Established:**
-- **IMPORTANT**: Manual code entry by user (better learning)
-- **Claude's Role**: Explain concepts, provide instructions, verify user's code
-- **User's Role**: Write all code manually unless specifically asking Claude to implement
+# Help
+./run_tests.sh help
+```
+
+**Debugging with Grep:**
+```bash
+# Show test failures with context
+./run_tests.sh 2>&1 | grep -A 10 "Failed"
+
+# Find specific test
+./run_tests.sh verbose 2>&1 | grep -B 2 -A 15 "test name"
+
+# Count successes
+./run_tests.sh 2>&1 | grep -c "Success"
+```
+
+---
+
+### Appendix E: Cache Architecture Decisions
+
+**1. Cache Location:**
+- **Default**: `vim.fn.stdpath("data") .. "/readwise/"` (portable)
+  - macOS: `~/.local/share/nvim/readwise/`
+  - Linux: `~/.local/share/nvim/readwise/`
+- **Override**: Users can configure Dropbox, iCloud, or custom paths
+
+**2. Cache Duration:**
+- **Highlights**: 4 hours (fresh data, responsive to reading sessions)
+- **Books**: 24 hours (rarely changes)
+- **Rationale**: API limit is 240 req/min = 345,600/day. Even with 1-hour cache (24 refreshes/day), we use only 0.007% of daily capacity. **Network latency** (500ms-2s) is the real bottleneck, not API limits.
+
+**3. Testing Approach:**
+- **Day 1-2**: Strict TDD (write tests first)
+- **Day 3**: Test-After (implement, understand, then test)
+- **Rationale**: Focus on learning cache logic without test complexity overhead
+
+---
+
+### Appendix F: Development Method Reminders
+
+**⚠️ IMPORTANT:**
+- **Manual code entry**: User writes code manually for better learning
+- **Claude's role**: Explain concepts, provide instructions, verify user's code
 - **Process**: Claude explains → User codes → Claude verifies
-- **Testing**: Use proper test suite only - NO interactive REPL testing
-- **Documentation**: Updated as we modify plans
-
-**⚠️ REMINDER FOR CLAUDE**:
-- Do NOT write code for the user unless explicitly asked. Always give instructions and let user implement.
-- Do NOT suggest interactive testing (`:lua` commands in Neovim) - local functions can't be tested this way
-- ALWAYS recommend proper test suite implementation using `./run_tests.sh`
-
-**Manual Refresh Feature Added:**
-- Discussed need for `:ReadwiseRefresh` commands for active reading sessions
-- Will implement in Day 2 API client functions
-
-### 🔄 **NEXT: Day 2 - API Client Implementation**
-**Learning Focus**: HTTP requests, JSON parsing, error handling, manual refresh
-
-**Ready to implement:**
-- API client functions for Readwise HTTP requests
-- Authentication handling with secure token storage  
-- JSON parsing with `vim.json.decode()`
-- Error handling with `pcall()`
-- Manual refresh commands for active reading workflow
-
-## Next Steps
-
-1. **Continue with Day 2** - API Client Implementation
-2. **Maintain learning method** - Claude explains, user types, Claude verifies
-3. **Keep updating docs** - Document changes and discoveries as we go
-4. **Test frequently** - Use headless mode debugging for reliable testing
-
-**Current Status**: Day 1 complete, ready to start Day 2 API implementation.
-
----
-
-## 📋 **Readwise API Research & Analysis** 
-**Date**: 2025-08-10
-**Status**: Research completed, ready for implementation design
-
-### API Discovery Summary
-
-**Authentication**:
-- Token-based: `Authorization: Token YOUR_TOKEN_HERE`
-- Get token from: https://readwise.io/access_token
-- Test endpoint: `GET /api/v2/auth/` (returns 204 if valid)
-
-**Key Endpoints**:
-1. **`GET /api/v2/export/`** - ⭐ **PRIMARY ENDPOINT** (Bulk export)
-   - Gets all highlights with pagination via `pageCursor`
-   - Supports date filtering, book filtering  
-   - Uses general 240 req/min rate limit (better than list endpoints)
-   - Most efficient for caching strategy
-
-2. **`GET /api/v2/books/`** - Books list (⚠️ 20 req/min limit)
-3. **`GET /api/v2/highlights/`** - Individual highlights (⚠️ 20 req/min limit)  
-4. **`POST /api/v2/highlights/`** - Create highlights (240 req/min)
-
-**Rate Limits**:
-- **General**: 240 requests/minute
-- **LIST endpoints** (books, highlights): ⚠️ **20 requests/minute only**
-- **Export endpoint**: Uses general 240 limit (much better!)
-- **429 responses**: Check `Retry-After` header for wait time
-
-### Recommended Implementation Strategy
-
-**1. Primary Data Strategy**: 
-- Use `/api/v2/export/` as main endpoint
-- Implement pagination with `pageCursor` 
-- Support date filtering for incremental updates
-
-**2. Authentication Approach**:
-```lua
--- Secure token storage options:
-local token = os.getenv('READWISE_TOKEN') or vim.fn.input('Readwise Token: ')
-```
-
-**3. HTTP Client Options**:
-- Option A: `curl` command via `vim.fn.system()` (no dependencies)
-- Option B: Check for `plenary.nvim` HTTP client (cleaner API)
-
-**4. Caching Strategy**:
-- Full export on first run
-- Incremental updates using date filtering
-- Store in Dropbox directory following existing patterns
-
-### Outstanding Questions for Day 2 Implementation
-
-1. **Token Storage**: Environment variable vs encrypted config file?
-2. **HTTP Client**: `curl` vs `plenary.nvim` dependency? 
-3. **Response Format**: Need to test API to see actual JSON structure
-4. **Error Handling**: Retry strategy for rate limits and network failures?
-5. **Incremental Updates**: How often to refresh vs use cache?
-
----
-
-## ✅ **COMPLETED: TDD Framework Setup** 
-**Date Completed**: 2025-08-11
-
-### What We Built:
-
-**1. Complete Test Framework Setup**
-- ✅ `tests/minimal_init.lua` - Minimal Neovim test environment
-- ✅ `tests/readwise_spec.lua` - Comprehensive test suite
-- ✅ plenary.nvim testing integration working perfectly
-- ✅ Mock system established for API testing
-
-**2. TDD Implementation Achievement**
-- ✅ **Full TDD Cycle Completed**: Red → Green → Verification
-- ✅ **Configuration Tests**: Default config and option merging (2 tests passing)
-- ✅ **API Function Tests**: Mocked `get_highlights()` with error handling (2 tests passing) 
-- ✅ **Total**: 4/4 tests passing successfully
-
-**3. Core Functions Implemented**
-- ✅ `M.setup()` - Configuration merging and validation
-- ✅ `M.get_highlights()` - Basic API client function (minimal implementation)
-- ✅ Mock framework for HTTP requests without network dependencies
-
-### Key Learning Accomplished:
-
-**TDD Concepts Mastered**:
-- Red-Green-Refactor cycle in practice
-- Writing tests before implementing functions
-- Mock functions to replace real API calls
-- Test isolation with setup/teardown patterns
-
-**Lua/Neovim Skills Gained**:
-- plenary.nvim test framework (`describe`, `it`, assertions)
-- Function mocking and restoration techniques
-- JSON encoding/decoding with `vim.json`
-- Module reloading in test environments
-- `vim.fn.system()` for system commands
-
-**Testing Patterns Learned**:
-- Configuration testing strategies
-- API client testing with mocks
-- Error handling verification with `pcall()`
-- Test organization and cleanup best practices
-
-### Current Status:
-- ✅ **TDD Framework**: Fully operational
-- ✅ **Test Coverage**: Configuration and basic API functions
-- ✅ **Development Method**: TDD approach established
-- ✅ **Foundation**: Ready for API implementation with test coverage
-
-### 🔄 **NEXT SESSION: Test Runner + Continue Day 2**
-**Ready to implement:**
-
-**Immediate Next Steps (5 minutes)**:
-1. Create test runner script for easy testing
-2. Update development plan with TDD integration
-
-**Day 2 API Implementation (with TDD)**:
-1. **Authentication handling** (write tests first, then implement)
-2. **Error handling and retry logic** (test-driven approach)
-3. **JSON parsing and data transformation** (mock real API responses)
-4. **Caching strategy implementation** (test file I/O operations)
-
-**Testing Strategy for Day 2**:
-- Write failing tests for each API function before implementing
-- Use mocks for HTTP requests and file operations
-- Test error scenarios (network failures, invalid JSON, rate limits)
-- Maintain 100% test coverage for all new functions
-
-### Development Method Reminder:
-- **IMPORTANT**: Manual code entry by user (better learning)
-- **Process**: Claude explains → User codes → Claude verifies with tests
-- **TDD Cycle**: Red (failing test) → Green (minimal code) → Refactor (improve)
-- **Testing**: All new code should have tests written first
-
-**Current Status**: TDD framework complete. Ready to continue Day 2 API implementation with test-driven approach.
-
----
-
-## ✅ **COMPLETED: Portable Test Runner Setup** 
-**Date Completed**: 2025-08-12
-
-### What We Built:
-
-**1. Complete Portable Test Runner**
-- ✅ `run_tests.sh` - Professional test runner with multiple modes
-- ✅ Portable design using runtime path (no hardcoded paths)
-- ✅ Clean output filtering - shows only test results
-- ✅ Colored output for easy reading (green/red/blue/yellow)
-- ✅ Multiple modes: normal, verbose, watch, help
-- ✅ Environment validation with helpful error messages
-
-**2. Enhanced Development Workflow**
-- ✅ **Quick Testing**: `./run_tests.sh` - run tests instantly
-- ✅ **Verbose Mode**: `./run_tests.sh verbose` - full debug output
-- ✅ **Watch Mode**: `./run_tests.sh watch` - auto-run on file changes (requires fswatch)
-- ✅ **Help System**: `./run_tests.sh help` - comprehensive usage guide
-- ✅ **Cross-platform**: macOS (fswatch) and Linux (inotifywait) support
-
-**3. Quality Assurance**
-- ✅ **Error Handling**: Validates environment before running
-- ✅ **Clean Output**: Filters noise to show only relevant test information
-- ✅ **Exit Codes**: Proper success/failure reporting
-- ✅ **User Experience**: Clear colored messages and helpful instructions
-
-### Key Features Implemented:
-
-**Test Runner Capabilities**:
-- Runtime path detection (works from any directory with tests/)
-- Automatic environment validation (checks for required files)
-- Smart output filtering (clean vs verbose modes)
-- Watch mode with file change detection
-- Cross-platform file watching support
-- Professional help system with color coding
-
-**Development Benefits**:
-- **Fast feedback loop**: Quick test execution during development
-- **TDD support**: Easy to run tests frequently during red-green-refactor cycles
-- **Future-proof**: Will work when moving to `dev-plugins/readwise.nvim/`
-- **Professional quality**: Ready for team development or open source
-
-### Current Test Status:
-- ✅ **4/4 tests passing** - All configuration and basic API tests working
-- ✅ **TDD framework operational** - Ready for test-driven Day 2 development
-- ✅ **Mock system working** - HTTP requests properly mocked for testing
-- ✅ **Continuous testing ready** - Watch mode for active development
-
-### 🔄 **READY FOR: Day 2 - API Client Implementation**
-**Next Session Goals**: Implement authentication, error handling, and caching with TDD approach
-
-**Ready to implement (using TDD cycle)**:
-1. **Authentication handling** - Add token to curl headers (write tests first)
-2. **Error handling and retry logic** - Network failures, rate limits (test-driven)
-3. **JSON parsing validation** - Handle malformed responses (mock bad data)
-4. **Caching strategy implementation** - File I/O operations (test file operations)
-
-**Development Method Established**:
-- ✅ **Test-First Approach**: Write failing tests before implementing functions
-- ✅ **Quick Feedback**: Use `./run_tests.sh` for instant validation
-- ✅ **Watch Mode Available**: Auto-run tests during active development
-- ✅ **Manual Implementation**: User writes code, Claude provides guidance and verification
-
-### Tools Ready for Day 2:
-- **Test Runner**: `./run_tests.sh` (normal, verbose, watch modes)
-- **TDD Framework**: plenary.nvim with mocking capabilities
-- **Mock System**: HTTP request mocking for network-free testing
-- **Development Environment**: Portable, professional setup
-
-**Current Status**: Test runner complete, all tests passing. Ready to start Day 2 API implementation with professional TDD workflow.
-
----
-
-## 📋 **Day 2 Progress Update**
-**Date**: 2025-09-25
-**Status**: API Research and Bug Fixes Completed
-
-### ✅ **COMPLETED: Plenary.job Research and Documentation**
-
-**What We Accomplished:**
-- ✅ **Complete plenary.job analysis** - Created comprehensive documentation in `plenary_job_explanation.md`
-- ✅ **Asynchronous HTTP patterns** - Detailed explanation of non-blocking API requests
-- ✅ **Error handling strategies** - JSON parsing, network errors, API failures
-- ✅ **Integration planning** - How async patterns fit with TDD and UI components
-
-**Key Learning Achieved:**
-- **Plenary.job API**: Constructor, args, callbacks, and error handling
-- **Async patterns**: Non-blocking execution with callbacks
-- **Error isolation**: Network failures won't crash editor
-- **Testing strategy**: How to mock Job behavior for tests
-
-**Documentation Created:**
-- `plenary_job_explanation.md` - Complete implementation guide with line-by-line breakdown
-- Usage examples and integration patterns
-- Next steps for Day 2 API implementation
-
-### ✅ **COMPLETED: Cache Directory Validation Bug Fix**
-
-**Problem Identified:**
-- Setup function had incomplete validation for cache directory
-- Could cause errors if cache_dir was empty or misconfigured
-
-**Solution Implemented:**
-```lua
--- Before: Basic directory check
-if not vim.fn.isdirectory(cache_dir) then
-    vim.fn.mkdir(cache_dir, "p")
-end
-
--- After: Comprehensive validation
-if cache_dir and cache_dir ~= "" then     -- validate cache_dir
-    if not vim.fn.isdirectory(cache_dir) then -- check if directory exists
-        vim.fn.mkdir(cache_dir, "p")
-    end
-else
-    vim.notify("Cache directory is not configured ...", vim.log.levels.ERROR)
-end
-```
-
-**Benefits:**
-- ✅ **Prevents crashes** from empty cache_dir configuration
-- ✅ **Clear error messages** for configuration issues
-- ✅ **Defensive programming** with proper validation
-- ✅ **Better user experience** with helpful notifications
-
-### 🔄 **READY FOR NEXT SESSION: Day 2 API Implementation**
-
-**Immediate Next Steps:**
-1. **Implement async API client** using plenary.job patterns from documentation
-2. **Add authentication handling** with secure token management
-3. **Create comprehensive tests** for all API functions with mocks
-4. **Build caching layer** that integrates with async patterns
-
-**Current State:**
-- ✅ **Foundation solid** - Configuration and validation working
-- ✅ **Research complete** - Async patterns documented and understood
-- ✅ **Bug fixes applied** - Cache directory validation improved
-- ✅ **Ready for TDD** - Test framework operational for API development
-
-**Files Ready for Next Session:**
-- `readwise.lua` - Clean foundation with improved validation
-- `plenary_job_explanation.md` - Complete implementation guide
-- `run_tests.sh` - TDD workflow ready
-- Development plan updated with current progress
-
-### Development Method Reminder:
-- **Manual Implementation**: User writes code following Claude's explanations
-- **TDD Approach**: Write tests first, then implement functions
-- **Async Focus**: Use plenary.job for all HTTP requests
-- **Error Handling**: Comprehensive validation and user feedback
-
----
-
-## ✅ **COMPLETED: Day 2 Session 1 - TDD Test Implementation**
-**Date**: 2025-09-28
-**Status**: RED phase complete, ready for GREEN phase implementation
-
-### **Major Accomplishments:**
-
-#### **✅ Complete Async Test Suite Implementation**
-- ✅ **Perfect TDD setup** - Comprehensive failing test ready for implementation
-- ✅ **Plenary.job mocking** - Complete mock system that simulates real HTTP behavior
-- ✅ **Async test patterns** - Proper completion tracking with `vim.wait` for reliable testing
-- ✅ **Test structure validated** - All syntax issues resolved, proper block structure
-
-#### **✅ Deep Learning Session: plenary.job and Testing Concepts**
-- ✅ **Line-by-line explanation** of plenary.job async patterns
-- ✅ **Mock function architecture** - Understanding of fake vs real function replacement
-- ✅ **Test lifecycle management** - `before_each` and `after_each` cleanup patterns
-- ✅ **Async testing challenges** - Completion tracking and timing issues solved
-
-#### **✅ TDD Red Phase Validation**
-- ✅ **Test failing correctly** - Error: "attempt to call field 'get_highlights_async' (a nil value)"
-- ✅ **Existing tests passing** - 4/5 tests passing, showing foundation is solid
-- ✅ **Test runner operational** - Both normal and verbose modes working
-- ✅ **Ready for implementation** - Clear path to GREEN phase
-
-### **Current Test Status:**
-```
-✅ Readwise Configuration should have default configuration
-✅ Readwise Configuration should merge user options with defaults
-✅ Readwise API Functions should fetch highlights from Readwise API
-✅ Readwise API Functions should handle API errors gracefully
-❌ Readwise Async API Functions should handle successful async API call
-   → Expected failure: get_highlights_async function doesn't exist yet
-```
-
-### **Next Session Requirements:**
-
-#### **GREEN Phase Implementation**
-```lua
--- Target function signature to implement:
-function M.get_highlights_async(callback)
-  -- 1. Get API token (environment or config)
-  -- 2. Use plenary.job for HTTP request with authentication
-  -- 3. Handle success: callback(parsed_data, nil)
-  -- 4. Handle errors: callback(nil, friendly_error_message)
-end
-```
-
-#### **Authentication Strategy:**
-- **Primary**: Environment variable `READWISE_TOKEN` from ~/.secrets
-- **Fallback**: Config option `M.config.api_token`
-- **Security**: No token storage in git-tracked files
-
-#### **Implementation Steps:**
-1. Add plenary.job import to readwise.lua
-2. Implement get_api_token() helper with ~/.secrets support
-3. Create basic async function using plenary.job pattern
-4. Run tests to achieve 5/5 passing status
-5. Add user-friendly error handling for common scenarios
-
-**Current Status**: TDD RED phase complete. Test suite operational with comprehensive mocking. Ready for GREEN phase implementation.
-
----
-
-## ✅ **COMPLETED: Day 2 Session 2 - GREEN Phase SUCCESS**
-**Date Completed**: 2025-09-28
-**Status**: 5/5 tests passing - Full async API client implemented
-
-### **Major Accomplishments:**
-
-#### **✅ Complete TDD GREEN Phase Achievement**
-- ✅ **Perfect implementation** - All 5 tests passing successfully
-- ✅ **Async API client working** - `get_highlights_async()` function fully operational
-- ✅ **Authentication system solid** - Environment variable + config fallback working
-- ✅ **Error handling comprehensive** - Token validation, HTTP errors, JSON parsing
-
-#### **✅ Technical Breakthroughs**
-**Key Implementation Details:**
-```lua
--- Final working functions:
-local function get_api_token()          -- Secure token management with fallback
-function M.get_highlights_async(callback) -- Non-blocking HTTP with plenary.job
-```
-
-**Critical Learning Points:**
-- **plenary.job syntax**: `job.new()` vs `job:new()` - constructor vs method call
-- **Test environment isolation**: Mocked `os.getenv` for token access in tests
-- **Callback pattern mastery**: `callback(data, nil)` success, `callback(nil, error)` failure
-- **Mock data format**: `{mock_response}` array vs `mock_response` string for plenary.job
-
-#### **✅ Authentication & Security**
-- ✅ **~/.secrets file** - Secure token storage working perfectly
-- ✅ **Environment variables** - `READWISE_TOKEN` accessible in all contexts
-- ✅ **Test mocking** - Complete isolation from real tokens during testing
-- ✅ **Fallback strategy** - Config-based tokens as backup option
-
-#### **✅ Final Test Status**
-```
-✅ Readwise Configuration should have default configuration
-✅ Readwise Configuration should merge user options with defaults
-✅ Readwise API Functions should fetch highlights from Readwise API
-✅ Readwise API Functions should handle API errors gracefully
-✅ Readwise Async API Functions should handle successful async API call
-```
-
-**Result: 5/5 tests passing - Complete SUCCESS!**
-
-### **Key Debugging Insights Learned:**
-1. **Mock format mismatch** - plenary.job expects array of lines, not single string
-2. **Environment isolation** - Test environment needs explicit token mocking
-3. **Syntax precision** - Constructor call vs method call in Lua objects
-4. **Callback verification** - Debug prints essential for async testing
-
-### **Development Method Proven:**
-- ✅ **TDD Red → Green cycle** - Failed test → implementation → passing test
-- ✅ **Manual coding approach** - User implements, Claude guides and verifies
-- ✅ **Incremental debugging** - Systematic error resolution with verbose testing
-- ✅ **Professional testing** - Complete mock system for development isolation
-
-### 🔄 **READY FOR DAY 3: Data Processing & Storage**
-**Next Session Goals**: Build caching layer and data transformation
-
-**Ready to implement**:
-1. **Cache management** - File I/O with timestamp validation
-2. **Data transformation** - Parse API responses for UI consumption
-3. **Incremental updates** - Smart cache refresh strategies
-4. **Error recovery** - Handle cache corruption and network failures
-
-**Current Foundation:**
-- ✅ **Async API client** - Fully tested and operational
-- ✅ **Authentication** - Secure, flexible token management
-- ✅ **TDD workflow** - Proven effective development methodology
-- ✅ **Test infrastructure** - Comprehensive mocking and validation
-
-**Tools Ready:**
-- Test runner with multiple modes (`./run_tests.sh`)
-- Complete async HTTP client with error handling
-- Professional mock system for isolated development
-- Secure authentication with environment variable support
-
-**Achievement**: Day 2 Complete - Async API implementation successful with 100% test coverage!
-
-### ✅ **FINAL STATUS: Day 2 Development Session Complete**
-**Session End Date**: 2025-09-28
-**Completion Status**: All objectives achieved
-
-#### **Production-Ready Implementation**
-- ✅ **Async API client**: Full plenary.job integration with error handling
-- ✅ **Secure authentication**: Environment variable + config fallback system
-- ✅ **Test coverage**: 5/5 tests passing with comprehensive mocking
-- ✅ **Code quality**: Clean implementation with proper error handling
-- ✅ **Documentation**: Complete learning progression documented
-
-#### **Ready for Day 3**
-**Next session goals**: Data processing, caching, and file I/O implementation
-- Foundation is solid for building upon
-- TDD methodology proven effective
-- All Day 2 objectives successfully completed
-
----
-
-## 📋 **Day 3 Preparation - Architectural Decisions**
-**Date**: 2025-10-05
-**Status**: Planning complete, ready for implementation
-
-### ✅ **Architecture Decisions Made**
-
-#### **1. Testing Approach: Test-After Development (TAD)**
-**Decision**: Switch from strict TDD to Test-After for Day 3
-
-**Rationale:**
-- Focus on learning cache logic without test complexity overhead
-- Understand implementation first, then formalize with tests
-- Tests become documentation of learned concepts
-- Still get regression protection and confidence for refactoring
-
-**New Workflow:**
-1. Write function skeleton (understand signature)
-2. Implement logic (make it work in Neovim)
-3. Test manually with `:lua` commands
-4. Write comprehensive tests once logic is clear
-5. Refactor with confidence (tests catch breaks)
-
-**Benefits for Learning:**
-- ✅ Learn one concept at a time
-- ✅ Focus on business logic without distraction
-- ✅ Tests solidify understanding
-- ✅ Natural learning progression
-
-#### **2. Cache Location: Portable Default with User Override**
-**Decision**: Use `vim.fn.stdpath("data")` as default, allow configuration override
-
-**Implementation:**
-```lua
--- Default (portable, no cloud dependency)
-cache_dir = vim.fn.stdpath("data") .. "/readwise/"
--- Expands to:
---   macOS: ~/.local/share/nvim/readwise/
---   Linux: ~/.local/share/nvim/readwise/
-```
-
-**User Override Examples:**
-```lua
--- Personal dotfiles can override to Dropbox
-require("vinod.readwise").setup({
-  cache_dir = "~/Library/CloudStorage/Dropbox/notebook/readwise/"
-})
-
--- Or iCloud (macOS)
-require("vinod.readwise").setup({
-  cache_dir = "~/Library/Mobile Documents/com~apple~CloudDocs/readwise/"
-})
-```
-
-**Advantages:**
-- ✅ Works out-of-box (no cloud account required)
-- ✅ Follows Neovim conventions
-- ✅ Cross-platform compatible
-- ✅ Users opt-in to cloud sync if desired
-- ✅ Personal config can use Dropbox easily
-
-#### **3. Cache Duration: Aggressive Refresh Strategy**
-**Decision**: 4-hour highlights cache, 24-hour books cache
-
-**Implementation:**
-```lua
-cache_duration = {
-  highlights = 4 * 60 * 60,  -- 4 hours (fresh data)
-  books = 24 * 60 * 60,      -- 24 hours (rarely changes)
-}
-```
-
-**API Limit Analysis:**
-- Readwise limit: 240 requests/minute = 345,600 requests/day
-- With 4-hour cache: Max 6 auto-refreshes/day
-- Usage: 6 / 345,600 = 0.002% of daily capacity
-- Even 1-hour cache (24/day) = 0.007% usage
-- **Conclusion**: API limits are NOT a constraint
-
-**Real Bottleneck:**
-- Network latency: 500ms - 2 seconds per API call
-- Cache read: <10ms
-- **User experience** drives the decision, not API limits
-
-**User Benefits:**
-- Fresh highlights within 4 hours of reading session
-- Instant responses for repeated access (cache)
-- Manual `:ReadwiseRefresh` for immediate updates
-- Configurable for personal workflow
-
-**User Override:**
-```lua
-require("vinod.readwise").setup({
-  cache_duration = {
-    highlights = 1 * 60 * 60,  -- 1 hour (very fresh)
-    books = 7 * 24 * 60 * 60,  -- 1 week (stable)
-  }
-})
-```
-
----
-
-### ⚠️ **FUTURE: Plugin Conversion Reminders**
-
-#### **Cache Directory User Documentation**
-When converting to public plugin, add to README:
-
-**Configuration Examples:**
-```lua
--- Default - Works everywhere (no setup needed)
--- Uses: ~/.local/share/nvim/readwise/
-
--- Dropbox sync (macOS)
-require("readwise").setup({
-  cache_dir = "~/Library/CloudStorage/Dropbox/notebook/readwise/"
-})
-
--- Dropbox sync (Linux)
-require("readwise").setup({
-  cache_dir = "~/Dropbox/notebook/readwise/"
-})
-
--- iCloud sync (macOS only)
-require("readwise").setup({
-  cache_dir = "~/Library/Mobile Documents/com~apple~CloudDocs/readwise/"
-})
-```
-
-**Future Enhancement Ideas:**
-- Auto-detect common cloud storage locations
-- `:ReadwiseSetup` interactive wizard for first-time setup
-- `:ReadwiseInfo` to show current cache location and stats
-- Cloud sync status indicator
-
----
-
-### 🔄 **READY FOR: Day 3 Implementation**
-**Approach**: Test-After Development (TAD)
-
-**Day 3 Goals:**
-1. **Cache file I/O** - Save/load JSON data with error handling
-2. **Data transformation** - Parse API responses for UI consumption
-3. **Cache validation** - Timestamp-based staleness detection
-4. **Manual refresh** - `:ReadwiseRefresh` command implementation
-5. **Error recovery** - Handle corrupt cache, missing files
-
-**Implementation Order:**
-1. Build `cache_data()` - Write JSON to file
-2. Build `load_cached_data()` - Read JSON from file
-3. Build `is_cache_valid()` - Timestamp validation
-4. Build `get_highlights_cached()` - Smart cache-or-fetch
-5. Test manually in Neovim with all functions
-6. Write comprehensive test suite for all functions
-7. Refactor and optimize with test safety net
-
----
-
-## ✅ **COMPLETED: Code Cleanup - Async-Only Architecture**
-**Date**: 2025-10-05
-**Status**: Cleanup successful, ready for Day 3
-
-### **Removed Legacy Synchronous Code**
-**Rationale**: Committed to async architecture, no need for sync scaffold code
-
-**Deletions:**
-1. ✅ Removed `M.get_highlights()` synchronous function from readwise.lua
-2. ✅ Removed "Readwise API Functions" test block from readwise_spec.lua
-3. ✅ Tests still passing: **3/3 tests** (2 config + 1 async API)
-
-**Benefits:**
-- Cleaner codebase with single approach (async-only)
-- No confusion about which function to use
-- Simplified test suite (from 5 tests to 3 tests)
-- Clean foundation for Day 3 caching layer
-
----
-
-## ✅ **COMPLETED: Day 3 Session 1 - Cache I/O Implementation**
-**Date**: 2025-10-05
-**Status**: File I/O complete, cache validation next
-
-### **Major Accomplishments**
-
-#### **✅ Function 1: `cache_data()` - Write Cache to File**
-**Implementation Complete:**
-- Save API data to JSON file with timestamp metadata
-- Error handling for file operations
-- Proper cache structure: `{ timestamp, cache_type, data }`
-
-**Code Location:** `readwise.lua` lines 95-125
-
-**Test Coverage:**
-- Test: "should cache data to file" ✅ Passing
-- Verifies file creation, JSON structure, timestamp presence
-
-**Key Learning:**
-- File I/O with `io.open()`, `file:write()`, `file:close()`
-- JSON encoding with `vim.json.encode()`
-- Error returns: `return false, error_msg` pattern
-- Cache structure design with metadata
-
-#### **✅ Function 2: `load_cached_data()` - Read Cache from File**
-**Implementation Complete:**
-- Load JSON data from cache file
-- Safe JSON parsing with `pcall()`
-- File existence checking before reading
-- Comprehensive error handling
-
-**Code Location:** `readwise.lua` lines 127-159
-
-**Test Coverage:**
-- Test: "should load cached data" ✅ Passing
-- Verifies data round-trip (cache → load → verify)
-- Checks timestamp, cache_type, and data integrity
-
-**Key Learning:**
-- File reading with `file:read("*a")` (read all)
-- `vim.fn.filereadable()` for file existence checks
-- Safe JSON parsing: `pcall(vim.json.decode, content)`
-- Return pattern: `return data, nil` for success, `return nil, error` for failure
-
-#### **✅ Test Infrastructure Improvements**
-**Enhanced Test Suite:**
-- Better assertions checking actual data, not just execution
-- Proper test isolation with `/tmp/readwise_test_cache/`
-- Explicit directory creation in `before_each()`
-- Cleanup in `after_each()` with `vim.fn.delete()`
-
-**Test Helpers Added:**
-```lua
-M.test_cache_data(data, cache_type)
-M.test_load_cached_data(cache_type)
-```
-
-**Current Test Status:** ✅ **5/5 tests passing**
-
-#### **🎓 Learning Achieved**
-
-**Lua File I/O Mastery:**
-- Opening files: `io.open(path, mode)` where mode = "r" (read) or "w" (write)
-- Reading: `file:read("*a")` reads entire file
-- Writing: `file:write(string)` writes text
-- Cleanup: Always `file:close()` after operations
-
-**Error Handling Patterns:**
-- Multiple return values: `success, error = function()`
-- Nil checks: `if not value then return nil, "error" end`
-- Safe operations: `pcall()` for functions that might fail
-
-**Test-After Development:**
-- Implement function first, understand logic
-- Write comprehensive tests after
-- Verify with edge cases
-- Refactor with confidence
-
-**Process Isolation Understanding:**
-- `./run_tests.sh` runs in separate headless Neovim process
-- No contamination of interactive session
-- Module reloading with `package.loaded[...] = nil` gives fresh state
-
----
-
-### 🔄 **NEXT SESSION: Function 3 - `is_cache_valid()`**
-**Status**: Ready to implement
-
-#### **Function Purpose**
-Decides whether to use cached data or fetch fresh from API based on cache age.
-
-#### **Function Signature**
-```lua
--- Check if cached data is still valid (not expired)
--- @param cache_type string: Type of cache ("highlights" or "books")
--- @return boolean: true if cache is valid and fresh, false otherwise
-local function is_cache_valid(cache_type)
-  -- Implementation needed
-end
-```
-
-#### **Logic Flow**
-```
-1. Load cached data using load_cached_data()
-   ↓
-2. If load fails → return false (no valid cache)
-   ↓
-3. Verify cache has timestamp field
-   ↓
-4. Calculate age: os.time() - cache.timestamp
-   ↓
-5. Get max_age from M.config.cache_duration[cache_type]
-   ↓
-6. Return: cache_age < max_age
-```
-
-#### **Implementation Pattern**
-```lua
-local function is_cache_valid(cache_type)
-  -- 1. Load cached data
-  local cached, err = load_cached_data(cache_type)
-  if err then
-    return false  -- No cache or error loading
-  end
-
-  -- 2. Verify timestamp exists
-  if not cached.timestamp then
-    return false  -- Corrupt cache
-  end
-
-  -- 3. Calculate cache age
-  local current_time = os.time()
-  local cache_age = current_time - cached.timestamp
-
-  -- 4. Get max age from config
-  local max_age = M.config.cache_duration[cache_type]
-  if not max_age then
-    return false  -- Unknown cache type
-  end
-
-  -- 5. Return freshness check
-  return cache_age < max_age
-end
-```
-
-#### **Example Math**
-```lua
--- Config: highlights cache lasts 4 hours
-M.config.cache_duration.highlights = 4 * 60 * 60  -- 14400 seconds
-
--- Scenario 1: Cache is 2 hours old (FRESH)
-current_time = 1728140000
-cached.timestamp = 1728132800  -- 2 hours ago
-cache_age = 7200 seconds (2 hours)
-max_age = 14400 seconds (4 hours)
-Result: 7200 < 14400 = true ✅ Use cache!
-
--- Scenario 2: Cache is 5 hours old (STALE)
-current_time = 1728140000
-cached.timestamp = 1728122000  -- 5 hours ago
-cache_age = 18000 seconds (5 hours)
-max_age = 14400 seconds (4 hours)
-Result: 18000 < 14400 = false ❌ Fetch fresh!
-```
-
-#### **Where to Add**
-**Location:** `readwise.lua` after `load_cached_data()` (around line 160)
-
-#### **Test Helper to Add**
-```lua
--- In temporary functions section:
-function M.test_is_cache_valid(cache_type)
-  return is_cache_valid(cache_type)
-end
-```
-
-#### **Test Cases to Write**
-1. **Valid fresh cache** → returns `true`
-2. **No cache file** → returns `false`
-3. **Stale cache** (old timestamp) → returns `false`
-4. **Cache without timestamp** → returns `false`
-
-#### **Key Learning Points**
-- `os.time()` - Get current Unix timestamp
-- Time math - Subtraction gives elapsed seconds
-- Boolean logic for freshness decisions
-- Defensive programming - Always check for missing fields
-
-#### **Implementation Steps**
-1. Add `is_cache_valid()` function after `load_cached_data()`
-2. Add test helper `M.test_is_cache_valid()`
-3. Write comprehensive tests for all scenarios
-4. Verify all tests pass with `./run_tests.sh`
-
----
-
-### ✅ **COMPLETED: Day 3 Session 2 - Cache Validation Implementation**
-**Date Completed**: 2025-10-11
-**Status**: 9/9 tests passing - Cache validation complete
-
-#### **Major Accomplishments**
-
-**✅ Function 3: `is_cache_valid()` - Cache Freshness Validation**
-**Implementation Complete:**
-- Time-based cache freshness checking with Unix timestamps
-- Defensive error handling for all edge cases
-- Configuration-driven duration limits (4 hours highlights, 24 hours books)
-- Boolean logic with early returns for any uncertainty
-
-**Code Location:** `readwise.lua` lines ~160-180
-
-**Test Coverage:**
-- Test: "should validate fresh cache as valid" ✅ Passing
-- Test: "should return false for non-existent cache" ✅ Passing
-- Test: "should return false for stale cache" ✅ Passing
-- Test: "should return false for cache without timestamp" ✅ Passing
-
-**Key Learning:**
-- Unix timestamps with `os.time()` for current time
-- Time arithmetic: `current_time - cached.timestamp` gives age in seconds
-- Defensive programming: Return `false` for ANY uncertainty (fail-safe approach)
-- Boolean validation with multiple checks and early returns
-
-**Debugging Experience:**
-- Function naming mismatch: `test_is_cache_valid` vs `test_is_valid_cache`
-- Case sensitivity error: lowercase `m` vs uppercase `M` module reference
-- Line-by-line error messages guided precise fixes
-- Test suite caught issues immediately with clear feedback
-
-**Current Test Status:** ✅ **9/9 tests passing**
-```
-✅ Readwise Configuration (2 tests)
-✅ Readwise Async API Functions (1 test)
-✅ Readwise Cache Functions (2 tests)
-✅ Readwise Cache Validation (4 tests)
-```
-
----
-
-### 🔄 **NEXT SESSION: Function 4 - `get_highlights_cached()`**
-**Status**: Ready to implement - Final Day 3 function
-
-#### **Function Purpose**
-Public API that orchestrates cache-or-fetch logic. This is what UI/users will call.
-
-#### **Function Signature**
-```lua
--- Get highlights with smart caching (async)
--- @param callback function: Called with (data, error) when complete
--- @param force_refresh boolean: If true, bypass cache and fetch fresh
-function M.get_highlights_cached(callback, force_refresh)
-  -- Implementation needed
-end
-```
-
-#### **Logic Flow**
-```
-1. Check: force_refresh OR cache invalid?
-   ↓ YES → Fetch from API + save to cache + callback
-   ↓ NO  → Load from cache + callback (fast path)
-```
-
-#### **Implementation Pattern**
-```lua
-function M.get_highlights_cached(callback, force_refresh)
-  force_refresh = force_refresh or false
-
-  -- Fast path: Use cache if valid
-  if not force_refresh and is_cache_valid("highlights") then
-    local cached_data, err = load_cached_data("highlights")
-    if not err then
-      callback(cached_data.data, nil)
-      return
-    end
-  end
-
-  -- Slow path: Fetch fresh data
-  M.get_highlights_async(function(api_data, api_err)
-    if api_err then
-      callback(nil, api_err)
-      return
-    end
-    cache_data(api_data, "highlights")
-    callback(api_data, nil)
-  end)
-end
-```
-
-#### **Test Cases to Write**
-1. Fresh cache → returns cached data (fast)
-2. Stale cache → fetches fresh from API
-3. Force refresh → bypasses cache
-4. API error → passes error to callback
-5. Cache save after API fetch
-
----
-
-### **Current Status Summary**
-- ✅ **Day 1**: Configuration & setup complete
-- ✅ **Day 2**: Async API client complete (authentication, error handling)
-- 🔄 **Day 3**: Almost complete (3/4 functions done)
-  - ✅ Cache writing (`cache_data`)
-  - ✅ Cache reading (`load_cached_data`)
-  - ✅ Cache validation (`is_cache_valid`)
-  - 🔄 Next: Smart cache-or-fetch wrapper (`get_highlights_cached`)
-
-**Test Status:** 9/9 passing ✅
-
-**When resuming Day 3 completion:**
-1. Implement `get_highlights_cached()` function
-2. Write comprehensive tests (5 test cases listed above)
-3. Day 3 complete - ready for Day 4 UI implementation!
-
-**Achievement**: Cache validation layer complete with full test coverage!
-
-**Current Test Coverage:**
-```
-✅ Readwise Configuration should have default configuration
-✅ Readwise Configuration should merge user options with defaults
-✅ Readwise Async API Functions should handle successful async API call
-```
-
-**Ready to start Day 3 development!**
+- **Testing**: Use `./run_tests.sh` only (no `:lua` interactive testing for local functions)
+
+**Tools:**
+- Test runner: `./run_tests.sh` (normal, verbose, watch modes)
+- TDD framework: plenary.nvim with mocking
+- Mock system: HTTP request mocking for network-free testing
