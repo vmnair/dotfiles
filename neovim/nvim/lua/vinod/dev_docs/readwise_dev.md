@@ -253,16 +253,16 @@ readwise.nvim/
 - ✅ **Function 3**: `is_cache_valid()` - Timestamp-based freshness validation
 - ✅ **Function 4**: `M.get_highlights()` - Smart cache orchestration
 
-**Test Status:** 10/10 passing ✅
+**Test Status:** 11/11 passing ✅
 ```
 ✅ Configuration (2 tests)
 ✅ Async API (1 test)
 ✅ Cache I/O (2 tests)
 ✅ Cache Validation (4 tests)
-✅ Smart Orchestration (1 test) ← Latest
+✅ Smart Orchestration (2 tests) ← Latest
 ```
 
-#### **Session 5 (Current) - First Orchestration Test** (2025-10-12)
+#### **Session 5 - First Orchestration Test** (2025-10-12)
 
 **Major Accomplishments:**
 
@@ -336,16 +336,79 @@ local test_data = {
 
 ---
 
-### 🔄 **Day 3 Remaining Work: 4 More Orchestration Tests**
+#### **Session 6 - Stale Cache Test** (2025-10-14)
+
+**Major Accomplishments:**
+
+**✅ Second Orchestration Test Complete**
+- Test: "should fetch new data when cache is stale or missing"
+- Validates cache expiration logic (slow path, API called)
+- Creates cache with 5-hour-old timestamp (beyond 4-hour limit)
+- Confirms API is called instead of using stale cache
+
+**✅ Path Construction Debugging**
+
+**The Bug: Filename Mismatch**
+```lua
+// Test created file at:
+test_cache_dir = "/tmp/readwise_test_cache"      ← No trailing slash
+cache_file = test_cache_dir .. "/highlights_cache.json"
+// Result: /tmp/readwise_test_cache/highlights_cache.json
+
+// But code looked for:
+cache_dir .. filename = "/tmp/readwise_test_cache" .. "highlights_cache.json"
+// Result: /tmp/readwise_test_cachehighlights_cache.json  ← Missing slash!
+```
+
+**The Fix:**
+```lua
+test_cache_dir = "/tmp/readwise_test_cache/"  ← Add trailing slash
+cache_file = test_cache_dir .. "highlights_cache.json"  ← No extra slash
+// Result: /tmp/readwise_test_cache/highlights_cache.json ✅
+```
+
+**Key Learning: File System Path Construction**
+- Directory paths must have **consistent trailing slash handling**
+- Either ALWAYS include trailing slash in directory vars
+- Or NEVER add slash during concatenation
+- Mixing approaches creates different file paths
+
+**✅ Mock Verification Pattern**
+```lua
+-- Track if function was called
+local api_was_called = false
+
+-- Replace with mock
+readwise.get_highlights_async = function(callback)
+  api_was_called = true  -- Set flag
+  callback({ text = "Fresh" }, nil)
+end
+
+-- Assert the flag
+assert.is_true(api_was_called, "API should be called for stale cache")
+```
+
+This pattern verifies **control flow** (which code path executed), not just data.
+
+**✅ Typo Debugging Experience**
+- Fixed `file.close()` → `file:close()` (method call syntax)
+- Fixed variable name: `original_get_highlights_sync` → `original_get_highlights_async`
+- Fixed typo: `readwise.get_highlights_asyc` → `readwise.get_highlights_async`
+
+**Code Location:** `tests/readwise_spec.lua` lines 286-346
+
+---
+
+### 🔄 **Day 3 Remaining Work: 3 More Orchestration Tests**
 
 **Test Cases to Implement:**
-1. ✅ **Cache hit (fresh)** - DONE!
-2. ⏭️ **Stale cache** - Should fetch when cache expired
+1. ✅ **Cache hit (fresh)** - DONE! (Session 5)
+2. ✅ **Stale cache** - DONE! (Session 6)
 3. ⏭️ **Force refresh** - Should bypass cache when `force_refresh=true`
 4. ⏭️ **API error handling** - Should propagate errors gracefully
 5. ⏭️ **Cache save after fetch** - Should save fresh data to cache
 
-**Expected Final Count:** 14 tests (10 existing + 4 new)
+**Expected Final Count:** 14 tests (11 existing + 3 new)
 
 **Test Pattern:**
 ```lua
