@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# tmux setup email project
+
+
+if ! tmux has-session -t EmailBot
+then
+
+# Neovim 
+tmux new-session -s EmailBot -n Neovim -d 
+tmux send-keys -t EmailBot:1 'cd ~/Projects/EmailBot' C-m
+tmux send-keys -t EmailBot:1 'nvn .' C-m
+
+# Create horizontal split and start claude code
+tmux split-window -h -t EmailBot:1
+tmux send-keys -t EmailBot:1.2 'cd ~/Projects/EmailBot' C-m
+tmux send-keys -t EmailBot:1.2 'claude' C-m
+
+
+# Console Window
+tmux new-window -n Console -t EmailBot
+tmux send-keys -t EmailBot:2  'cd ~/Projects/EmailBot' C-m
+tmux send-keys -t EmailBot:2  'opencode' C-m
+tmux send-keys -t EmailBot:2  'clear' C-m
+
+
+# Lazygit
+tmux new-window -n Lazygit -t EmailBot
+tmux send-keys -t EmailBot:3  'cd ~/dotfiles' C-m
+tmux send-keys -t EmailBot:3  'lg' C-m
+
+# Select the Neovim window
+tmux select-window -t EmailBot:1
+tmux select-pane -t EmailBot:1.1    
+fi
+
+# No running session, so start a new session 
+tmux attach -t EmailBot
+
+
+
