@@ -5,26 +5,26 @@
 -- noremap and silent.
 --]]
 local map = function(mode, lhs, rhs, opts)
-  local options = { noremap = true, silent = true }
-  if opts then
-    options = vim.tbl_extend("force", options, opts)
-  end
-  vim.api.nvim_set_keymap(mode, lhs, rhs, options)
+	local options = { noremap = true, silent = true }
+	if opts then
+		options = vim.tbl_extend("force", options, opts)
+	end
+	vim.api.nvim_set_keymap(mode, lhs, rhs, options)
 end
 
 --This function adds ability to add keymaps to different modes
 local map_for_modes = function(modes, lhs, rhs, opts)
-  local options = { noremap = true, silent = true }
-  if opts then
-    options = vim.tbl_extend("force", options, opts)
-  end
-  for _, mode in ipairs(modes) do
-    local rhs_command = rhs
-    if mode == "t" then
-      rhs_command = [[<C-\><C-n>]] .. rhs
-    end
-    vim.api.nvim_set_keymap(mode, lhs, rhs_command, opts)
-  end
+	local options = { noremap = true, silent = true }
+	if opts then
+		options = vim.tbl_extend("force", options, opts)
+	end
+	for _, mode in ipairs(modes) do
+		local rhs_command = rhs
+		if mode == "t" then
+			rhs_command = [[<C-\><C-n>]] .. rhs
+		end
+		vim.api.nvim_set_keymap(mode, lhs, rhs_command, opts)
+	end
 end
 
 map("i", "jk", "<ESC>", { desc = "Exit insert mode with jk" })

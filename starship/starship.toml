@@ -1,25 +1,26 @@
-# See: https://starship.rs/config/
-
 # Get editor completions based on the config schema
 "$schema" = 'https://starship.rs/config-schema.json'
+
+# Move the directory to the second line
+# format = '$all$directory$character'
 
 # Inserts a blank line between shell prompts
 add_newline = true
 
 # Replace the '❯' symbol in the prompt with '➜'
-[character] # The name of the module we are configuring is 'character'
-# success_symbol = '[➜](bold green)' # The 'success_symbol' segment is being set to '➜' with the color 'bold green'
+# ~/.config/starship.toml
+
+# Increase command timeout to prevent timeouts on slower commands like lua
+command_timeout = 2000
+
+[lua]
+disabled = true
+
+[character]
+success_symbol = '[➜](bold green) '
+error_symbol = '[➜](bold red) '
 
 # Disable the package module, hiding it from the prompt completely
-# [package]
-[python]
-format = " "
+[package]
+disabled = true
 
-[git_status]
-format = ""
-
-
-[battery]
-full_symbol = '🔋 '
-charging_symbol = '⚡️ '
-discharging_symbol = '💀 '

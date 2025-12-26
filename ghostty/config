@@ -1,6 +1,6 @@
 # ghostty configuration
 # Vinod Nair MD Start as an interactive shell. As login shell will show message 
-font-size = 16 
+font-size = 16
 theme = "tokyonight night" 
 macos-auto-secure-input = true
 macos-secure-input-indication = true 
@@ -8,20 +8,37 @@ macos-titlebar-style = "transparent"
 auto-update = download
 copy-on-select = true
 quit-after-last-window-closed = true
-# quick-terminal = true
+shell-integration = zsh
+font-family = JetBrains Mono
+mouse-hide-while-typing = true
+scrollback-limit = 100000
+window-save-state = always
 
-# keybinding
-keybind = cmd+f=toggle_fullscreen
-#open quick terminal with cmd+`
-keybind = cmd+`=toggle_quick_terminal
+# keybinding (leader: Ctrl+Space)
 
-# Split navigation
-keybind = cmd+h=goto_split:left
-keybind = cmd+j=goto_split:down
-keybind = cmd+k=goto_split:up
-keybind = cmd+l=goto_split:right
+# Reload
+keybind = ctrl+space>r=reload_config
 
-fullscreen = false 
+# Toggle fullscreen
+keybind = ctrl+space>f=toggle_fullscreen
 
-# Press Shift+Enter to insert a newline without sending the command
+# Open quick terminal
+keybind = ctrl+space>t=toggle_quick_terminal
+
+# Split navigation (vim-style)
+keybind = ctrl+space>h=goto_split:left
+keybind = ctrl+space>j=goto_split:down
+keybind = ctrl+space>k=goto_split:up
+keybind = ctrl+space>l=goto_split:right
+
+# Split resize
+keybind = ctrl+space>up=resize_split:up,20
+keybind = ctrl+space>down=resize_split:down,20
+keybind = ctrl+space>left=resize_split:left,21
+keybind = ctrl+space>right=resize_split:right,20
+fullscreen = true 
+
+# Shift+Enter to insert a newline without sending the command
 keybind = shift+enter=text:\n
+
+

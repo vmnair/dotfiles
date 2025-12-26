@@ -4,7 +4,8 @@ return {
   dependencies = { "echasnovski/mini.icons", opts = {} },
   lazy = false,
   -- Open the current file's directory in Oil in a floating window
-  vim.keymap.set("n", "-", "<Cmd>Oil --float<CR>", { desc = "Open parent directory in Oil." }),
+  -- vim.keymap.set("n", "-", "<Cmd>Oil --float<CR>", { desc = "Open parent directory in Oil." }),
+  vim.keymap.set("n", "-", "<Cmd>Oil <CR>", { desc = "Open parent directory in Oil." }),
 
   --Show hidden files by default
   config = function(_, opts)

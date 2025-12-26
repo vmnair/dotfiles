@@ -7,7 +7,7 @@ return {
   ---@type snacks.Config
   opts = {
     animate = {
-      enabled = true,          -- enable animations
+      enabled = false,         -- enable animations
       duration = 200,          -- duration of the animation in ms
       easing = "in-out-cubic", -- easing function for the animation
       -- easing = "linear", -- linear animation
@@ -83,6 +83,15 @@ return {
     --   enabled = true,
     -- },
 
+    -- Input
+    input = {
+      icon = " ",
+      icon_hl = "SnacksInputIcon",
+      icon_pos = "left",
+      prompt_pos = "title",
+      win = { style = "input" },
+      expand = true,
+    },
 
     -- notifier configuration
     notifier = {

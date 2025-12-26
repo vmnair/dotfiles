@@ -15,7 +15,7 @@
 
 3. `lazy.nvim` Setup
 
-4. Plugins
+4.
 
 - [x] [markdown-preview](https://github.com/iamcco/markdown-preview.nvim)
 - [x] [render-markdown](https://github.com/MeanderingProgrammer/render-markdown.nvim)

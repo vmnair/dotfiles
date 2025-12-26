@@ -13,9 +13,10 @@ M.config = {
 	date_format = "%m-%d-%Y",
 	categories = { "Medicine", "OMS", "Personal" },
 	category_icons = {
-		Medicine = "💊",
-		OMS = "🛠️",
-		Personal = "🏡",
+		-- Medicine = "💊",
+		Medicine = "󰿷",
+		OMS = "󰇄",
+		Personal = "",
 	},
 }
 
@@ -41,6 +42,7 @@ local function is_show_date_reached(date_str)
 		return true -- Invalid numbers mean show immediately
 	end
 
+	-- what does the os.time function do here?
 	local show_time = os.time({
 		year = year_num,
 		month = month_num,
@@ -373,7 +375,7 @@ function M.open_filtered_active_view()
 
 	-- Set markdown filetype to get proper checkbox rendering
 	vim.api.nvim_buf_set_option(buf, "filetype", "markdown")
-	
+
 	-- Set buffer as read-only (but will be made modifiable during toggle)
 	vim.api.nvim_buf_set_option(buf, "modifiable", false)
 	vim.api.nvim_buf_set_option(buf, "readonly", true)
@@ -384,12 +386,12 @@ function M.open_filtered_active_view()
 	-- Apply todo syntax overlays with multiple timing strategies
 	-- Immediate attempt
 	M.setup_todo_syntax()
-	
+
 	-- Deferred attempt (in case immediate fails)
 	vim.defer_fn(function()
 		M.setup_todo_syntax()
 	end, 100)
-	
+
 	-- Final attempt after longer delay
 	vim.defer_fn(function()
 		M.setup_todo_syntax()
@@ -842,8 +844,18 @@ function M.resolve_date_shortcut(keyword)
 
 	-- Convert text numbers to actual numbers
 	local text_to_number = {
-		one = 1, two = 2, three = 3, four = 4, five = 5, six = 6,
-		seven = 7, eight = 8, nine = 9, ten = 10, eleven = 11, twelve = 12
+		one = 1,
+		two = 2,
+		three = 3,
+		four = 4,
+		five = 5,
+		six = 6,
+		seven = 7,
+		eight = 8,
+		nine = 9,
+		ten = 10,
+		eleven = 11,
+		twelve = 12,
 	}
 
 	local number = tonumber(number_text) or text_to_number[number_text:lower()]
@@ -876,7 +888,16 @@ end
 -- ========================================
 
 -- Handle command continuation workflow for quick todo commands
-function M.handle_command_continuation(description, category, tags, due_date, show_date, use_show_calendar, use_due_calendar, command_prefix)
+function M.handle_command_continuation(
+	description,
+	category,
+	tags,
+	due_date,
+	show_date,
+	use_show_calendar,
+	use_due_calendar,
+	command_prefix
+)
 	if not use_show_calendar and not use_due_calendar then
 		return false -- No continuation needed
 	end
@@ -998,24 +1019,24 @@ function M.display_todos(todos, title)
 
 	print("\n" .. title .. ":")
 	print(string.rep("=", #title + 1))
-	
+
 	for i, todo in ipairs(todos) do
 		local icon = M.config.category_icons[todo.category] or "📝"
 		local tags_str = ""
 		if todo.tags and #todo.tags > 0 then
 			tags_str = " #" .. table.concat(todo.tags, " #")
 		end
-		
+
 		local show_str = ""
 		if todo.show_date and todo.show_date ~= "" then
 			show_str = " [Show: " .. todo.show_date .. "]"
 		end
-		
+
 		local due_str = ""
 		if todo.due_date and todo.due_date ~= "" then
 			due_str = " [Due: " .. todo.due_date .. "]"
 		end
-		
+
 		print(string.format("%2d. %s %s%s%s%s", i, icon, todo.description, tags_str, show_str, due_str))
 	end
 	print("")
@@ -1026,7 +1047,7 @@ end
 -- ========================================
 
 -- Global filter state
-M.current_filter = nil  -- nil means "Clear" (show all), otherwise category name
+M.current_filter = nil -- nil means "Clear" (show all), otherwise category name
 
 -- Get current filter state
 function M.get_current_filter()
@@ -1055,20 +1076,20 @@ function M.validate_category(name)
 	if not name or name == "" then
 		return false, "Category name cannot be empty"
 	end
-	
+
 	name = name:lower()
 	local valid_categories = {}
 	for _, cat in ipairs(M.config.categories) do
 		table.insert(valid_categories, cat:lower())
 	end
-	
+
 	-- Exact match (case insensitive)
 	for i, cat in ipairs(valid_categories) do
 		if cat == name then
-			return true, M.config.categories[i]  -- return proper case
+			return true, M.config.categories[i] -- return proper case
 		end
 	end
-	
+
 	-- Fuzzy matching for suggestions
 	local suggestions = {}
 	for i, cat in ipairs(valid_categories) do
@@ -1076,7 +1097,7 @@ function M.validate_category(name)
 			table.insert(suggestions, M.config.categories[i])
 		end
 	end
-	
+
 	local available = table.concat(M.config.categories, ", ")
 	if #suggestions > 0 then
 		local suggestion_str = table.concat(suggestions, ", ")
@@ -1090,30 +1111,30 @@ end
 function M.get_category_todo_counts()
 	local active_todos = M.get_active_todos()
 	local counts = {}
-	
+
 	-- Initialize counts for all categories
 	for _, category in ipairs(M.config.categories) do
 		counts[category] = 0
 	end
-	
+
 	-- Count todos by category
 	local total_count = 0
 	for _, todo in ipairs(active_todos) do
-		local cat = todo.category or "Personal"  -- default fallback
+		local cat = todo.category or "Personal" -- default fallback
 		if counts[cat] ~= nil then
 			counts[cat] = counts[cat] + 1
 		end
 		total_count = total_count + 1
 	end
-	
-	counts["Clear"] = total_count  -- "Clear" shows all todos
+
+	counts["Clear"] = total_count -- "Clear" shows all todos
 	return counts
 end
 
 -- Apply category filter to current view (in-place)
 function M.apply_category_filter_to_current_view()
 	local buf_name = vim.api.nvim_buf_get_name(0)
-	
+
 	-- Check if we're in a todo buffer that supports filtering
 	if buf_name:match("Active Todos") or buf_name:match("todo") then
 		-- Refresh the current view with filter applied
@@ -1126,7 +1147,7 @@ function M.refresh_filtered_view_with_state()
 	local current_filter = M.current_filter
 	local all_todos = M.get_active_todos()
 	local filtered_todos = all_todos
-	
+
 	-- Apply category filter if active
 	if current_filter then
 		filtered_todos = {}
@@ -1136,7 +1157,7 @@ function M.refresh_filtered_view_with_state()
 			end
 		end
 	end
-	
+
 	-- Update buffer name to reflect filter state
 	local buffer_name
 	if current_filter then
@@ -1148,35 +1169,44 @@ function M.refresh_filtered_view_with_state()
 	else
 		buffer_name = "Active Todos (Filtered View)"
 	end
-	
+
 	-- Create or update buffer content
 	local buf = vim.api.nvim_get_current_buf()
 	vim.api.nvim_buf_set_name(buf, buffer_name)
-	
+
 	-- Generate header with filter information
 	local lines = {}
 	table.insert(lines, "# " .. buffer_name)
 	table.insert(lines, "")
-	
+
 	if current_filter then
 		if #filtered_todos == 0 then
 			table.insert(lines, "No todos found in " .. current_filter .. " category")
 			table.insert(lines, "Use :TodoFilter Clear or <leader>tf to change filter")
 		else
 			local hidden_count = #all_todos - #filtered_todos
-			table.insert(lines, "Showing " .. #filtered_todos .. " " .. current_filter .. " todos (" .. hidden_count .. " others hidden)")
+			table.insert(
+				lines,
+				"Showing "
+					.. #filtered_todos
+					.. " "
+					.. current_filter
+					.. " todos ("
+					.. hidden_count
+					.. " others hidden)"
+			)
 		end
 	else
 		table.insert(lines, "Showing all " .. #filtered_todos .. " todos")
 	end
-	
+
 	table.insert(lines, "")
-	
+
 	-- Add filtered todos
 	for _, todo in ipairs(filtered_todos) do
 		table.insert(lines, M.format_todo_line(todo, "active"))
 	end
-	
+
 	-- Update buffer content and set filetype first
 	vim.api.nvim_buf_set_option(buf, "modifiable", true)
 	vim.api.nvim_buf_set_option(buf, "readonly", false)
@@ -1185,16 +1215,16 @@ function M.refresh_filtered_view_with_state()
 	vim.api.nvim_buf_set_option(buf, "modifiable", false)
 	vim.api.nvim_buf_set_option(buf, "readonly", true)
 	vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
-	
-	-- Apply todo syntax overlays with multiple timing strategies  
+
+	-- Apply todo syntax overlays with multiple timing strategies
 	-- Immediate attempt
 	M.setup_todo_syntax()
-	
+
 	-- Deferred attempts to ensure it works
 	vim.defer_fn(function()
 		M.setup_todo_syntax()
 	end, 100)
-	
+
 	vim.defer_fn(function()
 		M.setup_todo_syntax()
 	end, 300)
@@ -1208,7 +1238,7 @@ function M.update_static_categories(new_category)
 			return false, "Category '" .. new_category .. "' already exists"
 		end
 	end
-	
+
 	-- Add new category to config
 	table.insert(M.config.categories, new_category)
 	return true, "Category '" .. new_category .. "' added successfully"
@@ -1224,11 +1254,11 @@ function M.remove_category_with_checks(category)
 			break
 		end
 	end
-	
+
 	if not found then
 		return false, "Category '" .. category .. "' not found"
 	end
-	
+
 	-- Check for active todos in this category
 	local active_todos = M.get_active_todos()
 	local active_count = 0
@@ -1237,7 +1267,7 @@ function M.remove_category_with_checks(category)
 			active_count = active_count + 1
 		end
 	end
-	
+
 	-- Check for scheduled todos in this category
 	local scheduled_todos = M.get_scheduled_todos()
 	local scheduled_count = 0
@@ -1246,7 +1276,7 @@ function M.remove_category_with_checks(category)
 			scheduled_count = scheduled_count + 1
 		end
 	end
-	
+
 	-- Prevent removal if active or scheduled todos exist
 	if active_count > 0 or scheduled_count > 0 then
 		local message = "Cannot remove category '" .. category .. "'. "
@@ -1262,7 +1292,7 @@ function M.remove_category_with_checks(category)
 		message = message .. " first."
 		return false, message
 	end
-	
+
 	-- Safe to remove category
 	for i, cat in ipairs(M.config.categories) do
 		if cat == category then
@@ -1270,14 +1300,14 @@ function M.remove_category_with_checks(category)
 			break
 		end
 	end
-	
+
 	-- Handle active filter state
 	if M.current_filter == category then
-		M.current_filter = nil  -- Auto-clear filter
+		M.current_filter = nil -- Auto-clear filter
 		M.apply_category_filter_to_current_view()
 		return true, "Category '" .. category .. "' removed. Filter cleared, showing all todos."
 	end
-	
+
 	return true, "Category '" .. category .. "' removed successfully"
 end
 
@@ -1289,7 +1319,7 @@ function M.add_new_category(name, icon)
 		print("✗ " .. message)
 		return false
 	end
-	
+
 	-- Add icon to config
 	M.config.category_icons[name] = icon
 	print("✓ Category '" .. name .. "' (" .. icon .. ") added successfully")
@@ -1775,7 +1805,7 @@ function M.refresh_filtered_view_if_open()
 	-- Find any buffer with "Active Todos" in the name (handles both filtered and unfiltered)
 	local target_buf = nil
 	local buffers = vim.api.nvim_list_bufs()
-	
+
 	for _, buf in ipairs(buffers) do
 		if vim.api.nvim_buf_is_valid(buf) then
 			local buf_name = vim.api.nvim_buf_get_name(buf)
@@ -1844,9 +1874,9 @@ function M.setup_todo_syntax()
 	if vim.bo.filetype ~= "markdown" then
 		return false
 	end
-	
+
 	-- Apply todo syntax overlays to markdown base
-	
+
 	-- Don't clear existing syntax - keep markdown base
 	-- Add todo-specific patterns with explicit containedin to override markdown
 	vim.cmd([[
@@ -1856,7 +1886,7 @@ function M.setup_todo_syntax()
 		silent! syntax clear TodoIconOMS
 		silent! syntax clear TodoIconPersonal
 		silent! syntax clear TodoIconDefault
-		silent! syntax clear TodoTag  
+		silent! syntax clear TodoTag
 		silent! syntax clear TodoShowDate
 		silent! syntax clear TodoDueDate
 		silent! syntax clear TodoAddedDate
@@ -1864,12 +1894,12 @@ function M.setup_todo_syntax()
 		" Todo-specific patterns with high priority (using containedin=ALL)
 		syntax match TodoTag /#\w\+/ containedin=ALL
 		syntax match TodoShowDate /\[Show: [0-9-]\+\]/ containedin=ALL
-		syntax match TodoDueDate /\[Due: [0-9-]\+\]/ containedin=ALL  
+		syntax match TodoDueDate /\[Due: [0-9-]\+\]/ containedin=ALL
 		syntax match TodoAddedDate /([0-9-]\+)$/ containedin=ALL
 		
 		" Handle emoji icons separately (they can cause issues in syntax patterns)
 		syntax match TodoIconMedicine /💊/ containedin=ALL
-		syntax match TodoIconOMS /🛠️/ containedin=ALL  
+		syntax match TodoIconOMS /🛠️/ containedin=ALL
 		syntax match TodoIconPersonal /🏡/ containedin=ALL
 		syntax match TodoIconDefault /📝/ containedin=ALL
 		
@@ -1889,7 +1919,7 @@ function M.setup_todo_syntax()
 		highlight! mathIgnore ctermfg=white guifg=#ffffff
 		highlight! todoMath ctermfg=white guifg=#ffffff
 		
-		" Emoji icon highlights  
+		" Emoji icon highlights
 		highlight! TodoIconMedicine ctermfg=yellow guifg=#ffd700
 		highlight! TodoIconOMS ctermfg=yellow guifg=#ffd700
 		highlight! TodoIconPersonal ctermfg=yellow guifg=#ffd700
@@ -2044,13 +2074,13 @@ function M.show_todo_modal(options)
 		vim.keymap.set("n", "i", function()
 			-- Make buffer modifiable first
 			vim.api.nvim_buf_set_option(buf, "modifiable", true)
-			
+
 			-- Use a more reliable cursor positioning method
 			vim.schedule(function()
 				-- Get the current line content to calculate exact position
 				local current_line = vim.api.nvim_get_current_line()
 				local colon_pos = current_line:find(":")
-				
+
 				if colon_pos then
 					-- Position cursor after "Description: " (accounting for spaces)
 					local desc_start = current_line:find(":%s*", colon_pos)
@@ -2058,23 +2088,26 @@ function M.show_todo_modal(options)
 						-- Find where the actual description text begins
 						local desc_text_start = desc_start + 1
 						-- Skip any spaces after colon
-						while desc_text_start <= #current_line and current_line:sub(desc_text_start, desc_text_start) == " " do
+						while
+							desc_text_start <= #current_line
+							and current_line:sub(desc_text_start, desc_text_start) == " "
+						do
 							desc_text_start = desc_text_start + 1
 						end
-						
+
 						-- If there's existing text, go to the end of it
 						if form_data.description ~= "" then
-							vim.api.nvim_win_set_cursor(win, {1, #current_line})
+							vim.api.nvim_win_set_cursor(win, { 1, #current_line })
 						else
 							-- If no existing text, position after the spaces following the colon
-							vim.api.nvim_win_set_cursor(win, {1, desc_text_start - 1})
+							vim.api.nvim_win_set_cursor(win, { 1, desc_text_start - 1 })
 						end
 					else
 						-- Fallback: position at end of line
-						vim.api.nvim_win_set_cursor(win, {1, #current_line})
+						vim.api.nvim_win_set_cursor(win, { 1, #current_line })
 					end
 				end
-				
+
 				-- Enter insert mode at current cursor position
 				vim.cmd("startinsert")
 			end)
@@ -2336,7 +2369,6 @@ function M.show_todo_modal(options)
 	end
 end
 
-
 -- ========================================
 -- PHASE 3: CONTINUATION WORKFLOW CONSOLIDATION UTILITIES
 -- ========================================
@@ -2472,7 +2504,6 @@ function M.process_show_continuation(input)
 	})
 end
 
-
 -- ========================================
 -- TODO EDITING FUNCTIONALITY
 -- ========================================
@@ -2553,7 +2584,7 @@ local function generate_todo_id(todo)
 	if not added_date or added_date == "" then
 		added_date = os.date("%m-%d-%Y")
 	end
-	
+
 	local base_string = (todo.description or "") .. "|" .. (todo.category or "Personal") .. "|" .. added_date
 	-- Simple hash function to create shorter ID
 	local hash = 0
@@ -2572,14 +2603,14 @@ function M.create_or_open_note_from_todo()
 	end
 
 	-- Store cursor position in todo list for return navigation
-	local todo_cursor_line = vim.fn.line('.')
-	local todo_cursor_col = vim.fn.col('.')
+	local todo_cursor_line = vim.fn.line(".")
+	local todo_cursor_col = vim.fn.col(".")
 
 	-- Check if zk command is available
 	local zk_check = io.popen("which zk 2>/dev/null")
 	local zk_path = zk_check:read("*a")
 	zk_check:close()
-	
+
 	if not zk_path or zk_path == "" then
 		print("✗ zk command not found. Please install zk: brew install zk")
 		return
@@ -2587,9 +2618,12 @@ function M.create_or_open_note_from_todo()
 
 	local note_title = current_todo.description
 	local todo_id = generate_todo_id(current_todo)
-	
+
 	-- Safe search for existing notes using grep (zk --match doesn't search frontmatter)
-	local search_command = string.format('cd ~/notebook && timeout 5s grep -r "todo_id: %s" . --include="*.md" 2>/dev/null | head -1', todo_id)
+	local search_command = string.format(
+		'cd ~/notebook && timeout 5s grep -r "todo_id: %s" . --include="*.md" 2>/dev/null | head -1',
+		todo_id
+	)
 	local search_handle = io.popen(search_command)
 	local search_result = search_handle:read("*a")
 	search_handle:close()
@@ -2602,10 +2636,10 @@ function M.create_or_open_note_from_todo()
 			local full_path = vim.fn.expand("~/notebook/" .. existing_path)
 			print("📖 Opening existing note: " .. vim.fn.fnamemodify(existing_path, ":t"))
 			vim.cmd("edit " .. vim.fn.fnameescape(full_path))
-			
+
 			-- Set up autocmd to return to original todo line on save/exit
 			vim.schedule(function()
-				vim.api.nvim_create_autocmd({"BufWritePost", "WinClosed", "BufDelete"}, {
+				vim.api.nvim_create_autocmd({ "BufWritePost", "WinClosed", "BufDelete" }, {
 					buffer = 0,
 					once = true,
 					callback = function()
@@ -2616,7 +2650,7 @@ function M.create_or_open_note_from_todo()
 								pcall(vim.fn.cursor, todo_cursor_line, todo_cursor_col)
 							end
 						end)
-					end
+					end,
 				})
 			end)
 			return
@@ -2624,45 +2658,45 @@ function M.create_or_open_note_from_todo()
 	end
 
 	print("📝 Creating new note for: " .. note_title .. " (ID: " .. todo_id .. ")")
-	
+
 	-- No existing note found, create new one
 	local current_date = os.date("%Y-%m-%d")
-	
+
 	-- Create note using zk new command first
 	local create_command = string.format('zk new --title "%s" --print-path', note_title)
 	local create_handle = io.popen(create_command .. " 2>&1")
 	local create_result = create_handle:read("*a")
 	create_handle:close()
-	
+
 	if not create_result or create_result == "" then
 		print("✗ Failed to create zk note - check if zk repo is initialized")
 		return
 	end
-	
+
 	-- Extract note path from zk output
 	local note_path = create_result:match("([^\n\r]+)")
 	if not note_path then
 		print("✗ Could not determine created note path")
 		return
 	end
-	
+
 	-- Trim any whitespace from path
 	note_path = vim.trim(note_path)
-	
+
 	-- Build note content with frontmatter and template
 	local note_content = {}
-	
+
 	-- Add YAML frontmatter with todo_id for permanent linking
 	table.insert(note_content, "---")
 	table.insert(note_content, "todo_id: " .. todo_id)
 	table.insert(note_content, "category: " .. (current_todo.category or "Personal"))
 	table.insert(note_content, "created: " .. current_date)
-	
+
 	-- Add tags to frontmatter if present
 	if current_todo.tags and type(current_todo.tags) == "table" and #current_todo.tags > 0 then
 		table.insert(note_content, "tags: [" .. table.concat(current_todo.tags, ", ") .. "]")
 	end
-	
+
 	-- Add dates to frontmatter if present
 	if current_todo.due_date and current_todo.due_date ~= "" then
 		table.insert(note_content, "due_date: " .. current_todo.due_date)
@@ -2670,28 +2704,28 @@ function M.create_or_open_note_from_todo()
 	if current_todo.show_date and current_todo.show_date ~= "" and current_todo.show_date ~= current_todo.due_date then
 		table.insert(note_content, "show_date: " .. current_todo.show_date)
 	end
-	
+
 	table.insert(note_content, "---")
 	table.insert(note_content, "")
-	table.insert(note_content, "# " .. note_title)  -- H1 heading with todo description
+	table.insert(note_content, "# " .. note_title) -- H1 heading with todo description
 	table.insert(note_content, "")
 	table.insert(note_content, "**Category**: " .. (current_todo.category or "Personal"))
-	
+
 	-- Add tags if present
 	if current_todo.tags and type(current_todo.tags) == "table" and #current_todo.tags > 0 then
 		table.insert(note_content, "**Tags**: #" .. table.concat(current_todo.tags, " #"))
 	end
-	
+
 	-- Add due date if present
 	if current_todo.due_date and current_todo.due_date ~= "" then
 		table.insert(note_content, "**Due Date**: " .. current_todo.due_date)
 	end
-	
+
 	-- Add show date if present and different from due date
 	if current_todo.show_date and current_todo.show_date ~= "" and current_todo.show_date ~= current_todo.due_date then
 		table.insert(note_content, "**Show Date**: " .. current_todo.show_date)
 	end
-	
+
 	table.insert(note_content, "**Created**: " .. current_date)
 	table.insert(note_content, "")
 	table.insert(note_content, "## Notes")
@@ -2702,28 +2736,28 @@ function M.create_or_open_note_from_todo()
 	table.insert(note_content, "```")
 	table.insert(note_content, M.format_todo_line(current_todo, "storage"))
 	table.insert(note_content, "```")
-	
+
 	-- Write content directly to the created note file
 	local file = io.open(note_path, "w")
 	if not file then
 		print("✗ Failed to open created note file for writing: " .. note_path)
 		return
 	end
-	
+
 	for _, line in ipairs(note_content) do
 		file:write(line .. "\n")
 	end
 	file:close()
-	
+
 	-- Open the newly created note
 	vim.cmd("edit " .. vim.fn.fnameescape(note_path))
-	
+
 	-- Position cursor after last content for immediate note-taking
 	vim.schedule(function()
 		-- Find the last line with actual content
-		local last_line = vim.fn.line('$')
+		local last_line = vim.fn.line("$")
 		local content_line = 1
-		
+
 		for i = last_line, 1, -1 do
 			local line_content = vim.fn.getline(i)
 			if line_content:match("%S") then -- Found non-whitespace
@@ -2731,15 +2765,15 @@ function M.create_or_open_note_from_todo()
 				break
 			end
 		end
-		
+
 		-- Go to the last content line and position cursor at end
-		vim.cmd(content_line .. "G")  -- Go to specific line number
-		vim.cmd("normal! A")          -- Go to end of line
-		vim.cmd("normal! o")          -- Open new line below
-		vim.cmd("startinsert")        -- Enter insert mode
-		
+		vim.cmd(content_line .. "G") -- Go to specific line number
+		vim.cmd("normal! A") -- Go to end of line
+		vim.cmd("normal! o") -- Open new line below
+		vim.cmd("startinsert") -- Enter insert mode
+
 		-- Set up autocmd to return to original todo line on save/exit
-		vim.api.nvim_create_autocmd({"BufWritePost", "WinClosed", "BufDelete"}, {
+		vim.api.nvim_create_autocmd({ "BufWritePost", "WinClosed", "BufDelete" }, {
 			buffer = 0,
 			once = true,
 			callback = function()
@@ -2750,17 +2784,17 @@ function M.create_or_open_note_from_todo()
 						pcall(vim.fn.cursor, todo_cursor_line, todo_cursor_col)
 					end
 				end)
-			end
+			end,
 		})
 	end)
-	
+
 	print("✓ Created new note: " .. note_title)
-	
+
 	-- Ask if user wants to mark todo as completed
 	vim.defer_fn(function()
 		vim.ui.input({
 			prompt = "Mark todo as completed? (y/N): ",
-			default = "n"
+			default = "n",
 		}, function(input)
 			if input and input:lower() == "y" then
 				-- Switch back to todo buffer and toggle completion
