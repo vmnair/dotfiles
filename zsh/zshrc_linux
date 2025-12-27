@@ -45,6 +45,8 @@ alias gdb="gdb --silent"
 alias lg="lazygit"
 alias f="fzf"
 alias ss='bash ~/dotfiles/tmux/smart-sessionizer.sh'  # Session selector
+# Toggle weather display: minimal (icon + temp) or verbose (city + icon + temp + condition)
+alias weather-toggle='f=~/dotfiles/tmux/.weather_verbose; if [ -f "$f" ]; then rm "$f" && echo "Weather: minimal"; else touch "$f" && echo "Weather: verbose"; fi'
 
 # Load ZK (Zettelkasten) functionality
 source "$HOME/dotfiles/zsh/zk_functions.zsh"

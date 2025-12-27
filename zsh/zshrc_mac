@@ -135,6 +135,8 @@ export OLLAMA_NUM_THREADS=12  # M3 has 12 cores
 
 # Tmux configuration
 alias ss='bash ~/dotfiles/tmux/smart-sessionizer.sh'  # Session selector
+# Toggle weather display: minimal (icon + temp) or verbose (city + icon + temp + condition)
+alias weather-toggle='f=~/dotfiles/tmux/.weather_verbose; if [ -f "$f" ]; then rm "$f" && echo "Weather: minimal"; else touch "$f" && echo "Weather: verbose"; fi'
 
 tmux_sessionizer() {
   zle push-input
