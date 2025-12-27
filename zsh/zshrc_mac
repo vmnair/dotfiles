@@ -134,6 +134,8 @@ export OLLAMA_API_BASE=http://127.0.0.1:11434
 export OLLAMA_NUM_THREADS=12  # M3 has 12 cores
 
 # Tmux configuration
+alias ss='bash ~/dotfiles/tmux/smart-sessionizer.sh'  # Session selector
+
 tmux_sessionizer() {
   zle push-input
   BUFFER="$HOME/dotfiles/tmux/smart-sessionizer.sh"

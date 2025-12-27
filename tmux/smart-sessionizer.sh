@@ -8,35 +8,52 @@
 # Get list of existing sessions
 sessions=$(tmux list-sessions -F "#{session_name}" 2>/dev/null)
 
-# Store all tmux projects in dotfiles/tmux/projects with *proj extension.
-project_dirs=""
+# Possible directories to search for .proj files (auto-detected)
+POSSIBLE_PROJECT_DIRS=(
+    "$HOME/dotfiles/tmux/projects"
+    "$HOME/dotfiles"
+    "$HOME/projects"
+    "$HOME/dev"
+    "$HOME/code"
+    "$HOME/work"
+)
 
-if [[ -d "$HOME/dotfiles/tmux/projects" ]]; then
-    project_files=$(find "$HOME/dotfiles/tmux/projects" -mindepth 1 -maxdepth 1 -type f -name "*.proj")
-fi
+# Find .proj files in existing directories
+project_files=""
+for dir in "${POSSIBLE_PROJECT_DIRS[@]}"; do
+    if [[ -d "$dir" ]]; then
+        found=$(find "$dir" -maxdepth 3 -type f -name "*.proj" 2>/dev/null)
+        if [[ -n "$found" ]]; then
+            project_files+="$found"$'\n'
+        fi
+    fi
+done
+project_files=$(echo "$project_files" | grep -v '^$' | sort -u)
 
-# Combine sessions and project directories
+# Build formatted list with sections
 all_options=""
+
+# Active Sessions section
 if [[ -n "$sessions" ]]; then
-    # Mark existing sessions with a prefix
-    all_options=$(echo "$sessions" | sed 's/^/[ACTIVE] /')
+    all_options="━━ Active Sessions ━━"$'\n'
+    all_options+=$(echo "$sessions" | sed 's/^/  ● /')
 fi
 
+# Create New Session section
 if [[ -n "$project_files" ]]; then
-    # Add project files (strip .proj extension)
-    project_names=$(echo "$project_files" | xargs -I {} basename {} .proj | sed 's/^/[NEW] /')
+    project_names=$(echo "$project_files" | xargs -I {} basename {} .proj | sed 's/^/  ○ /')
     if [[ -n "$all_options" ]]; then
-        all_options="$all_options"$'\n'"$project_names"
+        all_options+=$'\n'$'\n'"━━ Create New Session ━━"$'\n'"$project_names"
     else
-        all_options="$project_names"
+        all_options="━━ Create New Session ━━"$'\n'"$project_names"
     fi
 fi
 
-# Add kill server option at the end
+# Kill server option
 if [[ -n "$all_options" ]]; then
-    all_options="$all_options"$'\n'"[KILL] Kill tmux server"
+    all_options+=$'\n'$'\n'"━━━━━━━━━━━━━━━━━━━━━━"$'\n'"  ⚠ Kill tmux server"
 else
-    all_options="[KILL] Kill tmux server"
+    all_options="  ⚠ Kill tmux server"
 fi
 
 if [[ -z "$all_options" ]]; then
@@ -44,39 +61,99 @@ if [[ -z "$all_options" ]]; then
     exit 1
 fi
 
-# Detect context and use appropriate fzf
-if [[ -n "$TMUX" ]]; then
-    # Inside tmux - use fzf directly (popup handled by tmux config)
-    selected=$(echo "$all_options" | fzf --prompt="Select tmux session: " --height=40% --layout=reverse --border)
-else
-    # Outside tmux - use fzf in full terminal
-    selected=$(echo "$all_options" | fzf --prompt="Select tmux session: " --height=50% --layout=reverse --border)
-fi
+# Preview command for fzf
+preview_cmd='
+  line={}
+  if [[ "$line" == *"● "* ]]; then
+    session=$(echo "$line" | sed "s/.*● //")
+    tmux list-windows -t "$session" -F "  #{window_index}: #{window_name} (#{pane_current_command})"
+  elif [[ "$line" == *"○ "* ]]; then
+    name=$(echo "$line" | sed "s/.*○ //")
+    echo "New session from: ${name}.proj"
+  elif [[ "$line" == *"⚠"* ]]; then
+    echo "⚠ This will terminate all tmux sessions"
+  else
+    echo ""
+  fi
+'
+
+# Use fzf with preview and ctrl-d to kill session
+fzf_output=$(echo "$all_options" | fzf \
+  --prompt="Choose session (<C-d> to kill): " \
+  --height=100% \
+  --layout=reverse \
+  --border \
+  --preview="$preview_cmd" \
+  --preview-window=right:40% \
+  --expect=ctrl-d)
+
+# Parse output: first line is key (if --expect matched), rest is selection
+key=$(echo "$fzf_output" | head -1)
+selected=$(echo "$fzf_output" | tail -n +2)
 
 if [[ -z "$selected" ]]; then
     exit 0
 fi
 
-# Extract the actual name
-session_name=$(echo "$selected" | sed 's/^\[.*\] //')
+# Ignore section headers
+if [[ "$selected" == "━━"* ]]; then
+    exit 0
+fi
+
+# Extract the actual name (remove icon prefix)
+session_name=$(echo "$selected" | sed 's/.*[●○⚠] //')
+
+# Handle ctrl-d (kill session)
+if [[ "$key" == "ctrl-d" ]]; then
+    # Only allow killing active sessions (●)
+    if [[ "$selected" != *"● "* ]]; then
+        exit 0
+    fi
+
+    # Count sessions
+    session_count=$(tmux list-sessions 2>/dev/null | wc -l | tr -d ' ')
+
+    if [[ "$session_count" -eq 1 ]]; then
+        # Last session - confirm kill server
+        confirm=$(printf "Yes\nNo" | fzf --prompt="Last session - kill server? " --height=20% --layout=reverse --border)
+        if [[ "$confirm" == "Yes" ]]; then
+            tmux kill-server
+        fi
+    else
+        # Multiple sessions - confirm kill and switch to another
+        confirm=$(printf "Yes\nNo" | fzf --prompt="Kill session '$session_name'? " --height=20% --layout=reverse --border)
+        if [[ "$confirm" == "Yes" ]]; then
+            # Find next session (most recent, excluding the one being deleted)
+            next_session=$(tmux list-sessions -F "#{session_last_attached}:#{session_name}" 2>/dev/null \
+                | grep -v ":${session_name}$" \
+                | sort -rn \
+                | head -1 \
+                | cut -d: -f2)
+
+            # Switch to next session first (if we're in tmux and deleting current)
+            current_session=$(tmux display-message -p '#S' 2>/dev/null)
+            if [[ -n "$TMUX" && "$current_session" == "$session_name" && -n "$next_session" ]]; then
+                tmux switch-client -t "$next_session"
+            fi
+
+            # Kill the session
+            tmux kill-session -t "$session_name"
+        fi
+    fi
+    exit 0
+fi
 
 # Handle session switching logic
-if [[ "$selected" == "[KILL]"* ]]; then
+if [[ "$selected" == *"⚠"* ]]; then
     # Kill tmux server with confirmation
-    if [[ -n "$TMUX" ]]; then
-        # Inside tmux - use fzf for confirmation in popup
-        confirm=$(printf "Yes\nNo" | fzf --prompt="Kill tmux server? " --height=20% --layout=reverse --border)
-    else
-        # Outside tmux - use fzf in terminal
-        confirm=$(printf "Yes\nNo" | fzf --prompt="Kill tmux server? " --height=20% --layout=reverse --border)
-    fi
-    
+    confirm=$(printf "Yes\nNo" | fzf --prompt="Kill tmux server? " --height=20% --layout=reverse --border)
+
     if [[ "$confirm" == "Yes" ]]; then
         tmux kill-server
         echo "Tmux server killed"
     fi
     exit 0
-elif [[ "$selected" == "[ACTIVE]"* ]]; then
+elif [[ "$selected" == *"● "* ]]; then
     # Switching to existing session
     if [[ -n "$TMUX" ]]; then
         # Inside tmux - check if already in selected session
@@ -93,16 +170,48 @@ elif [[ "$selected" == "[ACTIVE]"* ]]; then
     fi
 else
     # Creating new session from project file
-    project_file="$HOME/dotfiles/tmux/projects/${session_name}.proj"
-    
+    # Search for .proj file in all possible directories
+    project_file=""
+    for dir in "${POSSIBLE_PROJECT_DIRS[@]}"; do
+        found=$(find "$dir" -maxdepth 3 -name "${session_name}.proj" 2>/dev/null | head -1)
+        if [[ -n "$found" ]]; then
+            project_file="$found"
+            break
+        fi
+    done
+
     if [[ -f "$project_file" ]]; then
         # Make sure the project file is executable
         chmod +x "$project_file"
-        
+
         if [[ -n "$TMUX" ]]; then
-            # Inside tmux - detach and run project
-            tmux detach-client
-            "$project_file"
+            # Inside tmux - parse target session and switch to it
+            target_session=$(grep -E "attach.*-t" "$project_file" | sed 's/.*-t //' | head -1)
+
+            # Validate target_session was parsed
+            if [[ -z "$target_session" ]]; then
+                echo "Error: Could not parse session name from $project_file"
+                echo "Ensure the .proj file contains: tmux attach -t <session_name>"
+                read -p "Press Enter to continue..."
+                exit 1
+            fi
+
+            # Create session if it doesn't exist
+            if ! tmux has-session -t "$target_session" 2>/dev/null; then
+                bash "$project_file" >/dev/null 2>&1 &
+                sleep 0.5
+
+                # Verify session was created
+                if ! tmux has-session -t "$target_session" 2>/dev/null; then
+                    echo "Error: Failed to create session '$target_session'"
+                    echo "Check $project_file for errors"
+                    read -p "Press Enter to continue..."
+                    exit 1
+                fi
+            fi
+
+            # Switch to the session
+            tmux switch-client -t "$target_session"
         else
             # Outside tmux - just run project
             "$project_file"
@@ -110,16 +219,17 @@ else
     else
         # Fallback: create basic session
         project_path=""
-        
-        # Find the full path
-        if [[ -d "$HOME/projects/$session_name" ]]; then
-            project_path="$HOME/projects/$session_name"
-        elif [[ -d "$HOME/dev/$session_name" ]]; then
-            project_path="$HOME/dev/$session_name"
-        elif [[ "$session_name" == "dotfiles" ]]; then
-            project_path="$HOME/dotfiles"
-        else
-            # Fallback to current directory
+
+        # Search for directory matching session name in known paths
+        for dir in "${POSSIBLE_PROJECT_DIRS[@]}"; do
+            if [[ -d "$dir/$session_name" ]]; then
+                project_path="$dir/$session_name"
+                break
+            fi
+        done
+
+        # Final fallback to current directory
+        if [[ -z "$project_path" ]]; then
             project_path=$(pwd)
         fi
         

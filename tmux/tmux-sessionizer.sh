@@ -7,7 +7,6 @@
 sessions=$(tmux list-sessions -F "#{session_name}" 2>/dev/null)
 
 # Store all tmux projects in dotfiles/tmux/projects with *proj extension.
-project_dirs=""
 
 if [[ -d "$HOME/dotfiles/tmux/projects" ]]; then
     project_files=$(find "$HOME/dotfiles/tmux/projects" -mindepth 1 -maxdepth 1 -type f -name "*.proj")
@@ -47,29 +46,8 @@ session_name=$(echo "$selected" | sed 's/^\[.*\] //')
 # Check if it's an existing session or new project
 if [[ "$selected" == "[ACTIVE]"* ]]; then
     # Switch to existing session
-    if [[ -n "$TMUX" ]]; then
-        # We're already in tmux, ask what to do
-        action=$(printf "switch\nkill-current\ndetach" | fzf --prompt="Action for current session: " --height=20% --layout=reverse --border)
-        case "$action" in
-            "switch")
-                tmux switch-client -t "$session_name"
-                ;;
-            "kill-current")
-                current_session=$(tmux display-message -p '#S')
-                tmux switch-client -t "$session_name"
-                tmux kill-session -t "$current_session"
-                ;;
-            "detach")
-                tmux detach-client
-                tmux attach-session -t "$session_name"
-                ;;
-            *)
-                exit 0
-                ;;
-        esac
-    else
-        tmux attach-session -t "$session_name"
-    fi
+    confirm=$(printf "Yes\nNo" | fzf --prompt="Kill tmux server?" --height=20% -- layout=reverse, --border)
+fi
 else
     # Execute project file
     project_file="$HOME/dotfiles/tmux/projects/${session_name}.proj"
