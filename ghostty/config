@@ -9,7 +9,9 @@ auto-update = download
 copy-on-select = true
 quit-after-last-window-closed = true
 shell-integration = zsh
-font-family = JetBrains Mono
+# font-family = JetBrains Mono
+# Using Nerd Font for battery/icon glyphs in tmux status bar
+font-family = JetBrainsMono Nerd Font Mono
 mouse-hide-while-typing = true
 scrollback-limit = 100000
 window-save-state = always
