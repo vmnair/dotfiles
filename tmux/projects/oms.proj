@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# tmux setup OMS-Business project
+
+
+
+if ! tmux has-session -t OMS-Business
+then
+
+# Neovim 
+tmux new-session -s OMS-Business -n Neovim -d 
+tmux send-keys -t OMS-Business:1 'cd ~/Projects/OMS' C-m
+tmux send-keys -t OMS-Business:1 'nvn .' C-m
+
+# Create horizontal split and start claude code
+tmux split-window -h -t OMS-Business:1
+tmux send-keys -t OMS-Business:1.2 'cd ~/Projects/OMS' C-m
+tmux send-keys -t OMS-Business:1.2 'opencode' C-m
+
+
+# Console Window
+tmux new-window -n Console -t OMS-Business
+tmux send-keys -t OMS-Business:2  'cd ~/Projects/OMS' C-m
+tmux send-keys -t OMS-Business:2  'claude' C-m
+tmux send-keys -t OMS-Business:2  'clear' C-m
+
+
+# Lazygit
+tmux new-window -n Lazygit -t OMS-Business
+tmux send-keys -t OMS-Business:3  'cd ~/dotfiles' C-m
+tmux send-keys -t OMS-Business:3  'lg' C-m
+
+# Select the Neovim window
+tmux select-window -t OMS-Business:1
+tmux select-pane -t OMS-Business:1.1    
+fi
+
+# No running session, so start a new session 
+tmux attach -t OMS-Business
+
+
+
+

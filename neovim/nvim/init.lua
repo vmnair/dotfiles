@@ -9,7 +9,9 @@ require("vinod.config.autocmds")
 require("vinod.config.aliases")
 require("vinod.config.c_dev")
 -- require("vinod.config.mappings") Called from lazy.lua
-require("vinod.config.todo_commands")
+vim.defer_fn(function()
+  require("vinod.config.todo_commands")
+end, 0)
 -- require("vinod.config.ollama_commands") -- DISABLED: Using CopilotChat.nvim integration instead
 
 require("fzf-lua").register_ui_select()

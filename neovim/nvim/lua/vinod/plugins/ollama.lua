@@ -6,6 +6,7 @@ return {
   dependencies = {
     "folke/snacks.nvim",
   },
+  cmd = { "OllamaCheck", "OllamaUpdateModel", "OllamaUpdateAllModels" },
   config = function()
     local Job = require("plenary.job")
 

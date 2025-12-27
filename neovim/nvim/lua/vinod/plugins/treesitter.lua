@@ -6,6 +6,7 @@ return {
 		"nvim-treesitter/nvim-treesitter-textobjects",
 	},
 	build = ":TSUpdate", -- update parsers using this command,
+	event = "VeryLazy",
 	config = function()
 		local config = require("nvim-treesitter.configs")
 		config.setup({

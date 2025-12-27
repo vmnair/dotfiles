@@ -1,5 +1,6 @@
 return {
   "zk-org/zk-nvim",
+  ft = { "markdown", "zk", "zettelkasten" },
   config = function()
     require("zk").setup({
       -- picker = "snacks_picker",

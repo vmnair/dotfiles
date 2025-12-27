@@ -19,6 +19,8 @@ window-save-state = always
 # Reload
 keybind = ctrl+space>r=reload_config
 
+# Start fullscreen
+fullscreen = true 
 # Toggle fullscreen
 keybind = ctrl+space>f=toggle_fullscreen
 
@@ -36,7 +38,6 @@ keybind = ctrl+space>up=resize_split:up,20
 keybind = ctrl+space>down=resize_split:down,20
 keybind = ctrl+space>left=resize_split:left,21
 keybind = ctrl+space>right=resize_split:right,20
-fullscreen = true 
 
 # Shift+Enter to insert a newline without sending the command
 keybind = shift+enter=text:\n

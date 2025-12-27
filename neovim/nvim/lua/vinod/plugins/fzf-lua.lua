@@ -5,8 +5,6 @@ return {
 	dependencies = {
 		-- "nvim-tree/nvim-web-devicons",
 		"echasnovski/mini.icons",
-		"junegunn/fzf",
-		-- build = "./install --bin",
 	},
 	config = function()
 		-- calling `setup` is optional for customization

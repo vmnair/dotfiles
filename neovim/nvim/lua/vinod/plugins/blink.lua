@@ -1,7 +1,8 @@
 return {
 	"saghen/blink.cmp",
-	-- optional: provides snippets for the snippet source
+	-- optional: provides snippets for snippet source
 	dependencies = { "rafamadriz/friendly-snippets" },
+	event = "VeryLazy", -- Load after LSP config is ready
 
 	-- use a release tag to download pre-built binaries
 	version = "1.*",
@@ -26,6 +27,16 @@ return {
 		--
 		-- See :h blink-cmp-config-keymap for defining your own keymap
 		keymap = { preset = "default" },
+
+		-- Enable cmdline completion (for :, /, ?)
+		cmdline = {
+			enabled = true,
+			keymap = { preset = "cmdline" },
+			completion = { menu = { auto_show = false } },
+		},
+
+		-- Enable experimental signature help
+		signature = { enabled = true },
 
 		appearance = {
 			-- 'mono' (default) for 'Nerd Font Mono' or 'normal' for 'Nerd Font'
@@ -55,6 +66,8 @@ return {
 		-- elsewhere in your config, without redefining it, due to `opts_extend`
 		sources = {
 			default = { "lsp", "path", "snippets", "buffer" },
+			-- TODO: Add spell completion - need to install blink-cmp-spell community plugin
+			-- TODO: Add vimtex completion - need to evaluate blink.compat or find alternative
 		},
 
 		-- (Default) Rust fuzzy matcher for typo resistance and significantly better performance

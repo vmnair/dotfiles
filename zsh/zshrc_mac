@@ -1,5 +1,4 @@
-# Essential Zsh settings
-stty -ixon  # Disable software flow control to allow Ctrl+S for tmux sessionizer
+# Essential Zsh settings stty -ixon  # Disable software flow control to allow Ctrl+S for tmux sessionizer
 
 # Starship prompt
 eval "$(starship init zsh)"
@@ -14,11 +13,14 @@ zstyle ':completion::complete:*' use-fuzzy 2> /dev/null
 
 # Lazy completion loading
 autoload -Uz compinit
-if [[ -n ${ZDOTDIR}/.zcompdump(#qN.mh+24) ]]; then
-  compinit -C
-else
-  compinit
-fi
+# Only regenerate compdump once a day
+# _comp_files=(${ZDOTDIR:-$HOME}/.zcompdump(#qN.mh+24))
+# if (( $#_comp_files )); then
+#   compinit -C
+# else
+#   compinit
+# fi
+# unset _comp_files
 
 # Optimized completion menu
 zstyle ':completion:*:*:*:*:*' menu select

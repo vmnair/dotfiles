@@ -28,9 +28,10 @@ return {
 	},
 	{
 		"neovim/nvim-lspconfig",
+		event = "VeryLazy",
 		config = function()
 			local map = vim.keymap.set
-			local capabilities = require("cmp_nvim_lsp").default_capabilities()
+			local capabilities = require("blink.cmp").get_lsp_capabilities()
 
 			-- Lua language server configuration
 			vim.lsp.config("lua_ls", {
@@ -98,7 +99,7 @@ return {
 			-- bash language server configuration
 			vim.lsp.config("bashls", {
 				capabilities = capabilities,
-				filetypes = { "sh", "bash", "zsh", "zshrc", "proj" },
+				filetypes = { "sh", "bash", "proj" },
 			})
 			vim.lsp.enable("bashls")
 
