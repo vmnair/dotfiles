@@ -11,11 +11,11 @@ sessions=$(tmux list-sessions -F "#{session_name}" 2>/dev/null)
 # Possible directories to search for .proj files (auto-detected)
 POSSIBLE_PROJECT_DIRS=(
     "$HOME/dotfiles/tmux/projects"
-    "$HOME/dotfiles"
-    "$HOME/projects"
-    "$HOME/dev"
-    "$HOME/code"
-    "$HOME/work"
+    # "$HOME/projects"
+    # "$HOME/dotfiles"
+    # "$HOME/dev"
+    # "$HOME/code"
+    # "$HOME/work"
 )
 
 # Find .proj files in existing directories

@@ -31,7 +31,8 @@ return {
 		event = "VeryLazy",
 		config = function()
 			local map = vim.keymap.set
-			local capabilities = require("blink.cmp").get_lsp_capabilities()
+			local ok, blink = pcall(require, "blink.cmp")
+			local capabilities = ok and blink.get_lsp_capabilities() or vim.lsp.protocol.make_client_capabilities()
 
 			-- Lua language server configuration
 			vim.lsp.config("lua_ls", {
@@ -147,6 +148,7 @@ return {
 					-- What are the other options for border?
 					border = "double",
 				},
+				virtual_text = true,
 			})
 			-- Global mappings
 			--map("n", "<leader>o", vim.diagnostic.open_float, { desc = "Open diagnostics in a floating window" })

@@ -49,14 +49,13 @@ export EDITOR="nvim"
 
 # Neovim aliases
 alias v=nvim      # Stable neovim
+alias vi=nvim
 alias vim=nvim    # Stable neovim
-alias nvn='NVIM_APPNAME=nvim-nightly nvim_nightly'  # Neovim nightly
-alias update-nvim-nightly='cd ~/Neovim && ./update_nvim_nightly.sh'  # Update nightly build
 
 # Core aliases
 alias zsh_config="nvim ~/.zshrc"
 alias dot="nvim ~/dotfiles"
-alias nv="cd ~/dotfiles/neovim/nvim && nvim ."
+alias nvc="cd ~/dotfiles/neovim/nvim && nvim ."
 alias gc="cd ~/.config/ghostty && nvim config"
 alias lg="lazygit"
 alias update="brew update && brew upgrade && brew cleanup"

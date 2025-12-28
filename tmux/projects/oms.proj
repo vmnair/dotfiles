@@ -10,7 +10,7 @@ then
 # Neovim 
 tmux new-session -s OMS-Business -n Neovim -d 
 tmux send-keys -t OMS-Business:1 'cd ~/Projects/OMS' C-m
-tmux send-keys -t OMS-Business:1 'nvn .' C-m
+tmux send-keys -t OMS-Business:1 'vim .' C-m
 
 # Create horizontal split and start claude code
 tmux split-window -h -t OMS-Business:1
