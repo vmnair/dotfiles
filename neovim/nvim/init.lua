@@ -12,8 +12,9 @@ require("vinod.config.c_dev")
 vim.defer_fn(function()
   require("vinod.config.todo_commands")
 end, 0)
--- require("vinod.config.ollama_commands") -- DISABLED: Using CopilotChat.nvim integration instead
 
-require("fzf-lua").register_ui_select()
+vim.defer_fn(function()
+  require("fzf-lua").register_ui_select()
+end, 0)
 
 vim.opt.rtp:prepend(vim.fn.stdpath("config") .. "/dev-plugins/readwise.nvim")

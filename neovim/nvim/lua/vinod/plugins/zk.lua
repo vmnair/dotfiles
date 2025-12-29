@@ -3,8 +3,8 @@ return {
   ft = { "markdown", "zk", "zettelkasten" },
   config = function()
     require("zk").setup({
-      -- picker = "snacks_picker",
-      picker = "fzf_lua",
+      picker = "snacks_picker",
+      -- picker = "fzf_lua",
       snacks_picker = {
         layout = {
           preset = "ivy",
