@@ -7,12 +7,10 @@ return {
 
 	{
 		"williamboman/mason-lspconfig.nvim",
-		dependency = { "mason" },
+		dependencies = { "williamboman/mason.nvim" },
 		config = function()
 			require("mason-lspconfig").setup({
 				automatic_installation = false,
-				automatic_enable = false,
-				handlers = {},
 				ensure_installed = {
 					"gopls",
 					"lua_ls",
@@ -28,14 +26,15 @@ return {
 	},
 	{
 		"neovim/nvim-lspconfig",
-		event = "VeryLazy",
+		event = { "BufReadPre", "BufNewFile" },
 		config = function()
+			local lspconfig = require("lspconfig")
 			local map = vim.keymap.set
 			local ok, blink = pcall(require, "blink.cmp")
 			local capabilities = ok and blink.get_lsp_capabilities() or vim.lsp.protocol.make_client_capabilities()
 
 			-- Lua language server configuration
-			vim.lsp.config("lua_ls", {
+			lspconfig.lua_ls.setup({
 				capabilities = capabilities,
 				settings = {
 					Lua = {
@@ -46,38 +45,32 @@ return {
 					},
 				},
 			})
-			vim.lsp.enable("lua_ls")
+
 			-- clangd language server configuration
-			-- We will check if CMakeLists.txt is present or build/compile_commands
-			-- to determine the root directory
-			local function clangd_custom_root_dir(fname)
-				return vim.fs.root(fname, "CMakeLists.txt") or vim.fs.root(fname, "build/compile_commands.json")
-			end
-			vim.lsp.config("clangd", {
+			lspconfig.clangd.setup({
 				capabilities = capabilities,
 				cmd = { "clangd", "--compile-commands-dir=build" },
 				filetypes = { "c", "cpp" },
-				root_dir = clangd_custom_root_dir,
+				root_dir = function(fname)
+					return lspconfig.util.root_pattern("CMakeLists.txt", "build/compile_commands.json")(fname)
+				end,
 			})
-			vim.lsp.enable("clangd")
 
 			-- gopls language server configuration with auto-formatting
-			vim.lsp.config("gopls", {
+			lspconfig.gopls.setup({
 				capabilities = capabilities,
 				on_attach = function(_, bufnr)
 					-- Enable formatting on save
 					vim.api.nvim_create_autocmd("BufWritePre", {
 						buffer = bufnr,
 						callback = function()
-							vim.lsp.buf.format({ async = true })
+							vim.lsp.buf.format({ async = false })
 						end,
 					})
 				end,
 				cmd = { "gopls" },
 				filetypes = { "go", "gomod", "gowork", "gotmpl" },
-				root_dir = function(fname)
-					return vim.fs.root(fname, { "go.work", "go.mod", ".git" })
-				end,
+				root_dir = lspconfig.util.root_pattern("go.work", "go.mod", ".git"),
 				settings = {
 					gopls = {
 						completeUnimported = true,
@@ -88,24 +81,21 @@ return {
 					},
 				},
 			})
-			vim.lsp.enable("gopls")
 
 			-- cmake language server configuration
-			vim.lsp.config("cmake", {
+			lspconfig.cmake.setup({
 				capabilities = capabilities,
-				filetypes = { "cmake", "CMakeLists.txt" },
+				filetypes = { "cmake" },
 			})
-			vim.lsp.enable("cmake")
 
 			-- bash language server configuration
-			vim.lsp.config("bashls", {
+			lspconfig.bashls.setup({
 				capabilities = capabilities,
-				filetypes = { "sh", "bash", "proj" },
+				filetypes = { "sh", "bash" },
 			})
-			vim.lsp.enable("bashls")
 
 			-- texlab language server configuration (LaTeX)
-			vim.lsp.config("texlab", {
+			lspconfig.texlab.setup({
 				capabilities = capabilities,
 				settings = {
 					texlab = {
@@ -121,37 +111,21 @@ return {
 					},
 				},
 			})
-			vim.lsp.enable("texlab")
 
-			-- Lua language server configuration
-			vim.lsp.config("pyright", {
+			-- pyright language server configuration
+			lspconfig.pyright.setup({
 				capabilities = capabilities,
-				-- settings = {
-				-- 	Lua = {
-				-- 		diagnostics = {
-				-- 			-- get the language server to recognize the `vim` global
-				-- 			globals = { "vim" },
-				-- 		},
-				-- 	},
-				-- },
 			})
-			vim.lsp.enable("pyright")
-			-- marksman language server (markdown) - commented out
-			-- vim.lsp.config('marksman', {
-			--   capabilities = capabilities,
-			--   settings = {},
-			-- })
-			-- vim.lsp.enable('marksman')
+
 			-- Diagnostic floating window should have rounded borders
 			vim.diagnostic.config({
 				float = {
-					-- What are the other options for border?
 					border = "double",
 				},
 				virtual_text = true,
 			})
+
 			-- Global mappings
-			--map("n", "<leader>o", vim.diagnostic.open_float, { desc = "Open diagnostics in a floating window" })
 			map("n", "<leader>ql", vim.diagnostic.setloclist, { desc = "Show diagnostics in location list" })
 			map("n", "[d", vim.diagnostic.goto_prev, { desc = "Go to previous diagnostic" })
 			map("n", "]d", vim.diagnostic.goto_next, { desc = "Go to next diagnostic" })

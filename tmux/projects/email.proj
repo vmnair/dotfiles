@@ -9,18 +9,17 @@ then
 # Neovim 
 tmux new-session -s EmailBot -n Neovim -d 
 tmux send-keys -t EmailBot:1 'cd ~/Projects/EmailBot' C-m
-tmux send-keys -t EmailBot:1 'nvn .' C-m
+tmux send-keys -t EmailBot:1 'vim .' C-m
 
 # Create horizontal split and start claude code
 tmux split-window -h -t EmailBot:1
 tmux send-keys -t EmailBot:1.2 'cd ~/Projects/EmailBot' C-m
-tmux send-keys -t EmailBot:1.2 'claude' C-m
+tmux send-keys -t EmailBot:1.2 'opencode' C-m
 
 
 # Console Window
 tmux new-window -n Console -t EmailBot
 tmux send-keys -t EmailBot:2  'cd ~/Projects/EmailBot' C-m
-tmux send-keys -t EmailBot:2  'opencode' C-m
 tmux send-keys -t EmailBot:2  'clear' C-m
 
 
@@ -28,6 +27,12 @@ tmux send-keys -t EmailBot:2  'clear' C-m
 tmux new-window -n Lazygit -t EmailBot
 tmux send-keys -t EmailBot:3  'cd ~/dotfiles' C-m
 tmux send-keys -t EmailBot:3  'lg' C-m
+
+
+# Notes
+tmux new-window -n Notes -t EmailBot
+tmux send-keys -t EmailBot:4  'cd ~/notebook/dev/go' C-m
+tmux send-keys -t EmailBot:3  'zk recent' C-m
 
 # Select the Neovim window
 tmux select-window -t EmailBot:1

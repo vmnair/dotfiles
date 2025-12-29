@@ -26,7 +26,7 @@ opt.splitright = true --split horizontal window to below
 opt.splitbelow = true -- split horizontal window to below
 
 opt.textwidth = 80    -- Set the text width to 80 characters
-opt.wrap = false      -- disable line wrapping
+opt.wrap = true       -- disable line wrapping
 
 opt.expandtab = true
 opt.tabstop = 2               -- Expand tab to spaces
@@ -45,8 +45,7 @@ opt.showmode = false  -- Lualine does this, so we don't need it.
 opt.showmatch = true
 
 -- Ability to select cells where there are no
--- characters, we will set it to only in
--- block mode.
+-- characters, we will set it to block
 opt.virtualedit = "block"
 
 opt.inccommand = "split" -- Show incremental search in a split
