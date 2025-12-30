@@ -5,17 +5,41 @@
 # Caches result to avoid excessive API calls
 #
 # Toggle verbose mode (shows city + condition):
-#   touch ~/.weather_verbose    # Enable
-#   rm ~/.weather_verbose       # Disable
+#   touch ~/dotfiles/tmux/.weather_verbose    # Enable
+#   rm ~/dotfiles/tmux/.weather_verbose       # Disable
+#
+# Force refresh (also triggered by tmux <prefix> r):
+#   touch ~/dotfiles/tmux/.weather_refresh
 
 CACHE_FILE="/tmp/tmux_weather_cache"
 CACHE_FILE_VERBOSE="/tmp/tmux_weather_cache_verbose"
-CACHE_MAX_AGE=1800  # 30 minutes in seconds
+CACHE_MAX_AGE=600  # 10 minutes in seconds
 VERBOSE_FLAG="$HOME/dotfiles/tmux/.weather_verbose"
+REFRESH_FLAG="$HOME/dotfiles/tmux/.weather_refresh"
+
+# Check if it's night time (between 6 PM and 6 AM)
+is_night() {
+    local hour=$(date +%H)
+    [[ $hour -ge 18 || $hour -lt 6 ]]
+}
+
+# Convert day icons to night equivalents
+convert_to_night_icon() {
+    local icon="$1"
+    case "$icon" in
+        "☀️"|"🌤"|"⛅️"|"🌥") echo "🌙" ;;  # Clear/partly cloudy -> moon
+        *) echo "$icon" ;;  # Keep other icons (rain, snow, etc.)
+    esac
+}
 
 # Determine display mode
 verbose=false
 [[ -f "$VERBOSE_FLAG" ]] && verbose=true
+
+# Check for manual refresh trigger (created by tmux reload)
+if [[ -f "$REFRESH_FLAG" ]]; then
+    rm -f "$CACHE_FILE" "$CACHE_FILE_VERBOSE" "$REFRESH_FLAG"
+fi
 
 # Check if cache exists and is fresh
 if [[ -f "$CACHE_FILE" ]]; then
@@ -55,6 +79,12 @@ if [[ -n "$weather_full" && "$weather_full" != *"Unknown"* && "$weather_full" =~
     # Format is: "icon temp condition" -> extract first two parts
     icon=$(echo "$weather_full" | awk '{print $1}')
     temp=$(echo "$weather_full" | awk '{print $2}')
+    
+    # Convert to night icon if needed
+    if is_night; then
+        icon=$(convert_to_night_icon "$icon")
+    fi
+    
     weather_minimal="${icon} ${temp}"
 
     # Verbose format: City: icon temp condition

@@ -25,7 +25,7 @@ tmux send-keys -t EmailBot:2  'clear' C-m
 
 # Lazygit
 tmux new-window -n Lazygit -t EmailBot
-tmux send-keys -t EmailBot:3  'cd ~/dotfiles' C-m
+tmux send-keys -t EmailBot:3  'cd ~/Projects/EmailBot' C-m
 tmux send-keys -t EmailBot:3  'lg' C-m
 
 
