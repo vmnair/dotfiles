@@ -14,7 +14,7 @@ fi
 wifi_power=$(networksetup -getairportpower en0 2>/dev/null | awk '{print $4}')
 
 if [ "$wifi_power" != "On" ]; then
-    echo "󰖪"
+    echo "#[fg=red]󰖪#[fg=white]"
     exit 0
 fi
 
@@ -23,7 +23,7 @@ wifi_info=$(system_profiler SPAirPortDataType 2>/dev/null)
 
 # Check if connected
 if ! echo "$wifi_info" | grep -q "Status: Connected"; then
-    echo "󰖪"
+    echo "#[fg=red]󰖪#[fg=white]"
     exit 0
 fi
 
@@ -47,12 +47,9 @@ else
 fi
 
 # Convert RSSI to color
-# RSSI ranges: -30 to -50 (excellent), -50 to -60 (good), -60 to -70 (fair), -70+ (weak)
+# RSSI ranges: ≥-60 (good), -60 to -70 (fair), <-70 (weak)
 if [ -n "$rssi" ] && [ "$rssi" -eq "$rssi" ] 2>/dev/null; then
-    if [ "$rssi" -ge -50 ]; then
-        # Excellent signal - white
-        color=""
-    elif [ "$rssi" -ge -60 ]; then
+    if [ "$rssi" -ge -60 ]; then
         # Good signal - white
         color=""
     elif [ "$rssi" -ge -70 ]; then
@@ -67,5 +64,5 @@ else
     color=""
 fi
 
-# Output icon (coloring handled by tmux config)
-echo "${icon}"
+# Output icon with color
+echo "${color}${icon}#[fg=white]"

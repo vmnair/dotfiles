@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# tmux setup Neovim configurationa  
+
+
+if ! tmux has-session -t TmuxConf
+then
+
+# Neovim 
+tmux new-session -s TmuxConf -n Neovim -d 
+tmux send-keys -t TmuxConf:1 'cd ~/dotfiles/tmux/' C-m
+tmux send-keys -t TmuxConf:1  'clear' C-m
+tmux send-keys -t TmuxConf:1 'vim tmux-conf.proj' C-m
+
+# Create horizontal split and start claude code
+tmux split-window -h -t TmuxConf:1
+tmux send-keys -t TmuxConf:1.2 'cd ~/dotfiles/tmux/' C-m
+tmux send-keys -t TmuxConf:1.2  'clear' C-m
+tmux send-keys -t TmuxConf:1.2 'claude' C-m
+
+# Console Window
+tmux new-window -n Console -t TmuxConf
+tmux send-keys -t TmuxConf:2  'cd ~/dotfiles/tmux/' C-m
+# tmux send-keys -t TmuxConf:2  'nv' C-m
+tmux send-keys -t TmuxConf:2  'clear' C-m
+
+
+# Lazygit
+tmux new-window -n Lazygit -t TmuxConf
+tmux send-keys -t TmuxConf:3  'cd ~/dotfiles/tmux/' C-m
+tmux send-keys -t TmuxConf:3  'lg' C-m
+# tmux send-keys -t TmuxConf:2  'clear' C-m
+
+# Select the Neovim window
+tmux select-window -t TmuxConf:1
+tmux select-pane -t TmuxConf:1.1    
+fi
+
+# No running session, so start a new session 
+tmux attach -t TmuxConf
+
+
+

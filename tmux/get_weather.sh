@@ -23,13 +23,65 @@ is_night() {
     [[ $hour -ge 18 || $hour -lt 6 ]]
 }
 
-# Convert day icons to night equivalents
-convert_to_night_icon() {
+# Convert emoji to Nerd Font icon (respects tmux colors)
+convert_to_nerd_icon() {
     local icon="$1"
+    local is_night="$2"
+
     case "$icon" in
-        "☀️"|"🌤"|"⛅️"|"🌥") echo "🌙" ;;  # Clear/partly cloudy -> moon
-        *) echo "$icon" ;;  # Keep other icons (rain, snow, etc.)
+        "☀️"|"🌞")
+            if [ "$is_night" = "true" ]; then
+                echo "󰖔"  # moon
+            else
+                echo "󰖙"  # sun
+            fi
+            ;;
+        "🌤"|"⛅️"|"⛅")
+            if [ "$is_night" = "true" ]; then
+                echo "󰼳"  # partly cloudy night
+            else
+                echo "󰖕"  # partly cloudy day
+            fi
+            ;;
+        "🌥"|"☁️"|"☁")
+            echo "󰖐"  # cloudy
+            ;;
+        "🌧"|"🌦"|"💧")
+            echo "󰖗"  # rain
+            ;;
+        "⛈"|"🌩"|"⚡")
+            echo "󰙾"  # thunderstorm
+            ;;
+        "🌨"|"❄️"|"❄")
+            echo "󰖘"  # snow
+            ;;
+        "🌫"|"🌁")
+            echo "󰖑"  # fog
+            ;;
+        "🌙"|"🌛"|"🌜")
+            echo "󰖔"  # moon
+            ;;
+        *)
+            echo "󰖐"  # default: cloud
+            ;;
     esac
+}
+
+# Generate dynamic city abbreviation (bash 3.2 compatible)
+get_city_code() {
+    local city="$1"
+    # Remove trailing whitespace/newlines
+    city=$(echo "$city" | tr -d '\n' | sed 's/[[:space:]]*$//')
+
+    local word_count=$(echo "$city" | wc -w | tr -d ' ')
+
+    if [[ $word_count -gt 1 ]]; then
+        # Multi-word: take first letter of each word (e.g., "New York" -> "NY")
+        echo "$city" | awk '{for(i=1;i<=NF;i++) printf toupper(substr($i,1,1))}'
+    else
+        # Single word: take first 3 letters (e.g., "Boston" -> "BOS")
+        echo "$city" | cut -c1-3 | tr '[:lower:]' '[:upper:]'
+    fi
 }
 
 # Determine display mode
@@ -80,12 +132,15 @@ if [[ -n "$weather_full" && "$weather_full" != *"Unknown"* && "$weather_full" =~
     icon=$(echo "$weather_full" | awk '{print $1}')
     temp=$(echo "$weather_full" | awk '{print $2}')
     
-    # Convert to night icon if needed
+    # Convert emoji to Nerd Font icon
     if is_night; then
-        icon=$(convert_to_night_icon "$icon")
+        icon=$(convert_to_nerd_icon "$icon" "true")
+    else
+        icon=$(convert_to_nerd_icon "$icon" "false")
     fi
     
-    weather_minimal="${icon} ${temp}"
+    city_code=$(get_city_code "$city")
+    weather_minimal="${icon} ${temp} (${city_code})"
 
     # Verbose format: City: icon temp condition
     weather_verbose="${city}: ${weather_full}"
