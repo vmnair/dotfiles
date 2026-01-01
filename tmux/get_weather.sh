@@ -107,8 +107,16 @@ if [[ -f "$CACHE_FILE" ]]; then
     fi
 fi
 
-# Get city from IP geolocation
-city=$(curl -s --max-time 2 "ipinfo.io/city" 2>/dev/null)
+# Get city and state from IP geolocation (ip-api.com is more accurate than ipinfo.io)
+ip_api_response=$(curl -s --max-time 2 "http://ip-api.com/json" 2>/dev/null)
+city=$(echo "$ip_api_response" | grep -o '"city":"[^"]*"' | cut -d'"' -f4)
+state=$(echo "$ip_api_response" | grep -o '"region":"[^"]*"' | cut -d'"' -f4)
+
+# Fallback to ipinfo.io if ip-api.com fails
+if [[ -z "$city" ]]; then
+    city=$(curl -s --max-time 2 "ipinfo.io/city" 2>/dev/null)
+    state=""
+fi
 
 # Fetch weather for detected city
 # Use 'u' flag for US units (Fahrenheit)
@@ -140,7 +148,13 @@ if [[ -n "$weather_full" && "$weather_full" != *"Unknown"* && "$weather_full" =~
     fi
     
     city_code=$(get_city_code "$city")
-    weather_minimal="${icon} ${temp} (${city_code})"
+    # Add state code if available (e.g., HOU,LA)
+    if [[ -n "$state" ]]; then
+        location_code="${city_code},${state}"
+    else
+        location_code="${city_code}"
+    fi
+    weather_minimal="${icon} ${temp} (${location_code})"
 
     # Verbose format: City: icon temp condition
     weather_verbose="${city}: ${weather_full}"

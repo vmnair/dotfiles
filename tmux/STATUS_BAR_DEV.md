@@ -213,3 +213,145 @@ set -g status-right "#[fg=cyan]#(~/dotfiles/tmux/get_ai_model.sh) #[fg=white]▣
 
 2. **Remove color coding**: Edit scripts to remove `#[fg=color]` formatting
 3. **Delete new file**: Remove `get_memory_usage.sh` if needed
+
+---
+
+## Date: 2026-01-01
+
+## Weather Location Accuracy Fix
+
+### Problem
+Weather was showing Houston, TX (HOU) instead of Houma, LA - IP geolocation via `ipinfo.io` was inaccurate.
+
+### Solution
+1. Switched primary geolocation to `ip-api.com` (more accurate)
+2. Added state code to disambiguate cities (e.g., `HOU,LA` vs `HOU,TX`)
+3. Kept `ipinfo.io` as fallback
+
+### Changes to `get_weather.sh`
+
+**Location Detection** (lines 110-119):
+```bash
+# Get city and state from IP geolocation (ip-api.com is more accurate than ipinfo.io)
+ip_api_response=$(curl -s --max-time 2 "http://ip-api.com/json" 2>/dev/null)
+city=$(echo "$ip_api_response" | grep -o '"city":"[^"]*"' | cut -d'"' -f4)
+state=$(echo "$ip_api_response" | grep -o '"region":"[^"]*"' | cut -d'"' -f4)
+
+# Fallback to ipinfo.io if ip-api.com fails
+if [[ -z "$city" ]]; then
+    city=$(curl -s --max-time 2 "ipinfo.io/city" 2>/dev/null)
+    state=""
+fi
+```
+
+**Display Format** (lines 150-157):
+```bash
+city_code=$(get_city_code "$city")
+# Add state code if available (e.g., HOU,LA)
+if [[ -n "$state" ]]; then
+    location_code="${city_code},${state}"
+else
+    location_code="${city_code}"
+fi
+weather_minimal="${icon} ${temp} (${location_code})"
+```
+
+**Result**: Weather now shows `󰖙 45°F (HOU,LA)` with correct location.
+
+---
+
+## Pomodoro Timer Implementation
+
+### Summary
+Implemented a pomodoro timer with status bar display, sound notifications, and tmux keybindings.
+
+### Files Created
+- `/Users/vinodnair/dotfiles/tmux/pomodoro.sh` - Main timer script
+
+### Files Modified
+- `/Users/vinodnair/dotfiles/tmux/.tmux.conf` - Keybindings and status bar
+
+### Configuration
+```bash
+WORK_DURATION=$((25 * 60))       # 25 minutes
+SHORT_BREAK=$((5 * 60))          # 5 minutes
+LONG_BREAK=$((15 * 60))          # 15 minutes
+CYCLES_BEFORE_LONG_BREAK=4
+```
+
+### Keybindings
+| Key | Action |
+|-----|--------|
+| `<prefix> t` | Start/Resume timer |
+| `<prefix> T` | Pause timer |
+| `<prefix> x` | Cancel timer |
+| `<prefix> M-t` | Full reset (cancel + reset cycle count) |
+
+### Status Bar Display
+| State | Display | Color |
+|-------|---------|-------|
+| Idle | (nothing) | - |
+| Work | `🍅 24:59` | Yellow (red in last 2 min) |
+| Short break | `☕ 4:59` | Green (yellow in last 1 min) |
+| Long break | `🧘 14:59` | Green (yellow in last 2 min) |
+| Paused | `⏸ 12:34` | White |
+
+### Workflow
+1. `<prefix> t` → Start 25 min work session
+2. Timer ends → Sound plays → Auto-starts 5 min break
+3. Break ends → Sound plays → Timer disappears (idle)
+4. When ready, `<prefix> t` → Next work session
+5. After 4 work sessions → 15 min long break
+
+### State Management
+State files stored in `/tmp/`:
+- `pomodoro_end_time` - Unix timestamp when timer ends
+- `pomodoro_mode` - Current mode: `work`, `short_break`, `long_break`, `paused`, `idle`
+- `pomodoro_paused_remaining` - Seconds remaining when paused
+- `pomodoro_count` - Completed work cycles (0-4)
+
+### Sound Notifications
+- **macOS**: Uses `afplay` with system sounds
+  - Work end: `/System/Library/Sounds/Glass.aiff`
+  - Break end: `/System/Library/Sounds/Ping.aiff`
+- **Linux**: Falls back to `paplay` or `aplay`
+
+### Tmux Config Changes
+
+**Status interval** (for smooth countdown):
+```bash
+set -g status-interval 1
+```
+
+**Keybindings**:
+```bash
+unbind t  # unbind default clock
+unbind P  # cleanup old bindings
+unbind O
+unbind X
+unbind M-p
+bind t run-shell "~/dotfiles/tmux/pomodoro.sh start >/dev/null 2>&1"
+bind T run-shell "~/dotfiles/tmux/pomodoro.sh pause >/dev/null 2>&1"
+bind x run-shell "~/dotfiles/tmux/pomodoro.sh cancel >/dev/null 2>&1"
+bind M-t run-shell "~/dotfiles/tmux/pomodoro.sh reset >/dev/null 2>&1"
+```
+
+**Status bar**:
+```bash
+set -g status-right "#(~/dotfiles/tmux/pomodoro.sh status)  \
+  #[fg=white]#(~/dotfiles/tmux/get_weather.sh) \
+  ..."
+```
+
+### Testing
+To test with short durations, temporarily modify `pomodoro.sh`:
+```bash
+WORK_DURATION=30    # 30 seconds
+SHORT_BREAK=10      # 10 seconds
+LONG_BREAK=15       # 15 seconds
+```
+
+### Notes
+- Timer only appears when active (idle = clean status bar)
+- Sound plays at exact timer end regardless of status bar refresh rate
+- Old keybindings (P, O, X, M-p) should be unbound; restart tmux server if they persist: `tmux kill-server`
