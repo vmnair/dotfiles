@@ -8,6 +8,7 @@ require("vinod.config.util")
 require("vinod.config.autocmds")
 require("vinod.config.aliases")
 require("vinod.config.c_dev")
+require("vinod.config.lsp")
 -- require("vinod.config.mappings") Called from lazy.lua
 vim.defer_fn(function()
   require("vinod.config.todo_commands")

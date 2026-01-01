@@ -5,8 +5,9 @@
 When working on specific projects, refer to the relevant development documentation:
 
 - **Todo Manager**: `lua/vinod/dev_docs/todo_manager_dev.md` - Todo system development
-- **Readwise Integration**: `lua/vinod/dev_docs/readwise_dev.md` - Readwise plugin development  
+- **Readwise Integration**: `lua/vinod/dev_docs/readwise_dev.md` - Readwise plugin development
 - **Ollama Integration**: `lua/vinod/dev_docs/ollama_dev.md` - Ollama chat integration
+- **LSP Configuration**: `lua/vinod/dev_docs/lsp_dev.md` - Native vim.lsp setup (Neovim 0.11+)
 - **General Analysis**: `lua/vinod/dev_docs/todo_dev.md` - Cross-project development notes
 
 ## Project-Specific Instructions
