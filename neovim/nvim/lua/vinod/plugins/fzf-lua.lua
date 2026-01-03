@@ -9,6 +9,7 @@ return {
 	config = function()
 		-- calling `setup` is optional for customization
 		require("fzf-lua").setup({
+			fzf_tmux_opts = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
 			defaults = {
 				formatter = "path.filename_first", -- display filename before the file path
 			},
