@@ -167,6 +167,6 @@ return {
 		"n",
 		"<leader>fig",
 		":lua require('fzf-lua').files({ cwd = vim.fn.stdpath('config')})<CR>",
-		{ noremap = true, silent = true, desc = "Display keymaps" }
+		{ noremap = true, silent = true, desc = "View Neovim con[fig]" }
 	),
 }
