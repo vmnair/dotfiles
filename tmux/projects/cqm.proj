@@ -37,8 +37,12 @@ tmux select-window -t CQM:1
 tmux select-pane -t CQM:1.1    
 fi
 
-# Ensure session exists, then attach
-tmux attach -t CQM
+# Attach or switch to session
+if [ -n "$TMUX" ]; then
+    tmux switch-client -t CQM
+else
+    tmux attach -t CQM
+fi
 
 
 

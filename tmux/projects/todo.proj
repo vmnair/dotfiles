@@ -32,8 +32,12 @@ tmux select-window -t TodoProject:1
 tmux select-pane -t TodoProject:1.1    
 fi
 
-# No running session, so start a new session 
-tmux attach -t TodoProject
+# Attach or switch to session
+if [ -n "$TMUX" ]; then
+    tmux switch-client -t TodoProject
+else
+    tmux attach -t TodoProject
+fi
 
 
 

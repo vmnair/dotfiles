@@ -3,13 +3,7 @@ return {
   ft = { "markdown", "zk", "zettelkasten" },
   config = function()
     require("zk").setup({
-      picker = "snacks_picker",
-      -- picker = "fzf_lua",
-      snacks_picker = {
-        layout = {
-          preset = "ivy",
-        },
-      },
+      picker = "fzf_lua",
     })
 
     local function show_zk_aliases()
@@ -149,37 +143,68 @@ return {
       })
     end
 
-    -- Function to add selected text as hashtag to the last line of the file
-    local function add_hashtag_from_text(selected_text)
+    -- Function to add word under cursor as hashtag after --- separator
+    local function add_hashtag_from_word()
       local buf = vim.api.nvim_get_current_buf()
+      local word = vim.fn.expand("<cword>")
 
-      if selected_text == "" then
-        print("No text selected")
+      if word == "" then
+        print("No word under cursor")
         return
       end
 
       -- Convert to hashtag format
-      local hashtag = selected_text:lower()
-      hashtag = hashtag:gsub("^%s+", ""):gsub("%s+$", "") -- trim leading and trailing whitespace first
-      hashtag = hashtag:gsub("%s+", "-")               -- replace spaces with dashes
-      hashtag = hashtag:gsub("[^%w%-]", "")            -- remove non-alphanumeric characters except dashes
-      hashtag = hashtag:gsub("%-+", "-")               -- replace multiple dashes with single dash
-      hashtag = hashtag:gsub("^%-+", ""):gsub("%-+$", "") -- remove leading and trailing dashes
+      local hashtag = word:lower()
+      hashtag = hashtag:gsub("^%s+", ""):gsub("%s+$", "") -- trim whitespace
+      hashtag = hashtag:gsub("%s+", "-")                  -- replace spaces with dashes
+      hashtag = hashtag:gsub("[^%w%-]", "")               -- remove non-alphanumeric except dashes
+      hashtag = hashtag:gsub("%-+", "-")                  -- replace multiple dashes with single
+      hashtag = hashtag:gsub("^%-+", ""):gsub("%-+$", "") -- remove leading/trailing dashes
       hashtag = "#" .. hashtag
 
-      -- Get the last line of the file
       local line_count = vim.api.nvim_buf_line_count(buf)
-      local last_line = vim.api.nvim_buf_get_lines(buf, line_count - 1, line_count, false)[1]
+      local all_lines = vim.api.nvim_buf_get_lines(buf, 0, line_count, false)
 
-      -- Check if the hashtag already exists in the last line
-      if last_line and last_line:find(hashtag, 1, true) then
-        print("Hashtag '" .. hashtag .. "' already exists in the last line")
-        return
+      -- Find the --- separator line (search from end)
+      -- Match --- with optional leading/trailing whitespace
+      local separator_line_num = nil
+      for i = line_count, 1, -1 do
+        if all_lines[i] and all_lines[i]:match("^%s*%-%-%-+%s*$") then
+          separator_line_num = i
+          break
+        end
       end
 
-      -- Append the hashtag to the last line
-      local new_last_line = (last_line or "") .. " " .. hashtag
-      vim.api.nvim_buf_set_lines(buf, line_count - 1, line_count, false, { new_last_line })
+      if separator_line_num then
+        -- Check if hashtag already exists anywhere after ---
+        for i = separator_line_num + 1, line_count do
+          if all_lines[i] and all_lines[i]:find(hashtag, 1, true) then
+            print("Hashtag '" .. hashtag .. "' already exists")
+            return
+          end
+        end
+
+        -- Find the last line with hashtags after ---
+        local last_tag_line_num = nil
+        for i = separator_line_num + 1, line_count do
+          if all_lines[i] and all_lines[i]:match("#[%w%-]+") then
+            last_tag_line_num = i
+          end
+        end
+
+        if last_tag_line_num then
+          -- Append to the last tag line
+          local tag_line = all_lines[last_tag_line_num]
+          local new_tag_line = tag_line .. " " .. hashtag
+          vim.api.nvim_buf_set_lines(buf, last_tag_line_num - 1, last_tag_line_num, false, { new_tag_line })
+        else
+          -- No tag line exists, insert new tag line after ---
+          vim.api.nvim_buf_set_lines(buf, separator_line_num, separator_line_num, false, { hashtag })
+        end
+      else
+        -- No --- found, add it at the end with the hashtag
+        vim.api.nvim_buf_set_lines(buf, line_count, line_count, false, { "", "---", hashtag })
+      end
 
       print("Added hashtag: " .. hashtag)
     end
@@ -187,42 +212,28 @@ return {
     local opts = { noremap = true, silent = false }
 
     -- Create a new note after asking for its title.
-    vim.api.nvim_set_keymap("n", "<leader>zn", "<Cmd>ZkNew { title = vim.fn.input('Title: ') }<CR>", opts)
+    vim.api.nvim_set_keymap("n", "<leader>nn", "<Cmd>ZkNew { title = vim.fn.input('Title: ') }<CR>", opts)
     -- Open notes.
-    vim.api.nvim_set_keymap("n", "<leader>zo", "<Cmd>ZkNotes { sort = { 'modified' } }<CR>", opts)
+    vim.api.nvim_set_keymap("n", "<leader>no", "<Cmd>ZkNotes { sort = { 'modified' } }<CR>", opts)
     -- Open notes associated with the selected tags.
-    vim.api.nvim_set_keymap("n", "<leader>zt", "<Cmd>ZkTags<CR>", opts)
+    vim.api.nvim_set_keymap("n", "<leader>nt", "<Cmd>ZkTags<CR>", opts)
 
     -- Search for the notes matching a given query.
     vim.api.nvim_set_keymap(
       "n",
-      "<leader>zf",
+      "<leader>nf",
       "<Cmd>ZkNotes { sort = { 'modified' }, match = { vim.fn.input('Search: ') } }<CR>",
       opts
     )
     -- Search for the notes matching the current visual selection.
-    vim.api.nvim_set_keymap("v", "<leader>zf", ":'<,'>ZkMatch<CR>", opts)
+    vim.api.nvim_set_keymap("v", "<leader>nf", ":'<,'>ZkMatch<CR>", opts)
 
-    -- Add hashtag from visual selection
-    vim.api.nvim_set_keymap("v", "<leader>za", "", {
+    -- Add hashtag from word under cursor
+    vim.api.nvim_set_keymap("n", "<leader>na", "", {
       noremap = true,
       silent = true,
-      callback = function()
-        -- Get selected text directly while in visual mode
-        local save_reg = vim.fn.getreg('"')
-        local save_regtype = vim.fn.getregtype('"')
-
-        -- Yank the visual selection
-        vim.cmd("normal! y")
-        local selected_text = vim.fn.getreg('"')
-
-        -- Restore the register
-        vim.fn.setreg('"', save_reg, save_regtype)
-
-        -- Process the selected text
-        add_hashtag_from_text(selected_text)
-      end,
-      desc = "Add selected text as hashtag to last line",
+      callback = add_hashtag_from_word,
+      desc = "Add word under cursor as hashtag to last line",
     })
 
     -- Function to create todo from current line in zk note
@@ -321,7 +332,7 @@ return {
     end
 
     -- Create todo from current line
-    vim.api.nvim_set_keymap("n", "<leader>zT", "", {
+    vim.api.nvim_set_keymap("n", "<leader>nT", "", {
       noremap = true,
       silent = true,
       callback = create_todo_from_zk_line,
@@ -332,18 +343,17 @@ return {
     local function show_zk_help()
       local keymaps = {
         ["Core ZK Commands"] = {
-          ["<leader>zn"] = "Create new note with title prompt",
-          ["<leader>zo"] = "Open notes (sorted by modified date)",
-          ["<leader>zt"] = "Browse notes by tags",
-          ["<leader>zf"] = "Search notes by query (normal mode)",
-          -- ["<leader>zf"] = "Search notes matching visual selection (visual mode)"
+          ["<leader>nn"] = "Create new note with title prompt",
+          ["<leader>no"] = "Open notes (sorted by modified date)",
+          ["<leader>nt"] = "Browse notes by tags",
+          ["<leader>nf"] = "Search notes by query (normal/visual mode)",
         },
         ["ZK Aliases & Shortcuts"] = {
-          ["<leader>zh"] = "Show this comprehensive help window",
+          ["<leader>nh"] = "Show this comprehensive help window",
         },
         ["Text & Todo Integration"] = {
-          ["<leader>za"] = "Add selected text as hashtag to last line (visual mode)",
-          ["<leader>zT"] = "Create todo from current line (with category/date picker)",
+          ["<leader>na"] = "Add word under cursor as hashtag to last line",
+          ["<leader>nT"] = "Create todo from current line (with category/date picker)",
         },
         ["Built-in ZK Commands (via :Zk...)"] = {
           [":ZkNew"] = "Create new note",
@@ -365,13 +375,13 @@ return {
           ["config"] = "zk config - Edit zk configuration",
         },
         ["Workflow Tips"] = {
-          ["Quick note"] = "<leader>zn then type title",
-          ["Browse recent"] = "<leader>zo to see recent notes",
-          ["Find by tag"] = "<leader>zt to browse tags",
-          ["Search content"] = "<leader>zf then type search term",
-          ["Add hashtag"] = "Select text, then <leader>za",
-          ["Line to todo"] = "Place cursor on line, then <leader>zT",
-          ["Quick aliases"] = "<leader>zh for template shortcuts",
+          ["Quick note"] = "<leader>nn then type title",
+          ["Browse recent"] = "<leader>no to see recent notes",
+          ["Find by tag"] = "<leader>nt to browse tags",
+          ["Search content"] = "<leader>nf then type search term",
+          ["Add hashtag"] = "Place cursor on word, then <leader>na",
+          ["Line to todo"] = "Place cursor on line, then <leader>nT",
+          ["Quick aliases"] = "<leader>nh for template shortcuts",
         },
       }
 
@@ -450,7 +460,7 @@ return {
     end
 
     -- Show comprehensive ZK help
-    vim.api.nvim_set_keymap("n", "<leader>zh", "", {
+    vim.api.nvim_set_keymap("n", "<leader>nh", "", {
       noremap = true,
       silent = true,
       callback = show_zk_help,

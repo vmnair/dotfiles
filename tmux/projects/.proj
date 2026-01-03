@@ -34,8 +34,12 @@ tmux select-window -t LearnC:1
 tmux select-pane -t LearnC:1.1    
 fi
 
-# No running session, so start a new session 
-tmux attach -t LearnC
+# Attach or switch to session
+if [ -n "$TMUX" ]; then
+    tmux switch-client -t LearnC
+else
+    tmux attach -t LearnC
+fi
 
 
 

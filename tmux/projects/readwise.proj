@@ -36,8 +36,12 @@ tmux select-window -t Readwise:1
 tmux select-pane -t Readwise:1.1
 fi
 
-# No running session, so start a new session
-tmux attach -t Readwise
+# Attach or switch to session
+if [ -n "$TMUX" ]; then
+    tmux switch-client -t Readwise
+else
+    tmux attach -t Readwise
+fi
 
 
 

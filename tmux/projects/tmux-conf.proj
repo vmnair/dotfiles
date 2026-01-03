@@ -36,8 +36,12 @@ tmux select-window -t TmuxConf:1
 tmux select-pane -t TmuxConf:1.1    
 fi
 
-# No running session, so start a new session 
-tmux attach -t TmuxConf
+# Attach or switch to session
+if [ -n "$TMUX" ]; then
+    tmux switch-client -t TmuxConf
+else
+    tmux attach -t TmuxConf
+fi
 
 
 

@@ -29,8 +29,12 @@ tmux select-window -t LearnLua:1
 tmux select-pane -t LearnLua:1.1    
 fi
 
-# No running session, so start a new session 
-tmux attach -t LearnLua
+# Attach or switch to session
+if [ -n "$TMUX" ]; then
+    tmux switch-client -t LearnLua
+else
+    tmux attach -t LearnLua
+fi
 
 
 

@@ -1,6 +1,7 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Thi file provides guidance to Claude Code (claude.ai/code) when working with
+code in this repository.
 
 ## User Coding Preference
 
@@ -113,7 +114,7 @@ For detailed project-specific information, refer to the development documentatio
 - **lazy.nvim**: Plugin manager
 - **Mason**: LSP/DAP/linter installer
 - **Treesitter**: Syntax highlighting
-- **LSP**: Language server configurations
+- **LSP**: Language server configurations (Uses vim.lsp)
 - **DAP**: Debug adapter configurations for C and Go
 - **Completion**: cmp-based completion system
 - **Markdown**: Live preview and rendering capabilities

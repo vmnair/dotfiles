@@ -39,8 +39,12 @@ tmux select-window -t EmailBot:1
 tmux select-pane -t EmailBot:1.1    
 fi
 
-# No running session, so start a new session 
-tmux attach -t EmailBot
+# Attach or switch to session
+if [ -n "$TMUX" ]; then
+    tmux switch-client -t EmailBot
+else
+    tmux attach -t EmailBot
+fi
 
 
 

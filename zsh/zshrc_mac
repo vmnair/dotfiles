@@ -88,6 +88,7 @@ if [[ ! -f "$HOME/.cache/fzf-init.zsh" ]] || [[ "$HOME/.cache/fzf-init.zsh" -ot 
   fzf --zsh > "$HOME/.cache/fzf-init.zsh" 2>/dev/null
 fi
 source "$HOME/.cache/fzf-init.zsh" 2>/dev/null || eval "$(fzf --zsh)"
+export FZF_DEFAULT_OPTS="--reverse"
 export FZF_CTRL_T_OPTS="
   --walker-skip .git,node_modules,target
   --preview 'bat -n --color=always {}'

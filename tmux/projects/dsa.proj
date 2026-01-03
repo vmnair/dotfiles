@@ -34,8 +34,12 @@ tmux select-window -t LearnDSA:1
 tmux select-pane -t LearnDSA:1.1    
 fi
 
-# No running session, so start a new session 
-tmux attach -t LearnDSA
+# Attach or switch to session
+if [ -n "$TMUX" ]; then
+    tmux switch-client -t LearnDSA
+else
+    tmux attach -t LearnDSA
+fi
 
 
 

@@ -35,8 +35,12 @@ tmux select-window -t OMS-Business:1
 tmux select-pane -t OMS-Business:1.1    
 fi
 
-# No running session, so start a new session 
-tmux attach -t OMS-Business
+# Attach or switch to session
+if [ -n "$TMUX" ]; then
+    tmux switch-client -t OMS-Business
+else
+    tmux attach -t OMS-Business
+fi
 
 
 

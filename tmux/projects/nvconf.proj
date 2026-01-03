@@ -35,8 +35,12 @@ tmux select-window -t NeovimConf:1
 tmux select-pane -t NeovimConf:1.1    
 fi
 
-# No running session, so start a new session 
-tmux attach -t NeovimConf
+# Attach or switch to session
+if [ -n "$TMUX" ]; then
+    tmux switch-client -t NeovimConf
+else
+    tmux attach -t NeovimConf
+fi
 
 
 

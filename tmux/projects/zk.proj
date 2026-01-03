@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# tmux setup ZK Notebook configurationa  
+
+
+if ! tmux has-session -t ZKConfig
+then
+
+# Neovim 
+tmux new-session -s ZKConfig -n Neovim -d 
+tmux send-keys -t ZKConfig:1 "cd $HOME/notebook" C-m
+tmux send-keys -t ZKConfig:1 'vim .' C-m
+
+# Create horizontal split and start claude
+tmux split-window -h -t ZKConfig:1
+tmux send-keys -t ZKConfig:1.2 "cd $HOME/notebook && clear && claude" C-m
+
+# Create vertical split for shell
+tmux split-window -v -t ZKConfig:1
+tmux send-keys -t ZKConfig:1.3 "cd $HOME/notebook && clear" C-m
+
+
+# Select the Neovim window
+tmux select-window -t ZKConfig:1
+tmux select-pane -t ZKConfig:1.1    
+fi
+
+# Attach or switch to session
+if [ -n "$TMUX" ]; then
+    tmux switch-client -t ZKConfig
+else
+    tmux attach -t ZKConfig
+fi
+
+
+
