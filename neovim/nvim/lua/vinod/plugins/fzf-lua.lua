@@ -9,6 +9,12 @@ return {
 	config = function()
 		-- calling `setup` is optional for customization
 		require("fzf-lua").setup({
+			defaults = {
+				formatter = "path.filename_first", -- display filename before the file path
+			},
+			hls = {
+				path_dirname = "Comment", -- light gray
+			},
 			files = {
 				formatter = "path.filename_first", -- display filename before the file path
 			},
@@ -79,6 +85,14 @@ return {
 		":lua require('fzf-lua').live_grep()<CR>",
 		{ noremap = true, silent = true, desc = "Fuzzy find grep" }
 	),
+
+	vim.api.nvim_set_keymap(
+		"n",
+		"<leader>fc",
+		":lua require('fzf-lua').lgrep_curbuf()<CR>",
+		{ noremap = true, silent = true, desc = "[F]ind in [C]urrent buffer" }
+	),
+
 	vim.api.nvim_set_keymap(
 		"n",
 		"<leader>fb",
@@ -99,9 +113,36 @@ return {
 	),
 	vim.api.nvim_set_keymap(
 		"n",
-		"<leader>fk",
+		"<leader>fw",
 		":lua require('fzf-lua').grep_cword()<CR>",
-		{ noremap = true, silent = true, desc = "Fuzzy find keyword" }
+		{ noremap = true, silent = true, desc = "F[ind] current [w]ord" }
+	),
+
+	vim.api.nvim_set_keymap(
+		"n",
+		"<leader>fW",
+		":lua require('fzf-lua').grep_cWORD()<CR>",
+		{ noremap = true, silent = true, desc = "F[ind] current [W]ORD" }
+	),
+
+	vim.api.nvim_set_keymap(
+		"n",
+		"<leader>fo",
+		":lua require('fzf-lua').oldfiles()<CR>",
+		{ noremap = true, silent = true, desc = "F[ind] old files" }
+	),
+
+	vim.api.nvim_set_keymap(
+		"n",
+		"<leader>fa",
+		":lua require('fzf-lua').autocmds()<CR>",
+		{ noremap = true, silent = true, desc = "F[ind] autocmds" }
+	),
+	vim.api.nvim_set_keymap(
+		"n",
+		"<leader>gs",
+		":lua require('fzf-lua').git_status()<CR>",
+		{ noremap = true, silent = true, desc = "[g]it [s]tatus" }
 	),
 	vim.api.nvim_set_keymap(
 		"n",
@@ -119,6 +160,13 @@ return {
 		"n",
 		"<leader>fm",
 		":lua require('fzf-lua').keymaps()<CR>",
+		{ noremap = true, silent = true, desc = "Display keymaps" }
+	),
+
+	vim.api.nvim_set_keymap(
+		"n",
+		"<leader>fig",
+		":lua require('fzf-lua').files({ cwd = vim.fn.stdpath('config')})<CR>",
 		{ noremap = true, silent = true, desc = "Display keymaps" }
 	),
 }
