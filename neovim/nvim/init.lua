@@ -11,11 +11,11 @@ require("vinod.config.c_dev")
 require("vinod.config.lsp")
 -- require("vinod.config.mappings") Called from lazy.lua
 vim.defer_fn(function()
-  require("vinod.config.todo_commands")
+	require("vinod.config.todo_commands")
 end, 0)
 
 vim.defer_fn(function()
-  require("fzf-lua").register_ui_select()
+	require("fzf-lua").register_ui_select()
 end, 0)
 
 vim.opt.rtp:prepend(vim.fn.stdpath("config") .. "/dev-plugins/readwise.nvim")

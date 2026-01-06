@@ -91,6 +91,7 @@ return {
       expand = true,
     },
 
+
     -- notifier configuration
     notifier = {
       timeout = 3000, -- default timeout in ms
@@ -126,6 +127,11 @@ return {
     },
 
   },
+
+  config = function(_, opts)
+    require("snacks").setup(opts)
+    vim.ui.input = require("snacks").input
+  end,
 
   keys = {
     { "<leader>e",  function() require("snacks").explorer() end, desc = "File Explorer" },
