@@ -4,6 +4,12 @@
 vim.api.nvim_create_autocmd("QuickFixCmdPost", {
 	pattern = "*",
 	callback = function()
+		-- Skip if this event came from our custom Grip function
+		if vim.g.custom_grep_running then
+			vim.g.custom_grep_running = false
+			return
+		end
+
 		local qf_list = vim.fn.getqflist()
 		local qf_count = #qf_list
 		if qf_count > 0 then
@@ -14,6 +20,29 @@ vim.api.nvim_create_autocmd("QuickFixCmdPost", {
 		end
 	end,
 })
+
+-- Override :grep to skip the intermediate buffer
+vim.api.nvim_create_user_command("Grep", function(opts)
+	-- set flag to prevent autocmd notification
+	vim.g.custom_grep_running = true
+	local cmd = string.format("silent grep! %s", opts.args)
+	vim.cmd(cmd)
+
+	-- Handle our own notiication
+	local qf_list = vim.fn.getqflist()
+	local qf_count = #qf_list
+	if qf_count > 0 then
+		vim.cmd("copen")
+		vim.notify(string.format("Found %d result%s", qf_count, qf_count == 1 and "" or "s"))
+	else
+		vim.notify("No search results found", vim.log.levels.WARN)
+	end
+end, {
+	nargs = "+",
+	complete = "file",
+})
+
+vim.cmd("cnoreabbrev grep Grep")
 
 -- Markdown configuration
 local MarkdownConfig = vim.api.nvim_create_augroup("MarkdownConfig", { clear = true })

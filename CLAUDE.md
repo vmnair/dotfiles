@@ -7,6 +7,10 @@ code in this repository.
 
 **IMPORTANT**: I like to write code myself. Claude should show me the code with explanation and let me write the code so I can understand what I am doing. If I need Claude to update code or make changes, I will explicitly tell Claude to do so.
 
+## Edit Policy
+
+**CRITICAL**: Never show edits without explaining what you're doing first. This is a personal system-wide policy. Always explain the proposed changes, what they accomplish, and any trade-offs before showing any edit calls. I do not accept blind edits.
+
 ## Platform Compatibility
 
 **CRITICAL**: All code must work on both macOS and Debian-based Linux systems. When writing or suggesting code, ensure cross-platform compatibility.

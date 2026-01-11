@@ -10,14 +10,26 @@ return {
 		-- calling `setup` is optional for customization
 		require("fzf-lua").setup({
 			fzf_tmux_opts = { ["-p"] = "80%,80%", ["--margin"] = "0,0" },
+			-- Enhanced FZF options for better UI and performance
+			fzf_opts = {
+				["--ansi"] = "",
+				["--info"] = "inline",
+				["--height"] = "40%",
+				["--layout"] = "reverse",
+				["--border"] = "rounded",
+				["--preview-window"] = "right:60%:wrap",
+				["--bind"] = "ctrl-u:preview-page-up,ctrl-d:preview-page-down",
+			},
 			defaults = {
 				formatter = "path.filename_first", -- display filename before the file path
 			},
-			hls = {
-				path_dirname = "Comment", -- light gray
-			},
+			-- Configure titles for different pickers
 			files = {
-				formatter = "path.filename_first", -- display filename before the file path
+				formatter = "path.filename_first",
+				-- Exclude common directories for better performance
+				find_opts = [[-type f -not -path '*/\.git/*' -not -path '*/node_modules/*' -not -path '*/\.next/*' -not -path '*/__pycache__/*' -not -path '*/target/*' -not -name '*.pyc' -not -name '*.o' -not -name '*.a' -not -name '*.so' -not -name '*.dylib' -not -name '.DS_Store']],
+				rg_opts = "--files --hidden --follow --no-ignore-vcs -g '!{node_modules/*,.git/*,.next/*,__pycache__/*,target/*,*.pyc,*.o,*.a,*.so,*.dylib,.DS_Store,*.log}'",
+				fd_opts = "--color=never --type f --hidden --follow --exclude .git --exclude node_modules --exclude .next --exclude __pycache__ --exclude target --exclude '*.pyc' --exclude '*.o' --exclude '*.a' --exclude '*.so' --exclude '*.dylib' --exclude .DS_Store",
 			},
 			grep = {
 				cmd = "rg --vimgrep",
@@ -26,8 +38,14 @@ return {
 				color = "always", -- colorize output
 				git_icons = true, -- show git status icons
 				silent = true, -- hide auto-detection messages
-				rg_opts = "--column --line-number --no-heading --color=always --smart-case --max-columns=4096 -e",
+				-- Enhanced ripgrep options with exclusions and hidden file support
+				rg_opts = "--column --line-number --no-heading --color=always --smart-case --hidden --follow --glob '!.git/*' --glob '!node_modules/*' --glob '!.next/*' --glob '!__pycache__/*' --glob '!target/*' --glob '!*.pyc' --glob '!*.o' --glob '!*.a' --glob '!*.so' --glob '!*.dylib' --glob '!.DS_Store' --glob '!*.log' --max-columns=4096",
+				rg_glob = true, -- enable glob pattern support
 			},
+			hls = {
+				path_dirname = "Comment", -- light gray
+			},
+
 			winopts = {
 				-- split = "belowright 20new",
 				border = "rounded",
@@ -71,103 +89,42 @@ return {
 				},
 			},
 		})
+
+		-- Set up keymaps properly within config
+		local fzf = require("fzf-lua")
+		local keymap = vim.keymap.set
+		local opts = { silent = true, remap = false }
+
+		-- Core file operations
+		keymap("n", "<leader>ff", fzf.files, vim.tbl_extend("force", opts, { desc = "Fuzzy find files" }))
+		keymap("n", "<leader>fg", fzf.live_grep, vim.tbl_extend("force", opts, { desc = "Fuzzy find grep" }))
+
+		keymap("n", "<leader>fc", fzf.lgrep_curbuf, vim.tbl_extend("force", opts, { desc = "[F]ind in [C]urrent buffer" }))
+		keymap("n", "<leader>fb", fzf.buffers, vim.tbl_extend("force", opts, { desc = "Fuzzy find buffers" }))
+		keymap("n", "<leader>fh", fzf.help_tags, vim.tbl_extend("force", opts, { desc = "Fuzzy find help tags" }))
+		keymap("n", "<leader>fp", fzf.grep_project, vim.tbl_extend("force", opts, { desc = "Fuzzy find project" }))
+		-- Word search operations
+		keymap("n", "<leader>fw", fzf.grep_cword, vim.tbl_extend("force", opts, { desc = "F[ind] current [w]ord" }))
+		keymap("n", "<leader>fW", fzf.grep_cWORD, vim.tbl_extend("force", opts, { desc = "F[ind] current [W]ORD" }))
+
+		-- Additional operations
+		keymap("n", "<leader>fo", fzf.oldfiles, vim.tbl_extend("force", opts, { desc = "F[ind] old files" }))
+		keymap("n", "<leader>fa", fzf.autocmds, vim.tbl_extend("force", opts, { desc = "F[ind] autocmds" }))
+		keymap("n", "<leader>gs", fzf.git_status, vim.tbl_extend("force", opts, { desc = "[g]it [s]tatus" }))
+		keymap("n", "<leader>fq", fzf.grep_quickfix, vim.tbl_extend("force", opts, { desc = "Fuzzy find quickfix" }))
+		keymap("n", "<leader>fR", fzf.resume, vim.tbl_extend("force", opts, { desc = "Resume fuzzy find" }))
+		keymap("n", "<leader>fm", fzf.keymaps, vim.tbl_extend("force", opts, { desc = "Display keymaps" }))
+
+		-- LSP integration
+		keymap("n", "<leader>fs", fzf.lsp_document_symbols, vim.tbl_extend("force", opts, { desc = "Find symbols (document)" }))
+		keymap("n", "<leader>fS", fzf.lsp_workspace_symbols, vim.tbl_extend("force", opts, { desc = "Find Symbols (workspace)" }))
+		keymap("n", "<leader>fr", fzf.lsp_references, vim.tbl_extend("force", opts, { desc = "Find references" }))
+		keymap("n", "<leader>fd", fzf.lsp_definitions, vim.tbl_extend("force", opts, { desc = "Find definitions" }))
+		keymap("n", "<leader>fi", fzf.lsp_implementations, vim.tbl_extend("force", opts, { desc = "Find implementations" }))
+
+		-- Specialized searches
+		keymap("n", "<leader>fig", function()
+			fzf.files({ cwd = vim.fn.stdpath("config") })
+		end, vim.tbl_extend("force", opts, { desc = "View Neovim con[fig]" }))
 	end,
-
-	-- Key mappings (temporarily reverted to test fg error)
-	vim.api.nvim_set_keymap(
-		"n",
-		"<leader>ff",
-		":lua require('fzf-lua').files()<CR>",
-		{ noremap = true, silent = true, desc = "Fuzzy find files" }
-	),
-	vim.api.nvim_set_keymap(
-		"n",
-		"<leader>fg",
-		":lua require('fzf-lua').live_grep()<CR>",
-		{ noremap = true, silent = true, desc = "Fuzzy find grep" }
-	),
-
-	vim.api.nvim_set_keymap(
-		"n",
-		"<leader>fc",
-		":lua require('fzf-lua').lgrep_curbuf()<CR>",
-		{ noremap = true, silent = true, desc = "[F]ind in [C]urrent buffer" }
-	),
-
-	vim.api.nvim_set_keymap(
-		"n",
-		"<leader>fb",
-		":lua require('fzf-lua').buffers()<CR>",
-		{ noremap = true, silent = true, desc = "Fuzzy find buffers" }
-	),
-	vim.api.nvim_set_keymap(
-		"n",
-		"<leader>fh",
-		":lua require('fzf-lua').help_tags()<CR>",
-		{ noremap = true, silent = true, desc = "Fuzzy find help tags" }
-	),
-	vim.api.nvim_set_keymap(
-		"n",
-		"<leader>fp",
-		":lua require('fzf-lua').grep_project()<CR>",
-		{ noremap = true, silent = true, desc = "Fuzzy find project" }
-	),
-	vim.api.nvim_set_keymap(
-		"n",
-		"<leader>fw",
-		":lua require('fzf-lua').grep_cword()<CR>",
-		{ noremap = true, silent = true, desc = "F[ind] current [w]ord" }
-	),
-
-	vim.api.nvim_set_keymap(
-		"n",
-		"<leader>fW",
-		":lua require('fzf-lua').grep_cWORD()<CR>",
-		{ noremap = true, silent = true, desc = "F[ind] current [W]ORD" }
-	),
-
-	vim.api.nvim_set_keymap(
-		"n",
-		"<leader>fo",
-		":lua require('fzf-lua').oldfiles()<CR>",
-		{ noremap = true, silent = true, desc = "F[ind] old files" }
-	),
-
-	vim.api.nvim_set_keymap(
-		"n",
-		"<leader>fa",
-		":lua require('fzf-lua').autocmds()<CR>",
-		{ noremap = true, silent = true, desc = "F[ind] autocmds" }
-	),
-	vim.api.nvim_set_keymap(
-		"n",
-		"<leader>gs",
-		":lua require('fzf-lua').git_status()<CR>",
-		{ noremap = true, silent = true, desc = "[g]it [s]tatus" }
-	),
-	vim.api.nvim_set_keymap(
-		"n",
-		"<leader>fq",
-		":lua require('fzf-lua').grep_quickfix()<CR>",
-		{ noremap = true, silent = true, desc = "Fuzzy find quickfix" }
-	),
-	vim.api.nvim_set_keymap(
-		"n",
-		"<leader>fr",
-		":lua require('fzf-lua').resume()<CR>",
-		{ noremap = true, silent = true, desc = "Resume fuzzy find" }
-	),
-	vim.api.nvim_set_keymap(
-		"n",
-		"<leader>fm",
-		":lua require('fzf-lua').keymaps()<CR>",
-		{ noremap = true, silent = true, desc = "Display keymaps" }
-	),
-
-	vim.api.nvim_set_keymap(
-		"n",
-		"<leader>fig",
-		":lua require('fzf-lua').files({ cwd = vim.fn.stdpath('config')})<CR>",
-		{ noremap = true, silent = true, desc = "View Neovim con[fig]" }
-	),
 }

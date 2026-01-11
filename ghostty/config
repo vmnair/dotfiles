@@ -29,6 +29,10 @@ keybind = ctrl+space>f=toggle_fullscreen
 # Open quick terminal
 keybind = ctrl+space>t=toggle_quick_terminal
 
+# Split
+keybind = ctrl+space>v=new_split:right
+keybind = ctrl+space>s=new_split:down
+
 # Split navigation (vim-style)
 keybind = ctrl+space>h=goto_split:left
 keybind = ctrl+space>j=goto_split:down

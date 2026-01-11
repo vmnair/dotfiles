@@ -25,13 +25,13 @@ opt.relativenumber = true
 opt.splitright = true --split horizontal window to below
 opt.splitbelow = true -- split horizontal window to below
 
-opt.textwidth = 80    -- Set the text width to 80 characters
-opt.wrap = true       -- disable line wrapping
+opt.textwidth = 80 -- Set the text width to 80 characters
+opt.wrap = true -- disable line wrapping
 
 opt.expandtab = true
-opt.tabstop = 2               -- Expand tab to spaces
+opt.tabstop = 2 -- Expand tab to spaces
 opt.shiftwidth = 2
-opt.autoindent = true         -- Copy intent from the current line when starting new.
+opt.autoindent = true -- Copy intent from the current line when starting new.
 
 opt.clipboard = "unnamedplus" -- Synchronizes the system clipboard
 
@@ -39,9 +39,9 @@ opt.clipboard = "unnamedplus" -- Synchronizes the system clipboard
 opt.scrolloff = 999
 opt.cursorline = true -- Highlight current line.
 
-opt.swapfile = false  -- Turn off swap file.
+opt.swapfile = false -- Turn off swap file.
 
-opt.showmode = false  -- Lualine does this, so we don't need it.
+opt.showmode = false -- Lualine does this, so we don't need it.
 opt.showmatch = true
 
 -- Ability to select cells where there are no
@@ -49,17 +49,21 @@ opt.showmatch = true
 opt.virtualedit = "block"
 
 opt.inccommand = "split" -- Show incremental search in a split
-opt.ignorecase = true    -- Ignore case sensitivity in commands
-opt.smartcase = true     -- Mixed case in search assumes case sensitivity.
+opt.ignorecase = true -- Ignore case sensitivity in commands
+opt.smartcase = true -- Mixed case in search assumes case sensitivity.
 
 opt.termguicolors = true -- Use true colors
-opt.background = "dark"  -- Color schemes (light or dark) will be made dark.
+opt.background = "dark" -- Color schemes (light or dark) will be made dark.
 opt.colorcolumn = "80"
 opt.signcolumn = "yes"
 
 opt.backspace = "indent,eol,start" -- Allow backspace on insert mode start.
 
 opt.encoding = "utf-8"
+
+-- Configure grep to use ripgrep and skip intermediate buffer
+opt.grepprg = "rg --vimgrep --no-heading --smart-case"
+opt.grepformat = "%f:%l:%c:%m"
 
 -- opt.foldmethod = "indent"
 -- Which-key
