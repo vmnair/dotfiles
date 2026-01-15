@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Thi file provides guidance to Claude Code (claude.ai/code) when working with
+This file provides guidance to Claude Code (claude.ai/code) when working with
 code in this repository.
 
 ## User Coding Preference
@@ -28,10 +28,13 @@ This is a personal dotfiles repository containing configuration files for variou
 
 For detailed project-specific information, refer to the development documentation in:
 
-- **Todo Manager**: `neovim/nvim/lua/vinod/dev_docs/todo_manager_dev.md`
-- **Readwise Integration**: `neovim/nvim/lua/vinod/dev_docs/readwise_dev.md`
-- **Ollama Integration**: `neovim/nvim/lua/vinod/dev_docs/ollama_dev.md`
-- **General Analysis**: `neovim/nvim/lua/vinod/dev_docs/todo_dev.md`
+- **Todo Manager**: `dev_docs/todo_manager_dev.md`
+- **Readwise Integration**: `dev_docs/readwise_dev.md`
+- **Ollama Integration**: `dev_docs/ollama_dev.md`
+- **LSP Development**: `dev_docs/lsp_dev.md`
+- **Plenary Job**: `dev_docs/plenary_job_explanation.md`
+- **Zk Integration**: `dev_docs/zk_dev.md`
+- **eCQM Project**: `dev_docs/cqm_devdocs.md`
 
 ## Development Commands
 
