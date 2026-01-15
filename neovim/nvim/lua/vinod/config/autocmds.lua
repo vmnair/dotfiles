@@ -71,7 +71,16 @@ vim.api.nvim_create_autocmd("BufWinEnter", {
 	end,
 })
 
+-- Follow markdown links in neovim
+vim.keymap.set("n", "gl", function()
+	local line = vim.fn.getline(".")
+	local path = line:match("%[.*%]%((.-)%)")
+	if path then
+		vim.cmd("edit " .. path)
+	end
+end, { desc = "Follow markdown link" })
 -- Filetype specific configuration
+
 -- C configuration
 
 -- Create an augroup for autoindenting C files
