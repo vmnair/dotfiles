@@ -27,6 +27,13 @@ local map_for_modes = function(modes, lhs, rhs, opts)
 	end
 end
 
+-- expand ~ to $HOME
+vim.keymap.set("n", "gf", function()
+	local file = vim.fn.expand("<cfile>")
+	file = file:gsub("^~", vim.env.HOME)
+	vim.cmd("edit " .. file)
+end)
+
 map("i", "jk", "<ESC>", { desc = "Exit insert mode with jk" })
 map("n", "<Esc>", ":nohl<CR><Esc>", { desc = "Clear search highlights" })
 -- Normal mode center next selection

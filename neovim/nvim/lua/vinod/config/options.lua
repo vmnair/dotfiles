@@ -80,3 +80,6 @@ opt.guicursor = "n-v-c:block,i-ci-ve:ver25,r-cr:hor20,o:hor50"
 -- Set spell check
 -- opt.spell = true
 -- opt.spelllang = { "en" }
+
+-- Include ~ in filename characters for gf to work with ~/paths
+opt.isfname:append("~")

@@ -50,7 +50,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
 			vim.lsp.buf.code_action,
 			vim.tbl_extend("force", opts, { desc = "Code Actions" })
 		)
-		map("n", "gf", function()
+		map("n", "<leader>cf", function()
 			vim.lsp.buf.format({ async = true })
 		end, vim.tbl_extend("force", opts, { desc = "Format code" }))
 	end,
