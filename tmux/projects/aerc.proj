@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# tmux setup email project
+
+
+if ! tmux has-session -t aerc
+then
+
+# Neovim 
+tmux new-session -s aerc -n Neovim -d 
+tmux send-keys -t aerc:1 'cd ~/.config/aerc' C-m
+tmux send-keys -t aerc:1 'vim .' C-m
+
+# Create horizontal split and start claude code
+tmux split-window -h -t aerc:1
+tmux send-keys -t aerc:1.2 'cd ~/.config/aerc' C-m
+tmux send-keys -t aerc:1.2 'claude' C-m
+
+
+# Console Window
+tmux new-window -n Console -t aerc
+tmux send-keys -t aerc:2  'cd ~/.config/aerc' C-m
+tmux send-keys -t aerc:2  'clear' C-m
+
+
+# Lazygit
+tmux new-window -n Lazygit -t aerc
+tmux send-keys -t aerc:3  'cd ~/dotfiles' C-m
+tmux send-keys -t aerc:3  'lg' C-m
+
+
+# Select the Neovim window
+tmux select-window -t aerc:1
+tmux select-pane -t aerc:1.1    
+fi
+
+# Attach or switch to session
+if [ -n "$TMUX" ]; then
+    tmux switch-client -t aerc
+else
+    tmux attach -t aerc
+fi
+
+
+

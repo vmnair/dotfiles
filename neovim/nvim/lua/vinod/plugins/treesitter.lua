@@ -19,6 +19,7 @@ return {
 				"go",
 				"markdown",
 				"markdown_inline",
+				"mermaid",
 				"latex",
 				"cmake",
 			},

@@ -42,7 +42,12 @@ if [[ $TERM != "dumb" ]]; then
 fi
 
 # Secrets file
-source ~/.secrets
+if [ -f "$HOME/.secrets" ]; then
+  source "$HOME/.secrets"
+  export GMAIL_EMAIL
+  export GMAIL_APP_PASSWORD 
+fi
+
 
 # Editor configuration
 export EDITOR="nvim"
