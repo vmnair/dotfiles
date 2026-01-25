@@ -8,7 +8,7 @@ then
 
 # Neovim 
 tmux new-session -s TmuxConf -n Neovim -d 
-tmux send-keys -t TmuxConf:1 'cd ~/dotfiles/tmux/' C-m
+tmux send-keys -t TmuxConf:1 'cd ~/dotfiles/tmux/projects' C-m
 tmux send-keys -t TmuxConf:1  'clear' C-m
 tmux send-keys -t TmuxConf:1 'vim tmux-conf.proj' C-m
 
