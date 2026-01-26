@@ -1,13 +1,8 @@
 #!/bin/bash
 
 # Script to get git status for tmux status bar
-# Shows: branch name, dirty indicator (*), ahead/behind counts
-# Colors: yellow if dirty, red if behind, green if clean
-
-# Check if we're in a tmux session
-if [ -z "$TMUX" ]; then
-    exit 0
-fi
+# Shows: branch name, ahead/behind counts
+# Colors: yellow if dirty, white if clean
 
 # Get the current pane's working directory
 pane_path=$(tmux display-message -p '#{pane_current_path}')
@@ -32,7 +27,7 @@ fi
 # Check for uncommitted changes (staged or unstaged)
 dirty=""
 if ! git diff --quiet 2>/dev/null || ! git diff --cached --quiet 2>/dev/null; then
-    dirty="*"
+    dirty="yes"
 fi
 
 # Check ahead/behind remote (with timeout for slow remotes)
@@ -45,12 +40,12 @@ if [ -n "$counts" ]; then
     [ "$behind" -gt 0 ] 2>/dev/null && ahead_behind+="↓$behind"
 fi
 
-# Determine icon color based on state (white=clean, yellow=dirty)
+# Determine color based on state (white=clean, yellow=dirty)
 if [ -n "$dirty" ]; then
-    icon_color="yellow"
+    color="yellow"
 else
-    icon_color="white"
+    color="white"
 fi
 
-# Output: colored icon, white branch name
-echo "#[fg=$icon_color] #[fg=white]${branch}${dirty}${ahead_behind}"
+# Output: colored icon and branch name
+echo "#[fg=$color][ ${branch}${ahead_behind}]"
