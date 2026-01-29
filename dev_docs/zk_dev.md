@@ -41,7 +41,7 @@ export ZK_NOTEBOOK_DIR="$HOME/Library/CloudStorage/Dropbox/notebook"
 ### Text & Todo Integration
 | Keymap | Description |
 |--------|-------------|
-| `<leader>na` | Add word under cursor as hashtag after `---` separator |
+| `<leader>nk` | Add word under cursor as hashtag (keyword) after `---` separator |
 | `<leader>nT` | Create todo from current line (with category/date picker) |
 
 ### Help & Aliases
@@ -73,7 +73,7 @@ Displays available zk aliases from config.toml in the terminal.
 
 ## Key Features
 
-### Hashtag Management (`<leader>na`)
+### Hashtag Management (`<leader>nk`)
 Adds word under cursor as hashtag to the note's tag section:
 - Searches for `---` separator line from end of file
 - If found, appends hashtag after separator (on existing tag line or new line)

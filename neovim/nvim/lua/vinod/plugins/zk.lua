@@ -145,7 +145,6 @@ return {
 
     -- Function to add word under cursor as hashtag after --- separator
     local function add_hashtag_from_word()
-      local buf = vim.api.nvim_get_current_buf()
       local word = vim.fn.expand("<cword>")
 
       if word == "" then
@@ -155,58 +154,57 @@ return {
 
       -- Convert to hashtag format
       local hashtag = word:lower()
-      hashtag = hashtag:gsub("^%s+", ""):gsub("%s+$", "") -- trim whitespace
-      hashtag = hashtag:gsub("%s+", "-")                  -- replace spaces with dashes
-      hashtag = hashtag:gsub("[^%w%-]", "")               -- remove non-alphanumeric except dashes
-      hashtag = hashtag:gsub("%-+", "-")                  -- replace multiple dashes with single
-      hashtag = hashtag:gsub("^%-+", ""):gsub("%-+$", "") -- remove leading/trailing dashes
+      hashtag = hashtag:gsub("^%s+", ""):gsub("%s+$", "")
+      hashtag = hashtag:gsub("%s+", "-")
+      hashtag = hashtag:gsub("[^%w%-]", "")
+      hashtag = hashtag:gsub("%-+", "-")
+      hashtag = hashtag:gsub("^%-+", ""):gsub("%-+$", "")
       hashtag = "#" .. hashtag
 
-      local line_count = vim.api.nvim_buf_line_count(buf)
-      local all_lines = vim.api.nvim_buf_get_lines(buf, 0, line_count, false)
+      local line_count = vim.api.nvim_buf_line_count(0)
+      local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
 
-      -- Find the --- separator line (search from end)
-      -- Match --- with optional leading/trailing whitespace
-      local separator_line_num = nil
+      -- Find --- separator from end of file (skip YAML frontmatter at top)
+      local separator_idx = nil
       for i = line_count, 1, -1 do
-        if all_lines[i] and all_lines[i]:match("^%s*%-%-%-+%s*$") then
-          separator_line_num = i
-          break
+        if lines[i] and lines[i]:match("^%-%-%-+%s*$") then
+          -- Skip if this is likely YAML frontmatter (within first 10 lines)
+          if i > 10 then
+            separator_idx = i
+            break
+          end
         end
       end
 
-      if separator_line_num then
-        -- Check if hashtag already exists anywhere after ---
-        for i = separator_line_num + 1, line_count do
-          if all_lines[i] and all_lines[i]:find(hashtag, 1, true) then
+      if separator_idx then
+        -- Find hashtag line after separator
+        local hashtag_idx = nil
+        for i = separator_idx + 1, line_count do
+          if lines[i] and lines[i]:match("^#[%w%-]+") then
+            hashtag_idx = i
+            break
+          end
+        end
+
+        if hashtag_idx then
+          -- Check if this hashtag already exists on the line
+          if lines[hashtag_idx]:find(hashtag, 1, true) then
             print("Hashtag '" .. hashtag .. "' already exists")
             return
           end
-        end
-
-        -- Find the last line with hashtags after ---
-        local last_tag_line_num = nil
-        for i = separator_line_num + 1, line_count do
-          if all_lines[i] and all_lines[i]:match("#[%w%-]+") then
-            last_tag_line_num = i
-          end
-        end
-
-        if last_tag_line_num then
-          -- Append to the last tag line
-          local tag_line = all_lines[last_tag_line_num]
-          local new_tag_line = tag_line .. " " .. hashtag
-          vim.api.nvim_buf_set_lines(buf, last_tag_line_num - 1, last_tag_line_num, false, { new_tag_line })
+          -- Append to existing hashtag line
+          local new_line = lines[hashtag_idx] .. " " .. hashtag
+          vim.api.nvim_buf_set_lines(0, hashtag_idx - 1, hashtag_idx, false, { new_line })
         else
-          -- No tag line exists, insert new tag line after ---
-          vim.api.nvim_buf_set_lines(buf, separator_line_num, separator_line_num, false, { hashtag })
+          -- No hashtag line yet, insert one after ---
+          vim.api.nvim_buf_set_lines(0, separator_idx, separator_idx, false, { hashtag })
         end
       else
-        -- No --- found, add it at the end with the hashtag
-        vim.api.nvim_buf_set_lines(buf, line_count, line_count, false, { "", "---", hashtag })
+        -- No --- found, append at end with blank lines
+        vim.api.nvim_buf_set_lines(0, line_count, line_count, false, { "", "", "", "---", hashtag })
       end
 
-      print("Added hashtag: " .. hashtag)
+      print("Added: " .. hashtag)
     end
 
     local opts = { noremap = true, silent = false }
@@ -229,11 +227,10 @@ return {
     vim.api.nvim_set_keymap("v", "<leader>nf", ":'<,'>ZkMatch<CR>", opts)
 
     -- Add hashtag from word under cursor
-    vim.api.nvim_set_keymap("n", "<leader>na", "", {
+    vim.keymap.set("n", "<leader>nk", add_hashtag_from_word, {
       noremap = true,
-      silent = true,
-      callback = add_hashtag_from_word,
-      desc = "Add word under cursor as hashtag to last line",
+      silent = false,
+      desc = "Add word under cursor as hashtag (keyword)",
     })
 
     -- Function to create todo from current line in zk note
@@ -352,7 +349,7 @@ return {
           ["<leader>nh"] = "Show this comprehensive help window",
         },
         ["Text & Todo Integration"] = {
-          ["<leader>na"] = "Add word under cursor as hashtag to last line",
+          ["<leader>nk"] = "Add word under cursor as hashtag (keyword)",
           ["<leader>nT"] = "Create todo from current line (with category/date picker)",
         },
         ["Built-in ZK Commands (via :Zk...)"] = {
@@ -379,7 +376,7 @@ return {
           ["Browse recent"] = "<leader>no to see recent notes",
           ["Find by tag"] = "<leader>nt to browse tags",
           ["Search content"] = "<leader>nf then type search term",
-          ["Add hashtag"] = "Place cursor on word, then <leader>na",
+          ["Add hashtag"] = "Place cursor on word, then <leader>nk",
           ["Line to todo"] = "Place cursor on line, then <leader>nT",
           ["Quick aliases"] = "<leader>nh for template shortcuts",
         },

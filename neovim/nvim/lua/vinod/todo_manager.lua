@@ -237,6 +237,11 @@ function M.format_todo_line(todo, context)
 		line = line .. " (" .. todo.added_date .. ")"
 	end
 
+	-- Add note link indicator
+	if todo.has_note then
+		line = line .. " 󰈙"
+	end
+
 	return line
 end
 
@@ -496,6 +501,7 @@ function M.parse_todo_line(line)
 		show_date = "",
 		added_date = "",
 		completion_date = "",
+		has_note = false,
 		raw_line = line,
 	}
 
@@ -545,6 +551,12 @@ function M.parse_todo_line(line)
 
 		-- Also remove any fallback notepad icons that might have been added previously
 		desc_part = desc_part:gsub("📝", ""):gsub("^%s+", ""):gsub("%s+$", "")
+
+		-- Detect and remove note link indicator
+		if desc_part:find("󰈙", 1, true) then
+			todo.has_note = true
+			desc_part = desc_part:gsub("󰈙", ""):gsub("^%s+", ""):gsub("%s+$", "")
+		end
 
 		todo.description = desc_part:gsub("^%s+", ""):gsub("%s+$", "")
 	end
@@ -1890,7 +1902,8 @@ function M.setup_todo_syntax()
 		silent! syntax clear TodoShowDate
 		silent! syntax clear TodoDueDate
 		silent! syntax clear TodoAddedDate
-		
+		silent! syntax clear TodoNoteLink
+
 		" Todo-specific patterns with high priority (using containedin=ALL)
 		syntax match TodoTag /#\w\+/ containedin=ALL
 		syntax match TodoShowDate /\[Show: [0-9-]\+\]/ containedin=ALL
@@ -1902,7 +1915,8 @@ function M.setup_todo_syntax()
 		syntax match TodoIconOMS /🛠️/ containedin=ALL
 		syntax match TodoIconPersonal /🏡/ containedin=ALL
 		syntax match TodoIconDefault /📝/ containedin=ALL
-		
+		syntax match TodoNoteLink /󰈙/ containedin=ALL
+
 		" Override markdown math syntax ONLY in todo lines to prevent teal $ coloring
 		syntax match TodoLineNoMath /^- \[\s\?\].*$/ contains=@NoSpell transparent
 		syntax match TodoLineDoneNoMath /^- \[x\].*$/ contains=@NoSpell transparent
@@ -1924,6 +1938,7 @@ function M.setup_todo_syntax()
 		highlight! TodoIconOMS ctermfg=yellow guifg=#ffd700
 		highlight! TodoIconPersonal ctermfg=yellow guifg=#ffd700
 		highlight! TodoIconDefault ctermfg=yellow guifg=#ffd700
+		highlight! TodoNoteLink ctermfg=yellow guifg=#ffd700
 	]])
 
 	-- Set up due date color highlighting
@@ -2576,6 +2591,49 @@ end
 -- ZK INTEGRATION FUNCTIONALITY
 -- ========================================
 
+-- Get all folders in notebook directory recursively for note placement
+local function get_notebook_folders()
+	local notebook_dir = M.config.notebook_dir
+	local folders = {}
+
+	-- Use find command to get all directories
+	local cmd = string.format('find "%s" -type d 2>/dev/null | sort', notebook_dir)
+	local handle = io.popen(cmd)
+	if not handle then
+		return { "todo" }
+	end
+
+	local result = handle:read("*a")
+	handle:close()
+
+	for line in result:gmatch("[^\n]+") do
+		-- Get relative path from notebook_dir
+		local relative = line:sub(#notebook_dir + 2)
+		if relative and relative ~= "" then
+			-- Skip hidden directories
+			if not relative:match("^%.") and not relative:match("/%.") then
+				table.insert(folders, relative)
+			end
+		end
+	end
+
+	-- Ensure "todo" is first (default)
+	local todo_index = nil
+	for i, folder in ipairs(folders) do
+		if folder == "todo" then
+			todo_index = i
+			break
+		end
+	end
+
+	if todo_index then
+		table.remove(folders, todo_index)
+	end
+	table.insert(folders, 1, "todo")
+
+	return folders
+end
+
 -- Generate unique ID for todo item
 local function generate_todo_id(todo)
 	-- Create stable ID from description + category + added_date
@@ -2637,16 +2695,101 @@ function M.create_or_open_note_from_todo()
 			print("📖 Opening existing note: " .. vim.fn.fnamemodify(existing_path, ":t"))
 			vim.cmd("edit " .. vim.fn.fnameescape(full_path))
 
-			-- Set up autocmd to return to original todo line on save/exit
+			-- Add note link indicator if not already present
+			local todo_file = M.config.todo_dir .. "/" .. M.config.active_file
+			if vim.fn.filereadable(todo_file) == 1 then
+				local lines = vim.fn.readfile(todo_file)
+				if lines[todo_cursor_line] then
+					local todo_line = lines[todo_cursor_line]
+					if not todo_line:find("󰈙", 1, true) then
+						local new_line
+						if todo_line:match("%[Show:") then
+							new_line = todo_line:gsub("(%[Show:)", "󰈙 %1")
+						elseif todo_line:match("%[Due:") then
+							new_line = todo_line:gsub("(%[Due:)", "󰈙 %1")
+						elseif todo_line:match("#%w+") then
+							new_line = todo_line:gsub("(#%w+)", "󰈙 %1", 1)
+						else
+							new_line = todo_line .. " 󰈙"
+						end
+						lines[todo_cursor_line] = new_line
+						vim.fn.writefile(lines, todo_file)
+					end
+				end
+			end
+
+			-- Position cursor at end of Notes section with date stamp if needed
 			vim.schedule(function()
+				local buf = vim.api.nvim_get_current_buf()
+				local total_lines = vim.api.nvim_buf_line_count(buf)
+				local all_lines = vim.api.nvim_buf_get_lines(buf, 0, total_lines, false)
+
+				-- Find ## Notes section
+				local notes_line = nil
+				for i, line in ipairs(all_lines) do
+					if line:match("^## Notes") then
+						notes_line = i
+						break
+					end
+				end
+
+				if not notes_line then
+					vim.fn.cursor(total_lines, 1)
+					vim.cmd("startinsert")
+					return
+				end
+
+				-- Find end of notes section (before --- separator or end of file)
+				local insert_line = total_lines
+				for i = notes_line + 1, total_lines do
+					if all_lines[i] and all_lines[i]:match("^%s*%-%-%-+%s*$") then
+						insert_line = i - 1
+						break
+					end
+				end
+
+				-- Check for last date entry (mm/dd/yyyy format)
+				local today = os.date("%m/%d/%Y")
+				local last_date_found = nil
+				for i = insert_line, notes_line + 1, -1 do
+					local date_match = all_lines[i] and all_lines[i]:match("^(%d%d/%d%d/%d%d%d%d)%s*$")
+					if date_match then
+						last_date_found = date_match
+						break
+					end
+				end
+
+				-- Add new date if different from today (or no date exists)
+				if last_date_found ~= today then
+					-- Add blank lines for separation, new date, blank line after date
+					vim.api.nvim_buf_set_lines(buf, insert_line, insert_line, false, { "", "", today, "" })
+					vim.fn.cursor(insert_line + 4, 1)
+				else
+					-- Same date, add blank lines for separation between entries
+					vim.api.nvim_buf_set_lines(buf, insert_line, insert_line, false, { "", "" })
+					vim.fn.cursor(insert_line + 2, 1)
+				end
+				vim.cmd("startinsert")
+
+				-- Auto-save when leaving insert mode or buffer
+				vim.api.nvim_create_autocmd({ "InsertLeave", "BufLeave" }, {
+					buffer = 0,
+					callback = function()
+						if vim.bo.modified then
+							vim.cmd("silent! write")
+						end
+					end,
+				})
+
+				-- Return to todo file after saving
 				vim.api.nvim_create_autocmd({ "BufWritePost", "WinClosed", "BufDelete" }, {
 					buffer = 0,
 					once = true,
 					callback = function()
 						vim.schedule(function()
-							local todo_file = M.config.todo_dir .. "/" .. M.config.active_file
-							if vim.fn.filereadable(todo_file) == 1 then
-								vim.cmd("edit " .. vim.fn.fnameescape(todo_file))
+							local todo_file_path = M.config.todo_dir .. "/" .. M.config.active_file
+							if vim.fn.filereadable(todo_file_path) == 1 then
+								vim.cmd("edit " .. vim.fn.fnameescape(todo_file_path))
 								pcall(vim.fn.cursor, todo_cursor_line, todo_cursor_col)
 							end
 						end)
@@ -2657,152 +2800,178 @@ function M.create_or_open_note_from_todo()
 		end
 	end
 
-	print("📝 Creating new note for: " .. note_title .. " (ID: " .. todo_id .. ")")
-
-	-- No existing note found, create new one
-	local current_date = os.date("%Y-%m-%d")
-
-	-- Create note using zk new command first
-	local create_command = string.format('zk new --title "%s" --print-path', note_title)
-	local create_handle = io.popen(create_command .. " 2>&1")
-	local create_result = create_handle:read("*a")
-	create_handle:close()
-
-	if not create_result or create_result == "" then
-		print("✗ Failed to create zk note - check if zk repo is initialized")
-		return
-	end
-
-	-- Extract note path from zk output
-	local note_path = create_result:match("([^\n\r]+)")
-	if not note_path then
-		print("✗ Could not determine created note path")
-		return
-	end
-
-	-- Trim any whitespace from path
-	note_path = vim.trim(note_path)
-
-	-- Build note content with frontmatter and template
-	local note_content = {}
-
-	-- Add YAML frontmatter with todo_id for permanent linking
-	table.insert(note_content, "---")
-	table.insert(note_content, "todo_id: " .. todo_id)
-	table.insert(note_content, "category: " .. (current_todo.category or "Personal"))
-	table.insert(note_content, "created: " .. current_date)
-
-	-- Add tags to frontmatter if present
-	if current_todo.tags and type(current_todo.tags) == "table" and #current_todo.tags > 0 then
-		table.insert(note_content, "tags: [" .. table.concat(current_todo.tags, ", ") .. "]")
-	end
-
-	-- Add dates to frontmatter if present
-	if current_todo.due_date and current_todo.due_date ~= "" then
-		table.insert(note_content, "due_date: " .. current_todo.due_date)
-	end
-	if current_todo.show_date and current_todo.show_date ~= "" and current_todo.show_date ~= current_todo.due_date then
-		table.insert(note_content, "show_date: " .. current_todo.show_date)
-	end
-
-	table.insert(note_content, "---")
-	table.insert(note_content, "")
-	table.insert(note_content, "# " .. note_title) -- H1 heading with todo description
-	table.insert(note_content, "")
-	table.insert(note_content, "**Category**: " .. (current_todo.category or "Personal"))
-
-	-- Add tags if present
-	if current_todo.tags and type(current_todo.tags) == "table" and #current_todo.tags > 0 then
-		table.insert(note_content, "**Tags**: #" .. table.concat(current_todo.tags, " #"))
-	end
-
-	-- Add due date if present
-	if current_todo.due_date and current_todo.due_date ~= "" then
-		table.insert(note_content, "**Due Date**: " .. current_todo.due_date)
-	end
-
-	-- Add show date if present and different from due date
-	if current_todo.show_date and current_todo.show_date ~= "" and current_todo.show_date ~= current_todo.due_date then
-		table.insert(note_content, "**Show Date**: " .. current_todo.show_date)
-	end
-
-	table.insert(note_content, "**Created**: " .. current_date)
-	table.insert(note_content, "")
-	table.insert(note_content, "## Notes")
-	table.insert(note_content, "")
-	table.insert(note_content, "") -- Empty line for cursor positioning
-	table.insert(note_content, "")
-	table.insert(note_content, "## Original Todo")
-	table.insert(note_content, "```")
-	table.insert(note_content, M.format_todo_line(current_todo, "storage"))
-	table.insert(note_content, "```")
-
-	-- Write content directly to the created note file
-	local file = io.open(note_path, "w")
-	if not file then
-		print("✗ Failed to open created note file for writing: " .. note_path)
-		return
-	end
-
-	for _, line in ipairs(note_content) do
-		file:write(line .. "\n")
-	end
-	file:close()
-
-	-- Open the newly created note
-	vim.cmd("edit " .. vim.fn.fnameescape(note_path))
-
-	-- Position cursor after last content for immediate note-taking
-	vim.schedule(function()
-		-- Find the last line with actual content
-		local last_line = vim.fn.line("$")
-		local content_line = 1
-
-		for i = last_line, 1, -1 do
-			local line_content = vim.fn.getline(i)
-			if line_content:match("%S") then -- Found non-whitespace
-				content_line = i
-				break
+	-- Show folder picker for note placement
+	local folders = get_notebook_folders()
+	vim.ui.select(folders, {
+		prompt = "Select folder for note:",
+		format_item = function(item)
+			if item == "todo" then
+				return item .. " (default)"
 			end
+			return item
+		end,
+	}, function(selected_folder)
+		if not selected_folder then
+			print("Note creation cancelled")
+			return
 		end
 
-		-- Go to the last content line and position cursor at end
-		vim.cmd(content_line .. "G") -- Go to specific line number
-		vim.cmd("normal! A") -- Go to end of line
-		vim.cmd("normal! o") -- Open new line below
-		vim.cmd("startinsert") -- Enter insert mode
+		print("📝 Creating note in '" .. selected_folder .. "': " .. note_title)
 
-		-- Set up autocmd to return to original todo line on save/exit
-		vim.api.nvim_create_autocmd({ "BufWritePost", "WinClosed", "BufDelete" }, {
-			buffer = 0,
-			once = true,
-			callback = function()
-				vim.schedule(function()
+		local current_date = os.date("%Y-%m-%d")
+
+		-- Create note using zk new command in selected folder
+		local create_command = string.format('zk new %s --title "%s" --print-path', selected_folder, note_title)
+		local create_handle = io.popen(create_command .. " 2>&1")
+		local create_result = create_handle:read("*a")
+		create_handle:close()
+
+		if not create_result or create_result == "" then
+			print("✗ Failed to create zk note - check if zk repo is initialized")
+			return
+		end
+
+		local note_path = create_result:match("([^\n\r]+)")
+		if not note_path then
+			print("✗ Could not determine created note path")
+			return
+		end
+
+		note_path = vim.trim(note_path)
+
+		-- Build note content with frontmatter
+		local note_content = {
+			"---",
+			"todo_id: " .. todo_id,
+			"category: " .. (current_todo.category or "Personal"),
+			"created: " .. current_date,
+		}
+
+		if current_todo.tags and type(current_todo.tags) == "table" and #current_todo.tags > 0 then
+			table.insert(note_content, "tags: [" .. table.concat(current_todo.tags, ", ") .. "]")
+		end
+		if current_todo.due_date and current_todo.due_date ~= "" then
+			table.insert(note_content, "due_date: " .. current_todo.due_date)
+		end
+		if current_todo.show_date and current_todo.show_date ~= "" and current_todo.show_date ~= current_todo.due_date then
+			table.insert(note_content, "show_date: " .. current_todo.show_date)
+		end
+
+		table.insert(note_content, "---")
+		table.insert(note_content, "")
+		table.insert(note_content, "# " .. note_title)
+		table.insert(note_content, "")
+		table.insert(note_content, "**Category**: " .. (current_todo.category or "Personal"))
+
+		if current_todo.tags and type(current_todo.tags) == "table" and #current_todo.tags > 0 then
+			table.insert(note_content, "**Tags**: #" .. table.concat(current_todo.tags, " #"))
+		end
+		if current_todo.due_date and current_todo.due_date ~= "" then
+			table.insert(note_content, "**Due Date**: " .. current_todo.due_date)
+		end
+		if current_todo.show_date and current_todo.show_date ~= "" and current_todo.show_date ~= current_todo.due_date then
+			table.insert(note_content, "**Show Date**: " .. current_todo.show_date)
+		end
+
+		table.insert(note_content, "**Created**: " .. current_date)
+		table.insert(note_content, "")
+		table.insert(note_content, "## Original Todo")
+		table.insert(note_content, "```")
+		table.insert(note_content, M.format_todo_line(current_todo, "storage"))
+		table.insert(note_content, "```")
+		table.insert(note_content, "")
+		table.insert(note_content, "## Notes")
+		table.insert(note_content, "")
+		table.insert(note_content, os.date("%m/%d/%Y"))
+		table.insert(note_content, "")
+		table.insert(note_content, "")
+
+		local file = io.open(note_path, "w")
+		if not file then
+			print("✗ Failed to open created note file for writing: " .. note_path)
+			return
+		end
+
+		for _, line in ipairs(note_content) do
+			file:write(line .. "\n")
+		end
+		file:close()
+
+		vim.cmd("edit " .. vim.fn.fnameescape(note_path))
+
+		vim.schedule(function()
+			local total_lines = vim.fn.line("$")
+			local notes_line = nil
+
+			for i = 1, total_lines do
+				if vim.fn.getline(i):match("^## Notes") then
+					notes_line = i
+					break
+				end
+			end
+
+			if notes_line then
+				-- Position cursor below date line (## Notes -> blank -> date -> blank -> blank -> cursor)
+				vim.fn.cursor(notes_line + 4, 1)
+				vim.cmd("startinsert")
+			else
+				vim.fn.cursor(total_lines, 1)
+				vim.cmd("startinsert")
+			end
+
+			-- Auto-save when leaving insert mode or buffer
+			vim.api.nvim_create_autocmd({ "InsertLeave", "BufLeave" }, {
+				buffer = 0,
+				callback = function()
+					if vim.bo.modified then
+						vim.cmd("silent! write")
+					end
+				end,
+			})
+
+			-- Return to todo file after saving
+			vim.api.nvim_create_autocmd("BufWritePost", {
+				buffer = 0,
+				once = true,
+				callback = function()
 					local todo_file = M.config.todo_dir .. "/" .. M.config.active_file
 					if vim.fn.filereadable(todo_file) == 1 then
-						vim.cmd("edit " .. vim.fn.fnameescape(todo_file))
-						pcall(vim.fn.cursor, todo_cursor_line, todo_cursor_col)
+						vim.defer_fn(function()
+							vim.cmd("edit " .. vim.fn.fnameescape(todo_file))
+							pcall(vim.fn.cursor, todo_cursor_line, todo_cursor_col)
+						end, 100)
 					end
-				end)
-			end,
-		})
-	end)
+				end,
+			})
+		end)
 
-	print("✓ Created new note: " .. note_title)
+		print("✓ Created note in '" .. selected_folder .. "': " .. note_title)
 
-	-- Ask if user wants to mark todo as completed
-	vim.defer_fn(function()
-		vim.ui.input({
-			prompt = "Mark todo as completed? (y/N): ",
-			default = "n",
-		}, function(input)
-			if input and input:lower() == "y" then
-				-- Switch back to todo buffer and toggle completion
-				vim.cmd("wincmd p") -- Go to previous window
-				M.toggle_todo_on_line()
+		-- Add note link indicator to todo file
+		vim.schedule(function()
+			local todo_file = M.config.todo_dir .. "/" .. M.config.active_file
+			if vim.fn.filereadable(todo_file) == 1 then
+				local lines = vim.fn.readfile(todo_file)
+				if lines[todo_cursor_line] then
+					local todo_line = lines[todo_cursor_line]
+					if not todo_line:find("󰈙", 1, true) then
+						local new_line
+						if todo_line:match("%[Show:") then
+							new_line = todo_line:gsub("(%[Show:)", "󰈙 %1")
+						elseif todo_line:match("%[Due:") then
+							new_line = todo_line:gsub("(%[Due:)", "󰈙 %1")
+						elseif todo_line:match("#%w+") then
+							new_line = todo_line:gsub("(#%w+)", "󰈙 %1", 1)
+						else
+							new_line = todo_line .. " 󰈙"
+						end
+						lines[todo_cursor_line] = new_line
+						vim.fn.writefile(lines, todo_file)
+					end
+				end
 			end
 		end)
-	end, 1000) -- Longer delay to let file load and cursor position
+	end)
 end
 
 return M
