@@ -588,150 +588,111 @@ end, {
 -- Display all todo manager keymaps in a floating window
 -- Usage: :TodoHelp
 vim.api.nvim_create_user_command("TodoHelp", function()
-  local keymaps = {
-    ["Essential Commands"] = {
-      [":TodoAdd <desc> [#tags] [| Category: <cat>] [| Due: mm-dd-yyyy] [| Show: mm-dd-yyyy]"] =
-      "Add new todo with full metadata",
-      [":TodoAdd <desc> /show /due"] = "Sequential calendar pickers for show and due dates",
-      [":TodoAdd <desc> /show tomorrow"] = "Add todo with date shortcut (see shortcuts below)",
-      [":Todo <desc> [#tags] /show /due"] = "Quick add Personal todo with both dates",
-      [":TodoMed <desc> [#tags] /due next week"] = "Quick add Medicine todo with date shortcut",
-      [":TodoOMS <desc> [#tags] /due this weekend"] = "Quick add OMS todo with date shortcut",
-      [":TodoList [category]"] = "List currently active (visible) todos",
-      [":TodoScheduled"] = "List all scheduled (future) todos with show dates",
-      [":TodoUpcoming [days]"] = "List todos scheduled for next N days (default 7)",
-      [":TodoStats"] = "Show comprehensive todo statistics",
+  -- Ordered list of sections for consistent display
+  local sections = {
+    {
+      title = "Global Keybindings",
+      items = {
+        { "<leader>to", "Open filtered view of active todos (main workflow)" },
+        { "<leader>ta", "Quick add todo (opens :TodoAdd prompt)" },
+        { "<leader>tb", "Interactive todo builder modal" },
+        { "<leader>tl", "List active todos" },
+        { "<leader>tf", "Interactive category filter menu" },
+        { "<leader>ts", "Show todo statistics" },
+        { "<leader>tr", "Open raw todos file (includes scheduled)" },
+        { "<leader>tc", "Open completed todos file" },
+        { "<leader>th", "Show this help window" },
+      },
     },
-    ["Date Shortcuts"] = {
-      ["Pattern: [1-12] [unit]"] = "Use numbers 1-12 with days/weeks/months/years",
-      ["Pattern: [word] [unit]"] = "Use one-twelve with days/weeks/months/years",
-      ["/show 5 days"] = "Show todo in 5 days",
-      ["/due two weeks"] = "Due in 2 weeks (14 days)",
-      ["/show 1 month"] = "Show todo in 30 days",
-      ["/due twelve years"] = "Due in 12 years (4380 days)",
-      ["/show today"] = "Show todo today (special case)",
-      ["/due tomorrow"] = "Due tomorrow (special case)",
-      ["/show next week"] = "Show todo in 1 week (alias)",
-      ["/due this weekend"] = "Due this Saturday (special case)",
-      ["/show (no keyword)"] = "Opens calendar picker for manual date selection",
+    {
+      title = "File-Specific Keybindings (in todo files)",
+      items = {
+        { "tt", "Toggle todo completion" },
+        { "<leader>te", "Edit todo with pre-populated modal" },
+        { "<leader>td", "Update due date with calendar picker" },
+        { "<leader>tz", "Create or open zk note (smart duplicate detection)" },
+        { "<leader>tc", "Open completed todos file" },
+      },
     },
-    ["Global Keybindings (work anywhere)"] = {
-      ["<leader>ta"] = "Quick add todo (opens :TodoAdd prompt)",
-      ["<leader>tl"] = "List active todos",
-      ["<leader>to"] = "Open filtered view of active todos (main workflow)",
-      ["<leader>ts"] = "Show todo statistics",
-      ["<leader>tb"] = "Interactive todo builder modal (all fields on one screen)",
-      ["<leader>th"] = "Show this help window",
-      ["<leader>tr"] = "Open raw todos file (includes scheduled todos)",
-      ["<leader>tc"] = "Open completed todos file",
+    {
+      title = "View/Filter Submenu (in todo files: <leader>tv*)",
+      items = {
+        { "<leader>tvm", "Filter Medicine todos" },
+        { "<leader>tvp", "Filter Personal todos" },
+        { "<leader>tvo", "Filter OMS todos" },
+        { "<leader>tva", "Show all todos (clear filter)" },
+        { "<leader>tvd", "Filter todos with due dates" },
+        { "<leader>tvt", "Filter todos due today" },
+        { "<leader>tvx", "Filter urgent (today + past due)" },
+        { "<leader>tvq", "Close filter window" },
+      },
     },
-    ["File-Specific Keybindings (in todo files only)"] = {
-      ["tt"] = "Toggle todo completion (works in filtered view & raw files)",
-      ["<leader>tz"] = "Create or open zk note from todo (smart detection)",
-      ["<leader>tc"] = "Open completed todos file", 
-      ["<leader>td"] = "Update due date with calendar picker",
-      ["<leader>te"] = "Edit todo with pre-populated modal",
+    {
+      title = "Commands",
+      items = {
+        { ":TodoAdd <desc> /show /due", "Add todo with calendar pickers" },
+        { ":Todo, :TodoMed, :TodoOMS", "Quick add with pre-set category" },
+        { ":TodoFilter [Cat|Clear]", "Apply or clear category filter" },
+        { ":TodoScheduled", "List all scheduled (future) todos" },
+        { ":TodoUpcoming [days]", "Todos scheduled for next N days (default 7)" },
+        { ":TodoCompleted", "List completed todos" },
+      },
     },
-    ["Category Filtering"] = {
-      [":TodoFilter Medicine"] = "Filter current view to show only Medicine todos",
-      [":TodoFilter OMS"] = "Filter current view to show only OMS todos", 
-      [":TodoFilter Personal"] = "Filter current view to show only Personal todos",
-      [":TodoFilter Clear"] = "Remove filter and show all todos",
-      ["<leader>tf"] = "Interactive filter menu with category selection",
-      ["Smart Integration"] = "TodoBuilder pre-selects filtered category",
-      ["Filter Persistence"] = "Filters maintained during todo operations",
+    {
+      title = "Date Shortcuts (/show or /due)",
+      items = {
+        { "today, tomorrow", "Special date keywords" },
+        { "next week, this weekend", "Relative date aliases" },
+        { "[1-12] days/weeks/months", "Numeric offset (e.g. /due 5 days)" },
+        { "[word] days/weeks/months", "Word offset (e.g. /show two weeks)" },
+        { "(no keyword after /show)", "Opens calendar picker" },
+      },
     },
-    ["TodoBuild Modal Controls (<leader>tb & <leader>te)"] = {
-      ["i"] = "Edit description inline with proper cursor positioning",
-      ["j/k"] = "Navigate category selection (Medicine/OMS/Personal)",
-      ["Enter"] = "Context-sensitive: date picker on dates, submit on other fields",
-      ["Tab"] = "Navigate between fields: Description → Category → Show → Due",
-      ["s"] = "Submit form from anywhere",
-      ["ESC/q"] = "Cancel and close modal",
+    {
+      title = "TodoBuilder Modal (<leader>tb / <leader>te)",
+      items = {
+        { "i", "Edit description inline" },
+        { "j/k", "Navigate category selection" },
+        { "Tab", "Next field: Desc -> Category -> Show -> Due" },
+        { "Enter", "Date picker on date fields, submit on others" },
+        { "s", "Submit form from anywhere" },
+        { "ESC/q", "Cancel and close" },
+      },
     },
-    ["Command-Line Continuation (/due workflow)"] = {
-      [":Todo task /due → pick date → command line shows:"] = "':Todo task [Due: date] '",
-      ["Press Enter"] = "Add todo with show_date = due_date",
-      ["Type '/show' → pick date"] = "Add todo with both show and due dates",
-      ["Type anything else"] = "Cancel todo creation",
-    },
-    ["Show Date System"] = {
-      ["Active list (:TodoList)"] = "Hides show dates (clean display)",
-      ["Scheduled list (:TodoScheduled)"] = "Shows show dates for future todos",
-      ["/show with future date"] = "Todo scheduled (not in active list until show date)",
-      ["/show only"] = "Auto-sets due_date = show_date",
-      ["/due only"] = "Auto-sets show_date = due_date",
-    },
-    ["File Views"] = {
-      [":TodoOpen"] = "Filtered view - only active todos (daily use)",
-      [":TodoOpenRaw"] = "Raw file - all todos including scheduled (admin)",
-      [":TodoOpenCompleted"] = "Completed todos file",
-      ["Auto-refresh"] = "Filtered view updates immediately when todos change",
-    },
-    ["Reactivating Completed Todos"] = {
-      [":TodoOpenCompleted"] = "Open completed todos file",
-      ["tt on completed todo line"] = "Toggle back to incomplete (moves to active)",
-      [":TodoCompleted"] = "List completed todos for reference",
-    },
-    ["ZK Integration (Zettelkasten Notes)"] = {
-      ["<leader>tz"] = "Smart note integration: duplicate detection, open existing or create new",
-      ["Duplicate detection"] = "Searches frontmatter for todo_id to find existing notes",
-      ["Existing note found"] = "Opens existing note automatically, prompts for todo completion",
-      ["No existing note"] = "Creates new note with structured template and unique todo_id",
-      ["Note template includes"] = "Category, tags, dates, and original todo reference",
-      ["After note interaction"] = "Optional prompt to mark todo as completed",
-      ["Requirements"] = "zk command must be installed (brew install zk)",
-    },
-    ["Daily Workflow"] = {
-      ["Morning"] = "<leader>to (filtered view for current todos)",
-      ["Add todos"] = "<leader>tb (interactive builder) or <leader>ta",
-      ["Filter focus"] = "<leader>tf (select category to focus on)",
-      ["Edit todos"] = "<leader>te (edit current todo inline)",
-      ["Create notes"] = "<leader>tz (create/open zk note from todo)",
-      ["Complete"] = "tt on any todo line",
-      ["Check upcoming"] = ":TodoScheduled or :TodoUpcoming",
-      ["Quick help"] = "<leader>th (show this help)",
-    },
-    ["Calendar Picker"] = {
-      ["h/l"] = "Previous/Next month",
-      ["j/k"] = "Previous/Next day",
-      ["H/L"] = "Previous/Next year",
-      ["Enter"] = "Select date",
-      ["q/ESC"] = "Cancel",
+    {
+      title = "Calendar Picker",
+      items = {
+        { "h/l", "Previous/Next month" },
+        { "j/k", "Previous/Next day" },
+        { "H/L", "Previous/Next year" },
+        { "Enter", "Select date" },
+        { "q/ESC", "Cancel" },
+      },
     },
   }
 
   -- Create floating window
-  local width = 90
-  local height = 35
+  local width = 80
   local buf = vim.api.nvim_create_buf(false, true)
 
   local lines = {}
-  table.insert(lines, "🔹 Todo Manager Help")
+  table.insert(lines, "Todo Manager Help")
   table.insert(lines, string.rep("═", width - 4))
   table.insert(lines, "")
 
-  for section, items in pairs(keymaps) do
-    table.insert(lines, "▶ " .. section)
-    table.insert(lines, string.rep("─", #section + 2))
-    table.insert(lines, "")
-
-    for key, desc in pairs(items) do
-      local line = string.format("  %-35s %s", key, desc)
-      if #line > width - 4 then
-        -- Wrap long lines
-        local key_part = string.format("  %-35s", key)
-        table.insert(lines, key_part)
-        table.insert(lines, string.format("  %35s %s", "", desc))
-      else
-        table.insert(lines, line)
-      end
+  for _, section in ipairs(sections) do
+    table.insert(lines, "▶ " .. section.title)
+    table.insert(lines, string.rep("─", #section.title + 2))
+    for _, item in ipairs(section.items) do
+      table.insert(lines, string.format("  %-32s %s", item[1], item[2]))
     end
     table.insert(lines, "")
   end
 
   table.insert(lines, string.rep("═", width - 4))
   table.insert(lines, "Press 'q' or ESC to close")
+
+  local height = #lines
 
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   vim.api.nvim_buf_set_option(buf, "modifiable", false)
@@ -755,7 +716,7 @@ vim.api.nvim_create_user_command("TodoHelp", function()
   local win = vim.api.nvim_open_win(buf, true, win_opts)
 
   -- Set up syntax highlighting
-  vim.cmd("syntax match TodoHelpTitle /^🔹.*$/")
+  vim.cmd("syntax match TodoHelpTitle /^Todo Manager Help$/")
   vim.cmd("syntax match TodoHelpSection /^▶.*$/")
   vim.cmd("syntax match TodoHelpSeparator /^[═─].*$/")
   vim.cmd("syntax match TodoHelpKey /^  [^[:space:]].*$/")

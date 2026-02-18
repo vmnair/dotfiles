@@ -527,6 +527,13 @@ function M.parse_todo_line(line)
 			desc_part = desc_part:gsub("%s*%[Due: [%d%-]+%]", "")
 		end
 
+		-- Detect and remove note link indicator (before added_date extraction,
+		-- since 󰈙 appears after the date in storage format and would prevent the regex match)
+		if desc_part:find("󰈙", 1, true) then
+			todo.has_note = true
+			desc_part = desc_part:gsub("󰈙", ""):gsub("^%s+", ""):gsub("%s+$", "")
+		end
+
 		-- Extract added date (in parentheses at end)
 		local added_match = desc_part:match("%(([%d%-]+)%)%s*$")
 		if added_match then
@@ -551,12 +558,6 @@ function M.parse_todo_line(line)
 
 		-- Also remove any fallback notepad icons that might have been added previously
 		desc_part = desc_part:gsub("📝", ""):gsub("^%s+", ""):gsub("%s+$", "")
-
-		-- Detect and remove note link indicator
-		if desc_part:find("󰈙", 1, true) then
-			todo.has_note = true
-			desc_part = desc_part:gsub("󰈙", ""):gsub("^%s+", ""):gsub("%s+$", "")
-		end
 
 		todo.description = desc_part:gsub("^%s+", ""):gsub("%s+$", "")
 	end
@@ -2148,6 +2149,7 @@ function M.show_todo_modal(options)
 				form_data.category_index = (form_data.category_index % #M.config.categories) + 1
 				form_data.category = M.config.categories[form_data.category_index]
 				render_form()
+				vim.api.nvim_win_set_cursor(win, { 3, cursor[2] })
 			else
 				-- Normal j movement
 				vim.cmd("normal! j")
@@ -2163,6 +2165,7 @@ function M.show_todo_modal(options)
 				end
 				form_data.category = M.config.categories[form_data.category_index]
 				render_form()
+				vim.api.nvim_win_set_cursor(win, { 3, cursor[2] })
 			else
 				-- Normal k movement
 				vim.cmd("normal! k")
@@ -2535,7 +2538,7 @@ function M.get_current_todo()
 
 	-- Check if we're in a filtered view (where show dates might be hidden)
 	local buf_name = vim.api.nvim_buf_get_name(0)
-	if buf_name:match("Active Todos %(Filtered View%)") or buf_name:match("todos") then
+	if buf_name:match("Active Todos") or buf_name:match("todos") then
 		-- We're in a filtered view, need to get the full todo data from the actual file
 		-- Match this todo against the full todo list to get complete data
 		local all_todos = M.get_all_todos_from_active_file()
@@ -2853,7 +2856,11 @@ function M.create_or_open_note_from_todo()
 		if current_todo.due_date and current_todo.due_date ~= "" then
 			table.insert(note_content, "due_date: " .. current_todo.due_date)
 		end
-		if current_todo.show_date and current_todo.show_date ~= "" and current_todo.show_date ~= current_todo.due_date then
+		if
+			current_todo.show_date
+			and current_todo.show_date ~= ""
+			and current_todo.show_date ~= current_todo.due_date
+		then
 			table.insert(note_content, "show_date: " .. current_todo.show_date)
 		end
 
@@ -2869,7 +2876,11 @@ function M.create_or_open_note_from_todo()
 		if current_todo.due_date and current_todo.due_date ~= "" then
 			table.insert(note_content, "**Due Date**: " .. current_todo.due_date)
 		end
-		if current_todo.show_date and current_todo.show_date ~= "" and current_todo.show_date ~= current_todo.due_date then
+		if
+			current_todo.show_date
+			and current_todo.show_date ~= ""
+			and current_todo.show_date ~= current_todo.due_date
+		then
 			table.insert(note_content, "**Show Date**: " .. current_todo.show_date)
 		end
 

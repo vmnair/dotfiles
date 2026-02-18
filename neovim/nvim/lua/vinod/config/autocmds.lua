@@ -56,9 +56,11 @@ vim.api.nvim_create_autocmd("FileType", {
 		vim.opt_local.textwidth = 80
 		vim.opt_local.linebreak = true
 		vim.opt_local.breakindent = true
-		vim.opt_local.formatoptions:append("t") -- Auto-wrap text using textwidth
+		-- "t" and "a" disabled: they break markdown table formatting by
+		-- auto-wrapping and merging lines as you type.
+		-- vim.opt_local.formatoptions:append("t") -- Auto-wrap text using textwidth
 		vim.opt_local.formatoptions:append("c") -- Auto-wrap comments
-		vim.opt_local.formatoptions:append("a") -- Automatic formatting of paragraphs
+		-- vim.opt_local.formatoptions:append("a") -- Automatic formatting of paragraphs
 	end,
 })
 -- Move the help file to the right insted of the bottom
