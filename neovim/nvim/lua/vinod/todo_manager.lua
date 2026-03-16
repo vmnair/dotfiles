@@ -2156,17 +2156,6 @@ local function parse_continuation_input(input, expected_command)
 	end
 end
 
--- Check if show date has been reached (stub for compatibility)
-local function is_show_date_reached(show_date)
-	if not show_date or show_date == "" then
-		return true
-	end
-
-	-- Simple date comparison (stub implementation)
-	local current_date = os.date("%Y-%m-%d")
-	return show_date <= current_date
-end
-
 -- Format success message based on todo state and scheduling
 local function format_todo_success_message(state)
 	local is_scheduled = not is_show_date_reached(state.show_date)
@@ -2729,5 +2718,10 @@ function M.create_or_open_note_from_todo()
 		end)
 	end)
 end
+
+M._test = {
+	generate_todo_id = generate_todo_id,
+	is_show_date_reached = is_show_date_reached,
+}
 
 return M

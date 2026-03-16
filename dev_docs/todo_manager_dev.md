@@ -72,3 +72,27 @@ Neovim task management system with category-based todos, future scheduling, inte
 - **Note indicator**: 󰈙 (nf-md-file_document) with yellow highlight (#ffd700)
 - **Folder picker**: `vim.ui.select` over `~/notebook` subdirs, `todo` as default
 - **Requires**: `zk` CLI (`brew install zk` on macOS)
+
+## Testing
+
+**Run all tests** (from `neovim/nvim/`):
+```bash
+./tests/run_tests.sh
+# or directly:
+nvim --headless -l tests/todo_manager_spec.lua
+```
+
+**Run a specific test file**:
+```bash
+./tests/run_tests.sh tests/todo_manager_spec.lua
+```
+
+**Test file**: `neovim/nvim/tests/todo_manager_spec.lua`
+- Standalone Lua tests using `nvim --headless -l` (no plenary/busted dependency)
+- Mini assertion framework built into the file
+- Tests 8 pure functions: `parse_todo_line`, `format_todo_line`, `validate_category`, `is_past_due`, `is_due_today`, `is_show_date_reached`, `resolve_date_shortcut`, `generate_todo_id`
+- Round-trip tests (parse → format) catch subtle regressions
+
+**Adding new tests**: Add `test("name", function() ... end)` inside an existing or new `describe()` block. Use `assert_eq`, `assert_true`, `assert_false`, `assert_nil`, `assert_not_nil`, `assert_table_len`.
+
+**Private function access**: `M._test` exposes `generate_todo_id` and `is_show_date_reached` for testing.
