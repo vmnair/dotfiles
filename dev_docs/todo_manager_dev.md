@@ -39,8 +39,8 @@ Neovim task management system with category-based todos, future scheduling, inte
 | Key | Command | Description |
 |-----|---------|-------------|
 | `<leader>ta` | `:TodoAdd` | Quick add todo |
-| `<leader>tl` | `:TodoList` | List active todos |
-| `<leader>to` | | Open filtered view of active todos |
+| `<leader>tl` | | Clear category filter (show all) |
+| `<leader>to` | `:TodoOpen` | Open active todos (show-date filtered) |
 | `<leader>tb` | | Interactive todo builder with calendar |
 | `<leader>tr` | | Open raw todos file (includes scheduled) |
 | `<leader>tc` | | Open completed todos file |
@@ -60,11 +60,13 @@ Neovim task management system with category-based todos, future scheduling, inte
 ## ZK Integration Details
 
 - **Todo ID**: Hash of `description + category + added_date` → `todo_123456`
-- **Search**: `grep -r "todo_id: <id>" ~/notebook/` with 5s timeout
+- **Search**: `grep -r "todo_id: <id>" ~/notebook/` (no timeout — macOS lacks GNU `timeout`)
 - **Note creation**: `zk new <folder> --title "..." --print-path`
 - **Frontmatter**: YAML with `todo_id`, category, tags, dates
 - **Template**: Frontmatter → Title → Metadata → `## Original Todo` → `## Notes`
-- **Existing notes**: Opens at end of Notes section, adds new date stamp if needed
+- **Existing notes**: Opens at end of Notes section, adds new date stamp if different day
+- **Cursor positioning**: Always immediately below the date line; same day revisits add one blank line
+- **Orphan detection**: Warns user if 󰈙 indicator exists but no linked note file is found
 - **Auto-save**: On InsertLeave or BufLeave
 - **Return navigation**: Returns to original todo line after saving/exiting note
 - **Note indicator**: 󰈙 (nf-md-file_document) with yellow highlight (#ffd700)

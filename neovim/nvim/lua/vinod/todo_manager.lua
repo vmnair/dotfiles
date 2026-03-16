@@ -455,8 +455,8 @@ function is_past_due(date_str)
 		return false
 	end
 
-	local date_time = os.time({ year = tonumber(year), month = tonumber(month), day = tonumber(day) })
-	local current_time = os.time({ year = tonumber(cur_year), month = tonumber(cur_month), day = tonumber(cur_day) })
+	local date_time = os.time({ year = tonumber(year) --[[@as integer]], month = tonumber(month) --[[@as integer]], day = tonumber(day) --[[@as integer]] })
+	local current_time = os.time({ year = tonumber(cur_year) --[[@as integer]], month = tonumber(cur_month) --[[@as integer]], day = tonumber(cur_day) --[[@as integer]] })
 
 	return date_time < current_time
 end
@@ -467,14 +467,6 @@ function is_due_today(date_str)
 		return false
 	end
 	return date_str == get_current_date()
-end
-
--- Get display icon for a todo based on category
-function get_display_icon(todo)
-	if not todo or not todo.category then
-		return "📝"
-	end
-	return M.config.category_icons[todo.category] or "📝"
 end
 
 -- Get full file path for todo files
@@ -563,257 +555,6 @@ function M.parse_todo_line(line)
 	end
 
 	return todo
-end
-
--- ========================================
--- REFACTORED BUFFER FILTERING UTILITIES
--- ========================================
-
--- Collect todos with a filter function
-local function collect_todos_with_filter(filter_function)
-	local todos = {}
-	local total_lines = vim.api.nvim_buf_line_count(0)
-
-	for line_num = 1, total_lines do
-		local line = vim.api.nvim_buf_get_lines(0, line_num - 1, line_num, false)[1]
-		local todo = M.parse_todo_line(line)
-
-		if todo and filter_function(todo) then
-			local display_text = todo.description
-			if todo.completed then
-				display_text = display_text .. " ✓"
-			end
-
-			-- Add category icon
-			local icon = get_display_icon(todo)
-			if icon ~= "" then
-				display_text = display_text .. " " .. icon
-			end
-
-			-- Add due date with color indicator if present
-			if todo.due_date and todo.due_date ~= "" then
-				local due_indicator = is_past_due(todo.due_date) and " [OVERDUE: " or " [Due: "
-				display_text = display_text .. due_indicator .. todo.due_date .. "]"
-			end
-
-			-- Add show date if present and different from due date
-			if todo.show_date and todo.show_date ~= "" and todo.show_date ~= todo.due_date then
-				display_text = display_text .. " [Show: " .. todo.show_date .. "]"
-			end
-
-			-- Add tags
-			if #todo.tags > 0 then
-				display_text = display_text .. " #" .. table.concat(todo.tags, " #")
-			end
-
-			table.insert(todos, {
-				text = display_text,
-				line_num = line_num,
-				completed = todo.completed,
-				past_due = todo.due_date and is_past_due(todo.due_date) or false,
-			})
-		end
-	end
-
-	return todos
-end
-
--- Create a filter buffer with todos and setup
-local function create_filter_buffer(todos, title, filter_type, source_file)
-	if #todos == 0 then
-		print("No todos found for " .. title:lower())
-		return nil
-	end
-
-	local buf = vim.api.nvim_create_buf(false, true)
-	local lines = {}
-
-	table.insert(lines, title .. " (" .. #todos .. " found)")
-	table.insert(lines, string.rep("=", #lines[1]))
-	table.insert(lines, "")
-
-	for i, todo in ipairs(todos) do
-		table.insert(lines, string.format("%d. %s", i, todo.text))
-	end
-
-	table.insert(lines, "")
-	table.insert(lines, "Press Enter to jump to todo, Space to toggle completion, q to close")
-
-	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-	vim.api.nvim_buf_set_option(buf, "modifiable", false)
-	vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
-	vim.api.nvim_buf_set_option(buf, "filetype", "todofilter")
-
-	vim.cmd("botright 15split")
-	vim.api.nvim_win_set_buf(0, buf)
-
-	vim.b.filtered_todos = todos
-	vim.b.source_file = source_file
-	vim.b.filter_category = filter_type
-
-	return buf
-end
-
--- Setup common keymaps for filter buffers
-local function setup_filter_keymaps(buf, todos)
-	-- Enter - Jump to todo
-	vim.keymap.set("n", "<CR>", function()
-		local line = vim.fn.line(".") - 3
-		local filtered_todos = vim.b.filtered_todos
-		local file = vim.b.source_file
-
-		if line >= 1 and line <= #filtered_todos and file then
-			local todo = filtered_todos[line]
-			if todo and todo.line_num and type(todo.line_num) == "number" then
-				vim.cmd("close")
-				vim.schedule(function()
-					vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
-					vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
-				end)
-			else
-				print("Error: Invalid todo object or line_num")
-			end
-		else
-			print("Error: Could not navigate to todo")
-		end
-	end, { buffer = buf, desc = "Jump to todo" })
-
-	-- Space - Toggle completion (simplified for temp version)
-	vim.keymap.set("n", "<Space>", function()
-		local line = vim.fn.line(".") - 3
-		local filtered_todos = vim.b.filtered_todos
-		local file = vim.b.source_file
-
-		if line >= 1 and line <= #filtered_todos and file then
-			local todo = filtered_todos[line]
-			if todo and todo.line_num and type(todo.line_num) == "number" then
-				vim.cmd("close")
-				vim.schedule(function()
-					vim.cmd.edit({ vim.fn.fnameescape(file), bang = true })
-					vim.api.nvim_win_set_cursor(0, { todo.line_num, 0 })
-					print("Toggle functionality - use 'tt' in the todo file")
-				end)
-			else
-				print("Error: Could not toggle todo")
-			end
-		else
-			print("Error: Could not toggle todo")
-		end
-	end, { buffer = buf, desc = "Toggle todo completion" })
-
-	-- q - Close window
-	vim.keymap.set("n", "q", function()
-		vim.cmd("close")
-	end, { buffer = buf, desc = "Close filter window" })
-end
-
--- ========================================
--- REFACTORED BUFFER FILTERING FUNCTIONS
--- ========================================
-
--- Filter todos by due dates in scratch buffer
-function M.filter_buffer_by_due_dates()
-	local source_file = vim.api.nvim_buf_get_name(0)
-
-	local todos = collect_todos_with_filter(function(todo)
-		return todo.due_date and todo.due_date ~= ""
-	end)
-
-	local buf = create_filter_buffer(todos, "Due Date Todos", "due_dates", source_file)
-	if buf then
-		setup_filter_keymaps(buf, todos)
-	end
-end
-
--- Filter todos by category in scratch buffer
-function M.filter_buffer_by_category(category)
-	if not category then
-		print("Error: No category provided")
-		return
-	end
-
-	-- Validate category
-	if not vim.tbl_contains(M.config.categories, category) then
-		print("Invalid category. Must be one of: " .. table.concat(M.config.categories, ", "))
-		return
-	end
-
-	-- Check if we're in a todo file
-	local current_file = vim.api.nvim_buf_get_name(0)
-	local active_file_path = get_file_path(M.config.active_file)
-	local completed_file_path = get_file_path(M.config.completed_file)
-
-	if current_file ~= active_file_path and current_file ~= completed_file_path then
-		print("Error: Must be in a todo file to filter")
-		return
-	end
-
-	local source_file = vim.api.nvim_buf_get_name(0)
-
-	local todos = collect_todos_with_filter(function(todo)
-		return todo.category == category
-	end)
-
-	local buf = create_filter_buffer(todos, category .. " Todos", "category_" .. category:lower(), source_file)
-	if buf then
-		setup_filter_keymaps(buf, todos)
-	end
-end
-
--- Show all todos in scratch buffer
-function M.show_all_todos()
-	local source_file = vim.api.nvim_buf_get_name(0)
-
-	local todos = collect_todos_with_filter(function(todo)
-		return true -- Show all todos
-	end)
-
-	local buf = create_filter_buffer(todos, "All Todos", "all", source_file)
-	if buf then
-		setup_filter_keymaps(buf, todos)
-	end
-end
-
--- Filter today's todos in scratch buffer
-function M.filter_buffer_by_today()
-	local source_file = vim.api.nvim_buf_get_name(0)
-
-	local todos = collect_todos_with_filter(function(todo)
-		return todo.due_date and todo.due_date ~= "" and is_due_today(todo.due_date)
-	end)
-
-	local buf = create_filter_buffer(todos, "Today's Todos", "today", source_file)
-	if buf then
-		setup_filter_keymaps(buf, todos)
-	end
-end
-
--- Filter past due todos in scratch buffer
-function M.filter_buffer_by_past_due()
-	local source_file = vim.api.nvim_buf_get_name(0)
-
-	local todos = collect_todos_with_filter(function(todo)
-		return todo.due_date and todo.due_date ~= "" and is_past_due(todo.due_date)
-	end)
-
-	local buf = create_filter_buffer(todos, "Past Due Todos", "past_due", source_file)
-	if buf then
-		setup_filter_keymaps(buf, todos)
-	end
-end
-
--- Filter urgent todos (today + past due) in scratch buffer
-function M.filter_buffer_by_today_and_past_due()
-	local source_file = vim.api.nvim_buf_get_name(0)
-
-	local todos = collect_todos_with_filter(function(todo)
-		return todo.due_date and todo.due_date ~= "" and (is_due_today(todo.due_date) or is_past_due(todo.due_date))
-	end)
-
-	local buf = create_filter_buffer(todos, "Urgent Todos (Today + Past Due)", "urgent", source_file)
-	if buf then
-		setup_filter_keymaps(buf, todos)
-	end
 end
 
 -- ========================================
@@ -1004,9 +745,9 @@ function M.get_upcoming_todos(days)
 			local month, day, year = todo.show_date:match("(%d+)-(%d+)-(%d+)")
 			if month and day and year then
 				local show_time = os.time({
-					year = tonumber(year),
-					month = tonumber(month),
-					day = tonumber(day),
+					year = tonumber(year) --[[@as integer]],
+					month = tonumber(month) --[[@as integer]],
+					day = tonumber(day) --[[@as integer]],
 					hour = 0,
 					min = 0,
 					sec = 0,

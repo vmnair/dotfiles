@@ -593,10 +593,10 @@ vim.api.nvim_create_user_command("TodoHelp", function()
     {
       title = "Global Keybindings",
       items = {
-        { "<leader>to", "Open filtered view of active todos (main workflow)" },
+        { "<leader>to", "Open active todos (show-date filtered, main workflow)" },
         { "<leader>ta", "Quick add todo (opens :TodoAdd prompt)" },
         { "<leader>tb", "Interactive todo builder modal" },
-        { "<leader>tl", "List active todos" },
+        { "<leader>tl", "Clear category filter (show all)" },
         { "<leader>tf", "Interactive category filter menu" },
         { "<leader>ts", "Show todo statistics" },
         { "<leader>tr", "Open raw todos file (includes scheduled)" },
@@ -610,21 +610,8 @@ vim.api.nvim_create_user_command("TodoHelp", function()
         { "tt", "Toggle todo completion" },
         { "<leader>te", "Edit todo with pre-populated modal" },
         { "<leader>td", "Update due date with calendar picker" },
-        { "<leader>tz", "Create or open zk note (smart duplicate detection)" },
+        { "<leader>tz", "Create or open zk note (warns if note link is orphaned)" },
         { "<leader>tc", "Open completed todos file" },
-      },
-    },
-    {
-      title = "View/Filter Submenu (in todo files: <leader>tv*)",
-      items = {
-        { "<leader>tvm", "Filter Medicine todos" },
-        { "<leader>tvp", "Filter Personal todos" },
-        { "<leader>tvo", "Filter OMS todos" },
-        { "<leader>tva", "Show all todos (clear filter)" },
-        { "<leader>tvd", "Filter todos with due dates" },
-        { "<leader>tvt", "Filter todos due today" },
-        { "<leader>tvx", "Filter urgent (today + past due)" },
-        { "<leader>tvq", "Close filter window" },
       },
     },
     {
@@ -766,80 +753,6 @@ vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
     -- Custom buffer filtering system - clean display without quickfix clutter
     -- Opens a scratch buffer showing filtered todos with navigation
 
-    -- Todo View/Filter Submenu - consistent <leader>tv* pattern
-    -- Medicine category filter
-    vim.keymap.set("n", "<leader>tvm", function()
-      todo_manager.filter_buffer_by_category("Medicine")
-    end, {
-      buffer = true,
-      desc = "Filter Medicine todos",
-      silent = true,
-    })
-
-    -- Personal category filter
-    vim.keymap.set("n", "<leader>tvp", function()
-      todo_manager.filter_buffer_by_category("Personal")
-    end, {
-      buffer = true,
-      desc = "Filter Personal todos",
-      silent = true,
-    })
-
-    -- OMS category filter
-    vim.keymap.set("n", "<leader>tvo", function()
-      todo_manager.filter_buffer_by_category("OMS")
-    end, {
-      buffer = true,
-      desc = "Filter OMS todos",
-      silent = true,
-    })
-
-    -- Show all todos (no filtering)
-    vim.keymap.set("n", "<leader>tva", function()
-      todo_manager.show_all_todos()
-    end, {
-      buffer = true,
-      desc = "Show all todos",
-      silent = true,
-    })
-
-    -- Filter by due dates
-    vim.keymap.set("n", "<leader>tvd", function()
-      todo_manager.filter_buffer_by_due_dates()
-    end, {
-      buffer = true,
-      desc = "Filter todos with due dates",
-      silent = true,
-    })
-
-    -- Filter by today's due date
-    vim.keymap.set("n", "<leader>tvt", function()
-      todo_manager.filter_buffer_by_today()
-    end, {
-      buffer = true,
-      desc = "Filter todos due today",
-      silent = true,
-    })
-
-    -- Filter by today and past due
-    vim.keymap.set("n", "<leader>tvx", function()
-      todo_manager.filter_buffer_by_today_and_past_due()
-    end, {
-      buffer = true,
-      desc = "Filter urgent todos (today + past due)",
-      silent = true,
-    })
-
-    -- Close filter window
-    vim.keymap.set("n", "<leader>tvq", function()
-      vim.cmd("close")
-      print("✓ Filter window closed")
-    end, {
-      buffer = true,
-      desc = "Close filter window",
-      silent = true,
-    })
-
     -- Todo Actions - consistent <leader>t* pattern
     -- Update due date on current line using calendar picker
     vim.keymap.set("n", "<leader>td", function()
@@ -915,8 +828,10 @@ vim.api.nvim_create_autocmd("InsertLeave", {
 -- Quick add todo with prompt
 vim.keymap.set("n", "<leader>ta", ":TodoAdd ", { desc = "Add new todo" })
 
--- List active todos
-vim.keymap.set("n", "<leader>tl", ":TodoList<CR>", { desc = "List active todos" })
+-- Clear category filter and show all todos
+vim.keymap.set("n", "<leader>tl", function()
+  require("vinod.todo_manager").clear_category_filter()
+end, { desc = "Clear category filter" })
 
 -- Open filtered view of active todos (main daily workflow)
 vim.keymap.set("n", "<leader>to", ":TodoOpen<CR>", { desc = "Open filtered active todos" })
