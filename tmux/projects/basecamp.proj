@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# tmux setup Neovim configurationa  
+
+
+if ! tmux has-session -t Basecamp
+then
+
+# Neovim 
+tmux new-session -s Basecamp -n Neovim -d 
+tmux send-keys -t Basecamp:1 'cd ~/Projects/basecamp-mcp/' C-m
+tmux send-keys -t Basecamp:1 'vim .' C-m
+
+# Create horizontal split and start codex code
+tmux split-window -h -t Basecamp:1
+tmux send-keys -t Basecamp:1.2 'cd ~/Projects/basecamp-mcp/' C-m
+tmux send-keys -t Basecamp:1.2 'codex' C-m
+
+
+# Console Window
+tmux new-window -n Console -t Basecamp
+tmux send-keys -t Basecamp:2  'cd ~/Projects/basecamp-mcp/' C-m
+# tmux send-keys -t Basecamp:2  'nv' C-m
+tmux send-keys -t Basecamp:2  'clear' C-m
+
+
+# Lazygit
+tmux new-window -n Lazygit -t Basecamp
+tmux send-keys -t Basecamp:3  'cd ~/Projects/basecamp-mcp/' C-m
+tmux send-keys -t Basecamp:3  'lg' C-m
+# tmux send-keys -t Basecamp:2  'clear' C-m
+
+# Select the Neovim window
+tmux select-window -t Basecamp:1
+tmux select-pane -t Basecamp:1.1    
+fi
+
+# Attach or switch to session
+if [ -n "" ]; then
+    tmux switch-client -t Basecamp
+else
+    tmux attach -t Basecamp
+fi
+
+
+

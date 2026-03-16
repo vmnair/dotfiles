@@ -13,11 +13,9 @@ fi
 cpu_usage=$(timeout 2 sh -c "top -l 1 | grep 'CPU usage' | awk '{print \$3}' | sed 's/,//' | sed 's/%//'" 2>/dev/null)
 
 if [ -n "$cpu_usage" ] && [ "$cpu_usage" != "" ]; then
-    # Format with single decimal precision
-    formatted_cpu=$(printf "%.1f%%" "$cpu_usage")
-    
-    # Apply color coding based on thresholds
     cpu_int=$(printf "%.0f" "$cpu_usage")
+    formatted_cpu=$(printf "%-4s" "${cpu_int}%")
+
     if [ "$cpu_int" -ge 80 ]; then
         echo "#[fg=red]${formatted_cpu}#[fg=white]"
     elif [ "$cpu_int" -ge 30 ]; then

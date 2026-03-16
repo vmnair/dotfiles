@@ -21,8 +21,9 @@ This is a personal dotfiles repository containing configuration files for variou
 
 ## Git Commit Style
 
+- **CRITICAL**: NEVER run `git commit`. Only generate and display the commit message for the user. The user will commit manually.
+- NEVER include "Co-Authored-By", "Generated with Claude Code", or any AI attribution lines
 - Clean commit messages without AI-generated footers
-- No "Generated with Claude Code" or "Co-Authored-By" lines
 
 ## Project-Specific Development Documentation
 

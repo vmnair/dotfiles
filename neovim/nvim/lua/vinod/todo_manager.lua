@@ -337,7 +337,7 @@ function M.open_filtered_active_view()
 	local active_todos = M.get_active_todos()
 
 	-- Check if filtered view buffer already exists
-	local buf_name = "Active Todos (Filtered View)"
+	local buf_name = "Active Todos"
 	local existing_buf = vim.fn.bufnr(buf_name)
 
 	local buf
@@ -361,9 +361,9 @@ function M.open_filtered_active_view()
 
 	-- Create content lines
 	local lines = {}
-	table.insert(lines, "# Active Todos (Filtered View)")
+	table.insert(lines, "# Active Todos")
 	table.insert(lines, "")
-	table.insert(lines, "Showing only todos whose show date has arrived")
+	table.insert(lines, "Showing " .. #active_todos .. " active todos")
 	table.insert(lines, "")
 
 	-- Add filtered todos with active context (hides show dates)
@@ -1180,7 +1180,7 @@ function M.refresh_filtered_view_with_state()
 			buffer_name = "Active Todos - " .. current_filter .. " Filter"
 		end
 	else
-		buffer_name = "Active Todos (Filtered View)"
+		buffer_name = "Active Todos"
 	end
 
 	-- Create or update buffer content
@@ -2600,7 +2600,7 @@ local function get_notebook_folders()
 	local folders = {}
 
 	-- Use find command to get all directories
-	local cmd = string.format('find "%s" -type d 2>/dev/null | sort', notebook_dir)
+	local cmd = string.format('find "%s" -maxdepth 1 -type d 2>/dev/null | sort', notebook_dir)
 	local handle = io.popen(cmd)
 	if not handle then
 		return { "todo" }
@@ -2682,7 +2682,7 @@ function M.create_or_open_note_from_todo()
 
 	-- Safe search for existing notes using grep (zk --match doesn't search frontmatter)
 	local search_command = string.format(
-		'cd ~/notebook && timeout 5s grep -r "todo_id: %s" . --include="*.md" 2>/dev/null | head -1',
+		'cd ~/notebook && grep -r "todo_id: %s" . --include="*.md" 2>/dev/null | head -1',
 		todo_id
 	)
 	local search_handle = io.popen(search_command)
@@ -2764,13 +2764,13 @@ function M.create_or_open_note_from_todo()
 
 				-- Add new date if different from today (or no date exists)
 				if last_date_found ~= today then
-					-- Add blank lines for separation, new date, blank line after date
-					vim.api.nvim_buf_set_lines(buf, insert_line, insert_line, false, { "", "", today, "" })
-					vim.fn.cursor(insert_line + 4, 1)
+					-- Add blank line for separation, new date, cursor line
+					vim.api.nvim_buf_set_lines(buf, insert_line, insert_line, false, { "", today, "" })
+					vim.fn.cursor(insert_line + 3, 1)
 				else
-					-- Same date, add blank lines for separation between entries
-					vim.api.nvim_buf_set_lines(buf, insert_line, insert_line, false, { "", "" })
-					vim.fn.cursor(insert_line + 2, 1)
+					-- Same date, add blank line for next entry
+					vim.api.nvim_buf_set_lines(buf, insert_line, insert_line, false, { "" })
+					vim.fn.cursor(insert_line + 1, 1)
 				end
 				vim.cmd("startinsert")
 
@@ -2801,6 +2801,11 @@ function M.create_or_open_note_from_todo()
 			end)
 			return
 		end
+	end
+
+	-- Note indicator exists but note file not found - warn user
+	if current_todo.has_note then
+		vim.notify("⚠ Note indicator (󰈙) found but no linked note exists. Creating new note.", vim.log.levels.WARN)
 	end
 
 	-- Show folder picker for note placement
@@ -2895,7 +2900,6 @@ function M.create_or_open_note_from_todo()
 		table.insert(note_content, "")
 		table.insert(note_content, os.date("%m/%d/%Y"))
 		table.insert(note_content, "")
-		table.insert(note_content, "")
 
 		local file = io.open(note_path, "w")
 		if not file then
@@ -2922,8 +2926,8 @@ function M.create_or_open_note_from_todo()
 			end
 
 			if notes_line then
-				-- Position cursor below date line (## Notes -> blank -> date -> blank -> blank -> cursor)
-				vim.fn.cursor(notes_line + 4, 1)
+				-- Position cursor immediately below date line (## Notes -> blank -> date -> cursor)
+				vim.fn.cursor(notes_line + 3, 1)
 				vim.cmd("startinsert")
 			else
 				vim.fn.cursor(total_lines, 1)
