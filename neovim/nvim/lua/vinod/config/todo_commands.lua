@@ -973,7 +973,7 @@ function todo_manager.show_category_filter_menu()
   
   -- Use vim.ui.select for consistent interface
   vim.ui.select(options, {
-    prompt = "Todo Category Filter:",
+    prompt = "Select Category to Filter:",
     format_item = function(item)
       -- Find the index of this item to get the display version
       for i, option in ipairs(options) do

@@ -405,7 +405,11 @@ function M.open_filtered_active_view()
 	-- Set up keybindings for filtered view
 	M.setup_todo_buffer_keybindings(buf)
 
-	print("✓ Opened filtered active todos view")
+	if M.current_filter then
+		print("✓ Opened filtered active todos view (" .. M.current_filter .. ")")
+	else
+		print("✓ Opened active todos view")
+	end
 end
 
 -- ========================================
@@ -2540,19 +2544,31 @@ function M.create_or_open_note_from_todo()
 
 	-- Show folder picker for note placement
 	local folders = get_notebook_folders()
-	vim.ui.select(folders, {
-		prompt = "Select folder for note:",
-		format_item = function(item)
-			if item == "todo" then
-				return item .. " (default)"
-			end
-			return item
-		end,
-	}, function(selected_folder)
-		if not selected_folder then
-			print("Note creation cancelled")
-			return
+	local display_items = {}
+	for _, folder in ipairs(folders) do
+		if folder == "todo" then
+			table.insert(display_items, folder .. " (default)")
+		else
+			table.insert(display_items, folder)
 		end
+	end
+	require("fzf-lua").fzf_exec(display_items, {
+		prompt = "",
+		winopts = {
+			title = " Select folder ",
+			title_pos = "center",
+			height = 0.35,
+			width = 0.3,
+			preview = { hidden = "hidden" },
+		},
+		fzf_opts = { ["--no-info"] = "", ["--layout"] = "reverse", ["--border"] = "none" },
+		actions = {
+			["default"] = function(selected)
+				if not selected or #selected == 0 then
+					print("Note creation cancelled")
+					return
+				end
+				local selected_folder = selected[1]:gsub(" %(default%)$", "")
 
 		print("📝 Creating note in '" .. selected_folder .. "': " .. note_title)
 
@@ -2716,7 +2732,9 @@ function M.create_or_open_note_from_todo()
 				end
 			end
 		end)
-	end)
+			end,
+		},
+	})
 end
 
 M._test = {

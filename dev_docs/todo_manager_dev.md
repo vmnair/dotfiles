@@ -68,9 +68,9 @@ Neovim task management system with category-based todos, future scheduling, inte
 - **Cursor positioning**: Always immediately below the date line; same day revisits add one blank line
 - **Orphan detection**: Warns user if 󰈙 indicator exists but no linked note file is found
 - **Auto-save**: On InsertLeave or BufLeave
-- **Return navigation**: Returns to original todo line after saving/exiting note
+- **Return navigation**: `:w` from note saves and returns to todo list at original cursor position
 - **Note indicator**: 󰈙 (nf-md-file_document) with yellow highlight (#ffd700)
-- **Folder picker**: `vim.ui.select` over `~/notebook` subdirs, `todo` as default
+- **Folder picker**: `fzf-lua.fzf_exec` with clean single-frame UI, `todo` as default folder
 - **Requires**: `zk` CLI (`brew install zk` on macOS)
 
 ## Testing
