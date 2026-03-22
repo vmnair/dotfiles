@@ -164,7 +164,7 @@ launch_proj_file() {
         return 1
     fi
 
-    if [[ -n "$TMUX" ]]; then
+    if [[ -n "${TMUX:-}" ]]; then
         if ! tmux has-session -t "$target_session" 2>/dev/null; then
             bash "$project_file" >/dev/null 2>&1 &
             sleep 0.5
@@ -559,7 +559,7 @@ if [[ "$key" == "ctrl-d" ]]; then
 
                 # Switch to next session first (if we're in tmux and deleting current)
                 current_session=$(tmux display-message -p '#S' 2>/dev/null)
-                if [[ -n "$TMUX" && "$current_session" == "$session_name" && -n "$next_session" ]]; then
+                if [[ -n "${TMUX:-}" && "$current_session" == "$session_name" && -n "$next_session" ]]; then
                     tmux switch-client -t "$next_session"
                 fi
 
@@ -596,7 +596,7 @@ elif [[ "$selected" == *"● "* ]] || [[ "$selected" == *"${PIN_ICON}"* ]]; then
     session_name=$(extract_session_name "$selected")
     validate_session_name "$session_name" || exit 1
 
-    if [[ -n "$TMUX" ]]; then
+    if [[ -n "${TMUX:-}" ]]; then
         current_session=$(tmux display-message -p '#S')
         if [[ "$current_session" == "$session_name" ]]; then
             exit 0
@@ -620,7 +620,7 @@ elif [[ "$selected" == *"◆ "* ]]; then
     else
         # Create bare session
         log_session_access "$session_name"
-        if [[ -n "$TMUX" ]]; then
+        if [[ -n "${TMUX:-}" ]]; then
             tmux new-session -d -s "$session_name"
             tmux switch-client -t "$session_name"
         else
@@ -656,7 +656,7 @@ else
 
         # Create new session
         log_session_access "$session_name"
-        if [[ -n "$TMUX" ]]; then
+        if [[ -n "${TMUX:-}" ]]; then
             tmux new-session -d -s "$session_name" -c "$project_path"
             tmux switch-client -t "$session_name"
         else

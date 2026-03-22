@@ -115,6 +115,7 @@ This is necessary because 12 of 13 `.proj` files have different filenames than t
 
 ### Running outside tmux
 - The script works both inside and outside tmux
+- All `$TMUX` references use `${TMUX:-}` default syntax to prevent `set -u` unbound variable errors when running outside tmux
 - When tmux isn't running, `tmux list-sessions` and the subsequent `grep` for active names use `|| true` to prevent `set -euo pipefail` from exiting the script silently
 - Outside tmux with no server: shows only "Create New Session", "Tools", and "Kill tmux server" sections
 
