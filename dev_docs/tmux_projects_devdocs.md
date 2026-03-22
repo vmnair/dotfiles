@@ -110,6 +110,7 @@ This is necessary because 12 of 13 `.proj` files have different filenames than t
 | `format_epoch_date()` | Cross-platform epoch → MM/DD/YYYY formatting |
 | `reverse_lines()` | Cross-platform line reversal (`tac` on Linux, `tail -r` on macOS) |
 | `is_pinned()` / `toggle_pin()` | Check/toggle pin status in the pin file |
+| `validate_session_name()` | Validates name matches `^[a-zA-Z0-9._-]+$`, returns 1 on failure |
 
 ### Running outside tmux
 - The script works both inside and outside tmux
@@ -117,10 +118,11 @@ This is necessary because 12 of 13 `.proj` files have different filenames than t
 - Outside tmux with no server: shows only "Create New Session", "Tools", and "Kill tmux server" sections
 
 ### Input sanitization
+- `validate_session_name()` — shared function that checks names match `^[a-zA-Z0-9._-]+$`; used in all action handlers (pin, kill, switch, create) and inline in all three `preview_cmd` branches
 - `log_session_access()` strips `|` from session names to prevent corruption of the pipe-delimited history file
 - `get_last_access()` uses `grep -F` + `awk` exact match to prevent `.` in names matching any character via regex
-- `find_proj_file()` uses `grep -Fl --` with `--` terminator to prevent flag injection; reverse lookup anchors to `-t.*name` pattern to reduce false positives on short names
-- `preview_cmd` validates session names against `^[a-zA-Z0-9._-]+$` in all three branches (`●`/pinned, `◆` recent, `○` project) before executing commands or constructing file paths
+- `find_proj_file()` uses `grep -Fl --` with `--` terminator to prevent flag injection; reverse lookup uses two-step verification (fixed-string match then `-t` argument check) to reduce false positives
+- Ctrl-d next-session finder uses `awk` exact field match instead of `grep -v` regex to prevent `.` metacharacter issues
 
 ### Cross-platform notes
 - `reverse_lines()` wrapper: uses `tac` on Linux, `tail -r` on macOS

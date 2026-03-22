@@ -129,6 +129,14 @@ extract_session_name() {
     echo "$1" | sed 's/ ([^)]*) *$//' | sed 's/^[^a-zA-Z0-9]*//'
 }
 
+validate_session_name() {
+    local name="$1"
+    if ! echo "$name" | grep -qE '^[a-zA-Z0-9._-]+$'; then
+        echo "Error: Invalid session name '$name'"
+        return 1
+    fi
+}
+
 # =============================================================================
 # Launch .proj file (reusable for both ○ and ◆ handlers)
 # =============================================================================
@@ -188,7 +196,13 @@ find_proj_file() {
     # Pattern is flexible: matches -t Name, -t 'Name', -t='Name', extra spaces, trailing ;
     for dir in "${POSSIBLE_PROJECT_DIRS[@]}"; do
         local found
-        found=$(find "$dir" -maxdepth 3 -name "*.proj" -print0 2>/dev/null | xargs -0 grep -l -- "-t.*${name}" 2>/dev/null | head -1)
+        found=$(find "$dir" -maxdepth 3 -name "*.proj" -print0 2>/dev/null | xargs -0 grep -l "has-session" 2>/dev/null | xargs grep -Fl -- "$name" 2>/dev/null | while IFS= read -r f; do
+            # Verify name appears as a -t argument, not just anywhere in the file
+            if grep -qE -- "-t[= ]*['\"]?${name}['\"]?" "$f" 2>/dev/null; then
+                echo "$f"
+                break
+            fi
+        done)
         if [[ -n "$found" ]]; then
             echo "$found"
             return 0
@@ -479,6 +493,7 @@ if [[ "$key" == "ctrl-x" ]]; then
     # Only allow pinning active sessions (● or 📌)
     if [[ "$selected" == *"● "* ]] || [[ "$selected" == *"${PIN_ICON}"* ]]; then
         pin_target=$(extract_session_name "$selected")
+        validate_session_name "$pin_target" || exec bash "$SCRIPT_PATH"
         toggle_pin "$pin_target"
     fi
     # Re-run the script to refresh the menu
@@ -497,6 +512,7 @@ if [[ "$key" == "ctrl-d" ]]; then
 
     # Extract session name (strip icon and uptime)
     session_name=$(extract_session_name "$selected")
+    validate_session_name "$session_name" || exec bash "$SCRIPT_PATH"
 
     # Count sessions
     session_count=$(tmux list-sessions 2>/dev/null | wc -l | tr -d ' ')
@@ -514,7 +530,7 @@ if [[ "$key" == "ctrl-d" ]]; then
         if [[ "$confirm" == "Yes" ]]; then
             # Find next session (most recent, excluding the one being deleted)
             next_session=$(tmux list-sessions -F "#{session_last_attached}:#{session_name}" 2>/dev/null \
-                | grep -v ":${session_name}$" \
+                | awk -F: -v n="$session_name" '$2 != n' \
                 | sort -rn \
                 | head -1 \
                 | cut -d: -f2)
@@ -555,6 +571,7 @@ elif [[ "$selected" == *"+ "* ]]; then
 elif [[ "$selected" == *"● "* ]] || [[ "$selected" == *"${PIN_ICON}"* ]]; then
     # Switching to existing active session (regular or pinned)
     session_name=$(extract_session_name "$selected")
+    validate_session_name "$session_name" || exit 1
 
     if [[ -n "$TMUX" ]]; then
         current_session=$(tmux display-message -p '#S')
@@ -571,6 +588,7 @@ elif [[ "$selected" == *"● "* ]] || [[ "$selected" == *"${PIN_ICON}"* ]]; then
 elif [[ "$selected" == *"◆ "* ]]; then
     # Recent inactive session — recreate from .proj or create bare
     session_name=$(extract_session_name "$selected")
+    validate_session_name "$session_name" || exit 1
 
     project_file=$(find_proj_file "$session_name")
 
@@ -590,6 +608,7 @@ elif [[ "$selected" == *"◆ "* ]]; then
 else
     # Creating new session from project file (○ section)
     session_name=$(echo "$selected" | sed 's/.*○ //')
+    validate_session_name "$session_name" || exit 1
 
     project_file=$(find_proj_file "$session_name")
 

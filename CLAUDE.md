@@ -28,10 +28,11 @@ This is a personal dotfiles repository containing configuration files for variou
 ## Cleanup Command
 
 When the user says **"cleanup"**, perform these steps in order:
-1. Update the relevant `dev_docs/` file(s) to reflect all changes made in the session
-2. Generate a git commit message summarizing the work done
-3. Display the commit message and copy it to the clipboard (using `pbcopy` on macOS, `xclip` on Linux)
-4. The user will handle `git add` and `git commit` manually
+1. Run the **security-reviewer agent** in the **foreground** (not background) to review all code changes made in the session. Fix any issues found before proceeding.
+2. Update the relevant `dev_docs/` file(s) to reflect all changes made in the session (including any security fixes)
+3. Generate a git commit message summarizing the work done
+4. Display the commit message and copy it to the clipboard (using `pbcopy` on macOS, `xclip` on Linux)
+5. The user will handle `git add` and `git commit` manually
 
 ## Project-Specific Development Documentation
 
