@@ -14,6 +14,8 @@ Tmux session management system with project-based workflows, an interactive proj
 dotfiles/tmux/
 ├── .tmux.conf                  # Main tmux config
 ├── .tmux.mac.conf              # macOS-specific config (clipboard)
+├── data/                       # Persistent data files
+│   └── pinned_sessions         # Pinned/favorite session names (syncs via git)
 ├── projects/                   # Project session files
 │   ├── nvconf.proj
 │   ├── cqm.proj
@@ -59,22 +61,63 @@ Interactive fzf-based session picker. Accessible via:
 ### Menu sections
 | Section | Icon | Description |
 |---------|------|-------------|
-| Active Sessions | `●` | Running tmux sessions (switch to them) |
+| Active Sessions | `📌` / `●` | Running tmux sessions — pinned first, then MRU sorted, with uptime |
+| Recent (Inactive) | `◆` | Last 3 used sessions no longer active, with date (MM/DD/YYYY) |
 | Create New Session | `○` | Available .proj files (creates and switches) |
 | Tools | `+` | Create New Project (launches generator) |
 | Kill tmux server | `⚠` | Terminates all sessions (with confirmation) |
 
 ### Controls
-- **Enter**: Select/launch
-- **Ctrl-d**: Kill selected active session (with confirmation)
+| Key | Action | Behavior after action |
+|-----|--------|----------------------|
+| **Enter** | Select/launch session | Switches to session, closes picker |
+| **Ctrl-d** | Kill selected active session (with confirmation) | Stays in picker (refreshed list) |
+| **Ctrl-x** | Toggle pin on selected active session | Stays in picker (refreshed list) |
+| **Esc** | Cancel | Closes picker |
+| **Ctrl-p/n** | Navigate up/down | fzf default |
+
+Both Ctrl-d and Ctrl-x use `exec bash "$SCRIPT_PATH"` to re-launch the picker after the action, so the user stays in the session management flow without the popup closing.
+
+### Data files
+| File | Location | Purpose |
+|------|----------|---------|
+| Session history | `${XDG_DATA_HOME:-~/.local/share}/tmux/session_history` | Tracks session access timestamps (machine-local, not in git) |
+| Pinned sessions | `~/dotfiles/tmux/data/pinned_sessions` | One session name per line (in repo, syncs across machines) |
 
 ### How it finds .proj files
-Searches directories listed in `POSSIBLE_PROJECT_DIRS` array (default: `$HOME/dotfiles/tmux/projects`). Uses `find -maxdepth 3 -name "*.proj"`.
+
+The `find_proj_file()` function uses a two-step lookup:
+1. **Direct filename match** (case-insensitive): `find -iname "${name}.proj"` — handles cases like `aerc` → `aerc.proj`
+2. **Reverse lookup by session name**: Searches all `.proj` file contents for `has-session.*-t.*${name}` — handles cases where filename differs from session name (e.g., `dsa.proj` creates session `LearnDSA`)
+
+This is necessary because 12 of 13 `.proj` files have different filenames than the session names they create (e.g., `nvconf.proj` → `NeovimConf`, `cqm.proj` → `CQM`).
 
 ### How it launches .proj files
 1. Parses target session name from `tmux attach -t <name>` line in the .proj file
-2. Runs .proj in background, waits 0.5s for session creation
-3. Switches to the new session
+2. If session doesn't exist: runs .proj in background, waits 0.5s for creation
+3. Switches to the session
+
+### Helper functions
+
+| Function | Purpose |
+|----------|---------|
+| `extract_session_name()` | Strips icons, uptime/date suffix, and whitespace from a menu line to get the session name |
+| `find_proj_file()` | Finds a .proj file by name (direct match) or by session name (reverse lookup) |
+| `launch_proj_file()` | Runs a .proj file and switches to the created session |
+| `log_session_access()` | Appends `timestamp\|name` to session history |
+| `get_recent_sessions()` | Returns N most recently used unique session names from history |
+| `format_uptime()` | Converts session_created timestamp to human-readable uptime (e.g., `2h 15m`) |
+| `format_epoch_date()` | Cross-platform epoch → MM/DD/YYYY formatting |
+| `reverse_lines()` | Cross-platform line reversal (`tac` on Linux, `tail -r` on macOS) |
+| `is_pinned()` / `toggle_pin()` | Check/toggle pin status in the pin file |
+
+### Cross-platform notes
+- `reverse_lines()` wrapper: uses `tac` on Linux, `tail -r` on macOS
+- `format_epoch_date()` wrapper: tries `date -r` (macOS) then `date -d @` (Linux)
+- Pin emoji via `printf '\xf0\x9f\x93\x8c'` for bash 3.2 compatibility
+- Pin file removal uses `grep -vx` + `|| true` + temp file (avoids `sed -i` portability issue; `|| true` handles `grep` exit code 1 when file becomes empty)
+- `extract_session_name()` avoids emoji in sed patterns — strips trailing `(...)` then leading non-alphanumeric chars
+- `find_proj_file()` reverse lookup uses `grep -l` with a flexible pattern to handle `.proj` format variations (`-t Name`, `-t 'Name'`, `-t='Name'`, extra spaces)
 
 ## Project Generator (`create-project.sh`)
 

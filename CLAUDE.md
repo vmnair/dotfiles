@@ -25,6 +25,14 @@ This is a personal dotfiles repository containing configuration files for variou
 - NEVER include "Co-Authored-By", "Generated with Claude Code", or any AI attribution lines
 - Clean commit messages without AI-generated footers
 
+## Cleanup Command
+
+When the user says **"cleanup"**, perform these steps in order:
+1. Update the relevant `dev_docs/` file(s) to reflect all changes made in the session
+2. Generate a git commit message summarizing the work done
+3. Display the commit message and copy it to the clipboard (using `pbcopy` on macOS, `xclip` on Linux)
+4. The user will handle `git add` and `git commit` manually
+
 ## Project-Specific Development Documentation
 
 For detailed project-specific information, refer to the development documentation in:
