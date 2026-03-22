@@ -10,7 +10,7 @@ if [ -z "$TMUX" ]; then
     exit 0
 fi
 
-OLLAMA_CONFIG_PATH="/Users/vinodnair/.config/nvim/ollama_config.lua"
+OLLAMA_CONFIG_PATH="$HOME/.config/nvim/ollama_config.lua"
 
 if [ -f "$OLLAMA_CONFIG_PATH" ] && [ -r "$OLLAMA_CONFIG_PATH" ]; then
     # Extract the default_model value from the config file

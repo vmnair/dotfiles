@@ -15,12 +15,13 @@ SHORT_BREAK=$((5 * 60))          # 5 minutes
 LONG_BREAK=$((15 * 60))          # 15 minutes
 CYCLES_BEFORE_LONG_BREAK=4
 
-# State files
+# State files (scoped to user ID for security on shared systems)
 STATE_DIR="/tmp"
-END_TIME_FILE="$STATE_DIR/pomodoro_end_time"
-MODE_FILE="$STATE_DIR/pomodoro_mode"
-PAUSED_REMAINING_FILE="$STATE_DIR/pomodoro_paused_remaining"
-COUNT_FILE="$STATE_DIR/pomodoro_count"
+_UID="$(id -u)"
+END_TIME_FILE="$STATE_DIR/pomodoro_end_time_${_UID}"
+MODE_FILE="$STATE_DIR/pomodoro_mode_${_UID}"
+PAUSED_REMAINING_FILE="$STATE_DIR/pomodoro_paused_remaining_${_UID}"
+COUNT_FILE="$STATE_DIR/pomodoro_count_${_UID}"
 
 # Icons
 ICON_WORK="🍅"

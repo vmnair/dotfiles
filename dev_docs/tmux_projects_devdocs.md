@@ -117,7 +117,7 @@ This is necessary because 12 of 13 `.proj` files have different filenames than t
 - Pin emoji via `printf '\xf0\x9f\x93\x8c'` for bash 3.2 compatibility
 - Pin file removal uses `grep -vx` + `|| true` + temp file (avoids `sed -i` portability issue; `|| true` handles `grep` exit code 1 when file becomes empty)
 - `extract_session_name()` avoids emoji in sed patterns — strips trailing `(...)` then leading non-alphanumeric chars
-- `find_proj_file()` reverse lookup uses `grep -l` with a flexible pattern to handle `.proj` format variations (`-t Name`, `-t 'Name'`, `-t='Name'`, extra spaces)
+- `find_proj_file()` reverse lookup uses `grep -Fl` (fixed string) to safely match session names without regex metacharacter issues
 
 ## Project Generator (`create-project.sh`)
 
@@ -141,7 +141,8 @@ Generated `.proj` files are placed in `~/dotfiles/tmux/projects/` and made execu
 
 ### Cross-platform notes
 - Uses `tr '[:upper:]' '[:lower:]'` for case conversion (macOS ships bash 3.2, lacks `${var,,}`)
-- Uses `eval echo` to expand `~` for directory validation
+- Uses `${work_dir/#\~/$HOME}` for safe tilde expansion (no `eval`)
+- All interpolated variables in generated `.proj` files are properly quoted
 - No GNU-specific flags
 
 ## .proj File Template

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Interactive tmux project (.proj) file generator
 # Creates .proj files in ~/dotfiles/tmux/projects/
@@ -29,7 +30,7 @@ while true; do
         continue
     fi
     # Expand ~ for validation
-    expanded_dir=$(eval echo "$work_dir")
+    expanded_dir="${work_dir/#\~/$HOME}"
     if [[ -d "$expanded_dir" ]]; then
         break
     else
@@ -116,23 +117,23 @@ win_idx=1
     echo "# tmux setup for ${session_name}"
     echo ''
     echo ''
-    echo "if ! tmux has-session -t ${session_name}"
+    echo "if ! tmux has-session -t \"${session_name}\""
     echo 'then'
     echo ''
 
     # Window 1: Main editor window
     echo "# ${win1_name}"
-    echo "tmux new-session -s ${session_name} -n ${win1_name} -d"
-    echo "tmux send-keys -t ${session_name}:${win_idx} 'cd ${work_dir}' C-m"
-    echo "tmux send-keys -t ${session_name}:${win_idx} 'vim ${vim_target}' C-m"
+    echo "tmux new-session -s \"${session_name}\" -n \"${win1_name}\" -d"
+    echo "tmux send-keys -t \"${session_name}\":${win_idx} 'cd \"${work_dir}\"' C-m"
+    echo "tmux send-keys -t \"${session_name}\":${win_idx} 'vim \"${vim_target}\"' C-m"
 
     # AI split pane
     if [[ -n "$ai_cmd" ]]; then
         echo ''
         echo "# Create horizontal split and start ${ai_cmd}"
-        echo "tmux split-window -h -t ${session_name}:${win_idx}"
-        echo "tmux send-keys -t ${session_name}:${win_idx}.2 'cd ${work_dir}' C-m"
-        echo "tmux send-keys -t ${session_name}:${win_idx}.2 '${ai_cmd}' C-m"
+        echo "tmux split-window -h -t \"${session_name}\":${win_idx}"
+        echo "tmux send-keys -t \"${session_name}\":${win_idx}.2 'cd \"${work_dir}\"' C-m"
+        echo "tmux send-keys -t \"${session_name}\":${win_idx}.2 '${ai_cmd}' C-m"
     fi
 
     # Console window
@@ -141,9 +142,9 @@ win_idx=1
         echo ''
         echo ''
         echo "# Console Window"
-        echo "tmux new-window -n Console -t ${session_name}"
-        echo "tmux send-keys -t ${session_name}:${win_idx}  'cd ${work_dir}' C-m"
-        echo "tmux send-keys -t ${session_name}:${win_idx}  'clear' C-m"
+        echo "tmux new-window -n Console -t \"${session_name}\""
+        echo "tmux send-keys -t \"${session_name}\":${win_idx} 'cd \"${work_dir}\"' C-m"
+        echo "tmux send-keys -t \"${session_name}\":${win_idx} 'clear' C-m"
     fi
 
     # Lazygit window
@@ -152,9 +153,9 @@ win_idx=1
         echo ''
         echo ''
         echo "# Lazygit"
-        echo "tmux new-window -n Lazygit -t ${session_name}"
-        echo "tmux send-keys -t ${session_name}:${win_idx}  'cd ${work_dir}' C-m"
-        echo "tmux send-keys -t ${session_name}:${win_idx}  'lg' C-m"
+        echo "tmux new-window -n Lazygit -t \"${session_name}\""
+        echo "tmux send-keys -t \"${session_name}\":${win_idx} 'cd \"${work_dir}\"' C-m"
+        echo "tmux send-keys -t \"${session_name}\":${win_idx} 'lg' C-m"
     fi
 
     # Custom windows
@@ -165,27 +166,27 @@ win_idx=1
         echo ''
         echo ''
         echo "# ${cw_name}"
-        echo "tmux new-window -n ${cw_name} -t ${session_name}"
-        echo "tmux send-keys -t ${session_name}:${win_idx}  'cd ${work_dir}' C-m"
+        echo "tmux new-window -n \"${cw_name}\" -t \"${session_name}\""
+        echo "tmux send-keys -t \"${session_name}\":${win_idx} 'cd \"${work_dir}\"' C-m"
         if [[ -n "$cw_cmd" ]]; then
-            echo "tmux send-keys -t ${session_name}:${win_idx}  '${cw_cmd}' C-m"
+            echo "tmux send-keys -t \"${session_name}\":${win_idx} '${cw_cmd}' C-m"
         fi
     done
 
     # Select first window and pane
     echo ''
     echo "# Select the ${win1_name} window"
-    echo "tmux select-window -t ${session_name}:1"
-    echo "tmux select-pane -t ${session_name}:1.1"
+    echo "tmux select-window -t \"${session_name}\":1"
+    echo "tmux select-pane -t \"${session_name}\":1.1"
     echo 'fi'
     echo ''
 
     # Attach/switch logic
     echo '# Attach or switch to session'
     echo 'if [ -n "$TMUX" ]; then'
-    echo "    tmux switch-client -t ${session_name}"
+    echo "    tmux switch-client -t \"${session_name}\""
     echo 'else'
-    echo "    tmux attach -t ${session_name}"
+    echo "    tmux attach -t \"${session_name}\""
     echo 'fi'
 
 } > "$output_path"

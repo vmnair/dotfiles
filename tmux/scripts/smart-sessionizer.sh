@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 # Smart tmux session picker that works in both terminal and tmux contexts
 # Usage:
@@ -183,7 +184,7 @@ find_proj_file() {
     # Pattern is flexible: matches -t Name, -t 'Name', -t='Name', extra spaces, trailing ;
     for dir in "${POSSIBLE_PROJECT_DIRS[@]}"; do
         local found
-        found=$(find "$dir" -maxdepth 3 -name "*.proj" -exec grep -l "has-session.*-t[= ]*'*${name}" {} \; 2>/dev/null | head -1)
+        found=$(find "$dir" -maxdepth 3 -name "*.proj" -print0 2>/dev/null | xargs -0 grep -l "has-session" 2>/dev/null | xargs grep -Fl "$name" 2>/dev/null | head -1)
         if [[ -n "$found" ]]; then
             echo "$found"
             return 0

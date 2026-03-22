@@ -11,8 +11,8 @@
 # Force refresh (also triggered by tmux <prefix> r):
 #   touch ~/dotfiles/tmux/.weather_refresh
 
-CACHE_FILE="/tmp/tmux_weather_cache"
-CACHE_FILE_VERBOSE="/tmp/tmux_weather_cache_verbose"
+CACHE_FILE="/tmp/tmux_weather_cache_$(id -u)"
+CACHE_FILE_VERBOSE="/tmp/tmux_weather_cache_verbose_$(id -u)"
 CACHE_MAX_AGE=600  # 10 minutes in seconds
 VERBOSE_FLAG="$HOME/dotfiles/tmux/.weather_verbose"
 REFRESH_FLAG="$HOME/dotfiles/tmux/.weather_refresh"
@@ -108,13 +108,13 @@ if [[ -f "$CACHE_FILE" ]]; then
 fi
 
 # Get city and state from IP geolocation (ip-api.com is more accurate than ipinfo.io)
-ip_api_response=$(curl -s --max-time 2 "http://ip-api.com/json" 2>/dev/null)
+ip_api_response=$(curl -s --max-time 2 "https://ip-api.com/json" 2>/dev/null)
 city=$(echo "$ip_api_response" | grep -o '"city":"[^"]*"' | cut -d'"' -f4)
 state=$(echo "$ip_api_response" | grep -o '"region":"[^"]*"' | cut -d'"' -f4)
 
 # Fallback to ipinfo.io if ip-api.com fails
 if [[ -z "$city" ]]; then
-    city=$(curl -s --max-time 2 "ipinfo.io/city" 2>/dev/null)
+    city=$(curl -s --max-time 2 "https://ipinfo.io/city" 2>/dev/null)
     state=""
 fi
 
@@ -124,9 +124,9 @@ if [[ -n "$city" ]]; then
     # URL encode city name (replace spaces with +)
     city_encoded=$(echo "$city" | sed 's/ /+/g')
     # %c = icon, %t = temperature, %C = condition text
-    weather_full=$(curl -s --max-time 3 "wttr.in/${city_encoded}?format=%c+%t+%C&u" 2>/dev/null | head -1)
+    weather_full=$(curl -s --max-time 3 "https://wttr.in/${city_encoded}?format=%c+%t+%C&u" 2>/dev/null | head -1)
 else
-    weather_full=$(curl -s --max-time 3 "wttr.in/?format=%c+%t+%C&u" 2>/dev/null | head -1)
+    weather_full=$(curl -s --max-time 3 "https://wttr.in/?format=%c+%t+%C&u" 2>/dev/null | head -1)
     city="Unknown"
 fi
 
