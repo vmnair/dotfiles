@@ -84,12 +84,16 @@ format_uptime() {
 
 log_session_access() {
     local name="$1"
+    # Strip pipe characters to prevent corruption of pipe-delimited history format
+    name="${name//|/}"
+    [ -z "$name" ] && return
     echo "$(date +%s)|${name}" >> "$HISTORY_FILE"
 }
 
 get_last_access() {
     local name="$1"
-    grep "|${name}$" "$HISTORY_FILE" | tail -1 | cut -d'|' -f1
+    # Use -F for fixed-string match, then filter for exact name (no partial matches)
+    grep -F "|${name}" "$HISTORY_FILE" | awk -F'|' -v n="$name" '$2 == n' | tail -1 | cut -d'|' -f1
 }
 
 get_recent_sessions() {
@@ -184,7 +188,7 @@ find_proj_file() {
     # Pattern is flexible: matches -t Name, -t 'Name', -t='Name', extra spaces, trailing ;
     for dir in "${POSSIBLE_PROJECT_DIRS[@]}"; do
         local found
-        found=$(find "$dir" -maxdepth 3 -name "*.proj" -print0 2>/dev/null | xargs -0 grep -l "has-session" 2>/dev/null | xargs grep -Fl "$name" 2>/dev/null | head -1)
+        found=$(find "$dir" -maxdepth 3 -name "*.proj" -print0 2>/dev/null | xargs -0 grep -l -- "-t.*${name}" 2>/dev/null | head -1)
         if [[ -n "$found" ]]; then
             echo "$found"
             return 0
@@ -208,8 +212,8 @@ POSSIBLE_PROJECT_DIRS=(
 )
 
 # Get session data with creation time and last attached time
-session_data=$(tmux list-sessions -F "#{session_name}|#{session_created}|#{session_last_attached}" 2>/dev/null)
-active_names=$(echo "$session_data" | cut -d'|' -f1 | grep -v '^$')
+session_data=$(tmux list-sessions -F "#{session_name}|#{session_created}|#{session_last_attached}" 2>/dev/null || true)
+active_names=$(echo "$session_data" | cut -d'|' -f1 | grep -v '^$' || true)
 
 # Find .proj files in existing directories
 project_files=""
@@ -335,6 +339,12 @@ preview_cmd='
     # Active session (regular or pinned) — strip trailing (uptime) then leading non-alnum
     session=$(echo "$line" | sed "s/ ([^)]*) *$//;s/^[^a-zA-Z0-9]*//")
 
+    # Validate session name contains only safe characters
+    if ! echo "$session" | grep -qE "^[a-zA-Z0-9._-]+$"; then
+        echo "Invalid session name"
+        exit 0
+    fi
+
     # Working directory from first window
     work_dir=$(tmux display-message -t "${session}:1" -p "#{pane_current_path}" 2>/dev/null)
     if [ -n "$work_dir" ]; then
@@ -378,6 +388,10 @@ preview_cmd='
   elif [[ "$line" == *"◆ "* ]]; then
     # Recent inactive session
     name=$(echo "$line" | sed "s/.*◆ //;s/ (.*//" | xargs)
+    if ! echo "$name" | grep -qE "^[a-zA-Z0-9._-]+$"; then
+        echo "Invalid session name"
+        exit 0
+    fi
     date_str=$(echo "$line" | grep -o "([^)]*)" | tr -d "()")
     echo "Last used: $date_str"
     echo ""
@@ -403,6 +417,10 @@ preview_cmd='
   elif [[ "$line" == *"○ "* ]]; then
     # .proj file
     name=$(echo "$line" | sed "s/.*○ //")
+    if ! echo "$name" | grep -qE "^[a-zA-Z0-9._-]+$"; then
+        echo "Invalid project name"
+        exit 0
+    fi
     proj_file="$HOME/dotfiles/tmux/projects/${name}.proj"
     if [ -f "$proj_file" ]; then
         work_dir=$(grep "cd " "$proj_file" | head -1 | sed "s/.*cd //;s/'"'"'.*//" | xargs)
