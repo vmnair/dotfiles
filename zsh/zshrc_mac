@@ -99,13 +99,6 @@ export FZF_CTRL_T_OPTS="
   --preview 'bat -n --color=always {}'
   --bind 'ctrl-/:change-preview-window(down|hidden|)'"
 
-# Zoxide configuration (cache the init script)
-if [[ ! -f "$HOME/.cache/zoxide-init.zsh" ]] || [[ "$HOME/.cache/zoxide-init.zsh" -ot "$(which zoxide 2>/dev/null)" ]]; then
-  mkdir -p "$HOME/.cache"
-  zoxide init zsh --cmd cd > "$HOME/.cache/zoxide-init.zsh" 2>/dev/null
-fi
-source "$HOME/.cache/zoxide-init.zsh" 2>/dev/null || eval "$(zoxide init zsh --cmd cd)"
-
 # Version managers - Phase 3: Lazy Loading Optimization
 
 # Python version manager (lazy load)
@@ -154,3 +147,10 @@ bindkey '^S' tmux_sessionizer  # bind the widget to Ctrl+S
 
 # Project-specific aliases
 alias cqm='cd ~/Projects/cqm && source venv/bin/activate && (kill -9 $(lsof -ti:7860) 2>/dev/null || true) && python cqm_app.py'
+
+# Zoxide configuration (must be at the end of .zshrc)
+if [[ ! -f "$HOME/.cache/zoxide-init.zsh" ]] || [[ "$HOME/.cache/zoxide-init.zsh" -ot "$(which zoxide 2>/dev/null)" ]]; then
+  mkdir -p "$HOME/.cache"
+  zoxide init zsh --cmd cd > "$HOME/.cache/zoxide-init.zsh" 2>/dev/null
+fi
+source "$HOME/.cache/zoxide-init.zsh" 2>/dev/null || eval "$(zoxide init zsh --cmd cd)"
