@@ -139,13 +139,13 @@ export OLLAMA_API_BASE=http://127.0.0.1:11434
 export OLLAMA_NUM_THREADS=12  # M3 has 12 cores
 
 # Tmux configuration
-alias ss='bash ~/dotfiles/tmux/smart-sessionizer.sh'  # Session selector
+alias ss='bash ~/dotfiles/tmux/scripts/smart-sessionizer.sh'  # Session selector
 # Toggle weather display: minimal (icon + temp) or verbose (city + icon + temp + condition)
 alias weather-toggle='f=~/dotfiles/tmux/.weather_verbose; if [ -f "$f" ]; then rm "$f" && echo "Weather: minimal"; else touch "$f" && echo "Weather: verbose"; fi'
 
 tmux_sessionizer() {
   zle push-input
-  BUFFER="$HOME/dotfiles/tmux/smart-sessionizer.sh"
+  BUFFER="$HOME/dotfiles/tmux/scripts/smart-sessionizer.sh"
   zle accept-line
 }
 

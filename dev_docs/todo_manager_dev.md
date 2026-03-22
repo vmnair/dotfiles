@@ -40,11 +40,11 @@ Neovim task management system with category-based todos, future scheduling, inte
 |-----|---------|-------------|
 | `<leader>ta` | `:TodoAdd` | Quick add todo |
 | `<leader>tl` | | Clear category filter (show all) |
-| `<leader>to` | `:TodoOpen` | Open active todos (show-date filtered) |
+| `<leader>to` | `:TodoOpen` | Open active todos (shows filter status in message) |
 | `<leader>tb` | | Interactive todo builder with calendar |
 | `<leader>tr` | | Open raw todos file (includes scheduled) |
 | `<leader>tc` | | Open completed todos file |
-| `<leader>tf` | `:TodoFilter` | Category filter menu |
+| `<leader>tf` | `:TodoFilter` | Category filter menu (centered, auto-sized dialog) |
 
 ### In todo files
 | Key | Description |

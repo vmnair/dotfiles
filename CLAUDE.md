@@ -36,6 +36,7 @@ For detailed project-specific information, refer to the development documentatio
 - **Plenary Job**: `dev_docs/plenary_job_explanation.md`
 - **Zk Integration**: `dev_docs/zk_dev.md`
 - **eCQM Project**: `dev_docs/cqm_devdocs.md`
+- **Tmux Projects**: `dev_docs/tmux_projects_devdocs.md`
 
 ## Development Commands
 

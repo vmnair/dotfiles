@@ -49,6 +49,13 @@ if [[ -n "$project_files" ]]; then
     fi
 fi
 
+# Tools section
+if [[ -n "$all_options" ]]; then
+    all_options+=$'\n'$'\n'"━━ Tools ━━"$'\n'"  + Create New Project"
+else
+    all_options="━━ Tools ━━"$'\n'"  + Create New Project"
+fi
+
 # Kill server option
 if [[ -n "$all_options" ]]; then
     all_options+=$'\n'$'\n'"━━━━━━━━━━━━━━━━━━━━━━"$'\n'"  ⚠ Kill tmux server"
@@ -70,6 +77,9 @@ preview_cmd='
   elif [[ "$line" == *"○ "* ]]; then
     name=$(echo "$line" | sed "s/.*○ //")
     echo "New session from: ${name}.proj"
+  elif [[ "$line" == *"+ "* ]]; then
+    echo "Launch interactive project generator"
+    echo "Creates a new .proj file in ~/dotfiles/tmux/projects/"
   elif [[ "$line" == *"⚠"* ]]; then
     echo "⚠ This will terminate all tmux sessions"
   else
@@ -101,7 +111,7 @@ if [[ "$selected" == "━━"* ]]; then
 fi
 
 # Extract the actual name (remove icon prefix)
-session_name=$(echo "$selected" | sed 's/.*[●○⚠] //')
+session_name=$(echo "$selected" | sed 's/.*[●○⚠+] //')
 
 # Handle ctrl-d (kill session)
 if [[ "$key" == "ctrl-d" ]]; then
@@ -152,6 +162,10 @@ if [[ "$selected" == *"⚠"* ]]; then
         tmux kill-server
         echo "Tmux server killed"
     fi
+    exit 0
+elif [[ "$selected" == *"+ "* ]]; then
+    # Launch project generator
+    bash "$HOME/dotfiles/tmux/scripts/create-project.sh"
     exit 0
 elif [[ "$selected" == *"● "* ]]; then
     # Switching to existing session

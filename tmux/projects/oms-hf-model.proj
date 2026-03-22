@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# tmux setup for OMS-HF-Model
+
+
+if ! tmux has-session -t OMS-HF-Model
+then
+
+# Neovim
+tmux new-session -s OMS-HF-Model -n Neovim -d
+tmux send-keys -t OMS-HF-Model:1 'cd ~/Projects/OMS_HF_Model' C-m
+tmux send-keys -t OMS-HF-Model:1 'vim .' C-m
+
+# Create horizontal split and start codex
+tmux split-window -h -t OMS-HF-Model:1
+tmux send-keys -t OMS-HF-Model:1.2 'cd ~/Projects/OMS_HF_Model' C-m
+# tmux send-keys -t OMS-HF-Model:1.2 'codex' C-m
+tmux send-keys -t OMS-HF-Model:1.2 'claude' C-m
+
+
+# Console Window
+tmux new-window -n Console -t OMS-HF-Model
+tmux send-keys -t OMS-HF-Model:2  'cd ~/Projects/OMS_HF_Model' C-m
+tmux send-keys -t OMS-HF-Model:2  'clear' C-m
+
+
+# Lazygit
+tmux new-window -n Lazygit -t OMS-HF-Model
+tmux send-keys -t OMS-HF-Model:3  'cd ~/Projects/OMS_HF_Model' C-m
+tmux send-keys -t OMS-HF-Model:3  'lg' C-m
+
+# Select the Neovim window
+tmux select-window -t OMS-HF-Model:1
+tmux select-pane -t OMS-HF-Model:1.1
+fi
+
+# Attach or switch to session
+if [ -n "$TMUX" ]; then
+    tmux switch-client -t OMS-HF-Model
+else
+    tmux attach -t OMS-HF-Model
+fi
