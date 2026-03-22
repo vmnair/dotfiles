@@ -71,7 +71,7 @@ Interactive fzf-based session picker. Accessible via:
 | Key | Action | Behavior after action |
 |-----|--------|----------------------|
 | **Enter** | Select/launch session | Switches to session, closes picker |
-| **Ctrl-d** | Kill selected active session (with confirmation) | Stays in picker (refreshed list) |
+| **Ctrl-d** | Kill active session / Remove recent from history (with confirmation) | Stays in picker (refreshed list) |
 | **Ctrl-x** | Toggle pin on selected active session | Stays in picker (refreshed list) |
 | **Esc** | Cancel | Closes picker |
 | **Ctrl-p/n** | Navigate up/down | fzf default |
@@ -82,6 +82,7 @@ Both Ctrl-d and Ctrl-x use `exec bash "$SCRIPT_PATH"` to re-launch the picker af
 | File | Location | Purpose |
 |------|----------|---------|
 | Session history | `${XDG_DATA_HOME:-~/.local/share}/tmux/session_history` | Tracks session access timestamps (machine-local, not in git) |
+| Removed sessions | `${XDG_DATA_HOME:-~/.local/share}/tmux/removed_sessions` | Sessions hidden from recent list (machine-local); cleared when session is accessed again |
 | Pinned sessions | `~/dotfiles/tmux/data/pinned_sessions` | One session name per line (in repo, syncs across machines) |
 
 ### How it finds .proj files

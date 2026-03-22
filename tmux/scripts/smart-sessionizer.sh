@@ -32,6 +32,9 @@ fi
 # =============================================================================
 # Pin file (in dotfiles repo, syncs across machines)
 # =============================================================================
+REMOVED_FILE="${HISTORY_DIR}/removed_sessions"
+touch "$REMOVED_FILE"
+
 PIN_FILE="$HOME/dotfiles/tmux/data/pinned_sessions"
 mkdir -p "$(dirname "$PIN_FILE")"
 touch "$PIN_FILE"
@@ -88,6 +91,11 @@ log_session_access() {
     name="${name//|/}"
     [ -z "$name" ] && return
     echo "$(date +%s)|${name}" >> "$HISTORY_FILE"
+    # Clear from removed list so it can reappear in recent naturally
+    if grep -qFx "$name" "$REMOVED_FILE" 2>/dev/null; then
+        grep -vFx "$name" "$REMOVED_FILE" > "${REMOVED_FILE}.tmp" || true
+        mv "${REMOVED_FILE}.tmp" "$REMOVED_FILE"
+    fi
 }
 
 get_last_access() {
@@ -106,14 +114,14 @@ get_recent_sessions() {
 # =============================================================================
 
 is_pinned() {
-    grep -qx "$1" "$PIN_FILE" 2>/dev/null
+    grep -qFx "$1" "$PIN_FILE" 2>/dev/null
 }
 
 toggle_pin() {
     local name="$1"
     if is_pinned "$name"; then
         # grep -vx exits 1 when no lines remain, so avoid && to ensure mv always runs
-        grep -vx "$name" "$PIN_FILE" > "${PIN_FILE}.tmp" || true
+        grep -vFx "$name" "$PIN_FILE" > "${PIN_FILE}.tmp" || true
         mv "${PIN_FILE}.tmp" "$PIN_FILE"
     else
         echo "$name" >> "$PIN_FILE"
@@ -132,7 +140,7 @@ extract_session_name() {
 validate_session_name() {
     local name="$1"
     if ! echo "$name" | grep -qE '^[a-zA-Z0-9._-]+$'; then
-        echo "Error: Invalid session name '$name'"
+        echo "Error: Invalid session name '$name'" >&2
         return 1
     fi
 }
@@ -198,7 +206,9 @@ find_proj_file() {
         local found
         found=$(find "$dir" -maxdepth 3 -name "*.proj" -print0 2>/dev/null | xargs -0 grep -l "has-session" 2>/dev/null | xargs grep -Fl -- "$name" 2>/dev/null | while IFS= read -r f; do
             # Verify name appears as a -t argument, not just anywhere in the file
-            if grep -qE -- "-t[= ]*['\"]?${name}['\"]?" "$f" 2>/dev/null; then
+            # Escape dots in name to prevent regex wildcard matching
+            local escaped_name="${name//./\\.}"
+            if grep -qE -- "-t[= ]*['\"]?${escaped_name}['\"]?" "$f" 2>/dev/null; then
                 echo "$f"
                 break
             fi
@@ -281,6 +291,10 @@ while IFS= read -r recent_name; do
     [ -z "$recent_name" ] && continue
     # Skip if currently active
     if echo "$active_names" | grep -qx "$recent_name"; then
+        continue
+    fi
+    # Skip if explicitly removed from recent
+    if grep -qFx "$recent_name" "$REMOVED_FILE" 2>/dev/null; then
         continue
     fi
     # Get timestamp and format as date
@@ -505,44 +519,53 @@ fi
 # =============================================================================
 
 if [[ "$key" == "ctrl-d" ]]; then
-    # Only allow killing active sessions (● or 📌)
-    if [[ "$selected" != *"● "* ]] && [[ "$selected" != *"${PIN_ICON}"* ]]; then
+    # Only allow on active sessions (● or 📌) or recent sessions (◆)
+    if [[ "$selected" != *"● "* ]] && [[ "$selected" != *"${PIN_ICON}"* ]] && [[ "$selected" != *"◆ "* ]]; then
         exec bash "$SCRIPT_PATH"
     fi
 
-    # Extract session name (strip icon and uptime)
+    # Extract session name (strip icon and uptime/date)
     session_name=$(extract_session_name "$selected")
     validate_session_name "$session_name" || exec bash "$SCRIPT_PATH"
 
-    # Count sessions
-    session_count=$(tmux list-sessions 2>/dev/null | wc -l | tr -d ' ')
-
-    if [[ "$session_count" -eq 1 ]]; then
-        # Last session - confirm kill server
-        confirm=$(printf "Yes\nNo" | fzf --prompt="Last session - kill server? " --height=20% --layout=reverse --border)
+    if [[ "$selected" == *"◆ "* ]]; then
+        # Recent inactive session — hide from recent list
+        confirm=$(printf "Yes\nNo" | fzf --prompt="Remove '$session_name' from recent? " --height=20% --layout=reverse --border)
         if [[ "$confirm" == "Yes" ]]; then
-            tmux kill-server
-            exit 0
+            echo "$session_name" >> "$REMOVED_FILE"
         fi
     else
-        # Multiple sessions - confirm kill and switch to another
-        confirm=$(printf "Yes\nNo" | fzf --prompt="Kill session '$session_name'? " --height=20% --layout=reverse --border)
-        if [[ "$confirm" == "Yes" ]]; then
-            # Find next session (most recent, excluding the one being deleted)
-            next_session=$(tmux list-sessions -F "#{session_last_attached}:#{session_name}" 2>/dev/null \
-                | awk -F: -v n="$session_name" '$2 != n' \
-                | sort -rn \
-                | head -1 \
-                | cut -d: -f2)
+        # Active session — kill it
+        # Count sessions
+        session_count=$(tmux list-sessions 2>/dev/null | wc -l | tr -d ' ')
 
-            # Switch to next session first (if we're in tmux and deleting current)
-            current_session=$(tmux display-message -p '#S' 2>/dev/null)
-            if [[ -n "$TMUX" && "$current_session" == "$session_name" && -n "$next_session" ]]; then
-                tmux switch-client -t "$next_session"
+        if [[ "$session_count" -eq 1 ]]; then
+            # Last session - confirm kill server
+            confirm=$(printf "Yes\nNo" | fzf --prompt="Last session - kill server? " --height=20% --layout=reverse --border)
+            if [[ "$confirm" == "Yes" ]]; then
+                tmux kill-server
+                exit 0
             fi
+        else
+            # Multiple sessions - confirm kill and switch to another
+            confirm=$(printf "Yes\nNo" | fzf --prompt="Kill session '$session_name'? " --height=20% --layout=reverse --border)
+            if [[ "$confirm" == "Yes" ]]; then
+                # Find next session (most recent, excluding the one being deleted)
+                next_session=$(tmux list-sessions -F "#{session_last_attached}:#{session_name}" 2>/dev/null \
+                    | awk -F: -v n="$session_name" '$2 != n' \
+                    | sort -rn \
+                    | head -1 \
+                    | cut -d: -f2)
 
-            # Kill the session
-            tmux kill-session -t "$session_name"
+                # Switch to next session first (if we're in tmux and deleting current)
+                current_session=$(tmux display-message -p '#S' 2>/dev/null)
+                if [[ -n "$TMUX" && "$current_session" == "$session_name" && -n "$next_session" ]]; then
+                    tmux switch-client -t "$next_session"
+                fi
+
+                # Kill the session
+                tmux kill-session -t "$session_name"
+            fi
         fi
     fi
     # Re-launch picker (session list is now updated)
