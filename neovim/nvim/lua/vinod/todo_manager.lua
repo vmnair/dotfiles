@@ -2333,15 +2333,11 @@ local function get_notebook_folders()
 	local notebook_dir = M.config.notebook_dir
 	local folders = {}
 
-	-- Use find command to get all directories
-	local cmd = string.format('find "%s" -maxdepth 1 -type d 2>/dev/null | sort', notebook_dir)
-	local handle = io.popen(cmd)
-	if not handle then
+	-- Use find command to get all directories (table args to avoid shell injection)
+	local result = vim.fn.system({ "find", notebook_dir, "-maxdepth", "1", "-type", "d" })
+	if vim.v.shell_error ~= 0 or not result or result == "" then
 		return { "todo" }
 	end
-
-	local result = handle:read("*a")
-	handle:close()
 
 	for line in result:gmatch("[^\n]+") do
 		-- Get relative path from notebook_dir
@@ -2402,11 +2398,7 @@ function M.create_or_open_note_from_todo()
 	local todo_cursor_col = vim.fn.col(".")
 
 	-- Check if zk command is available
-	local zk_check = io.popen("which zk 2>/dev/null")
-	local zk_path = zk_check:read("*a")
-	zk_check:close()
-
-	if not zk_path or zk_path == "" then
+	if vim.fn.executable("zk") ~= 1 then
 		print("✗ zk command not found. Please install zk: brew install zk")
 		return
 	end
@@ -2415,21 +2407,17 @@ function M.create_or_open_note_from_todo()
 	local todo_id = generate_todo_id(current_todo)
 
 	-- Safe search for existing notes using grep (zk --match doesn't search frontmatter)
-	local search_command = string.format(
-		'cd ~/notebook && grep -r "todo_id: %s" . --include="*.md" 2>/dev/null | head -1',
-		todo_id
-	)
-	local search_handle = io.popen(search_command)
-	local search_result = search_handle:read("*a")
-	search_handle:close()
+	-- Table args avoid shell injection; -F uses fixed string matching; -l returns file paths only
+	local search_result = vim.fn.system({
+		"grep", "-r", "-F", "-l", "todo_id: " .. todo_id,
+		"--include=*.md", M.config.notebook_dir,
+	})
 
 	-- If we found an existing note, extract path and open it
-	if search_result and search_result ~= "" then
-		local existing_path = search_result:match("^%.?/?([^:]+):")
-		if existing_path and existing_path ~= "" then
-			-- Convert to absolute path
-			local full_path = vim.fn.expand("~/notebook/" .. existing_path)
-			print("📖 Opening existing note: " .. vim.fn.fnamemodify(existing_path, ":t"))
+	if vim.v.shell_error == 0 and search_result and search_result ~= "" then
+		local full_path = vim.trim(search_result:match("([^\n]+)") or "")
+		if full_path ~= "" then
+			print("📖 Opening existing note: " .. vim.fn.fnamemodify(full_path, ":t"))
 			vim.cmd("edit " .. vim.fn.fnameescape(full_path))
 
 			-- Add note link indicator if not already present
@@ -2574,24 +2562,27 @@ function M.create_or_open_note_from_todo()
 
 		local current_date = os.date("%Y-%m-%d")
 
-		-- Create note using zk new command in selected folder
-		local create_command = string.format('zk new %s --title "%s" --print-path', selected_folder, note_title)
-		local create_handle = io.popen(create_command .. " 2>&1")
-		local create_result = create_handle:read("*a")
-		create_handle:close()
+		-- Create note using zk new command (table args to avoid shell injection)
+		local create_result = vim.fn.system({ "zk", "new", selected_folder, "--title", note_title, "--print-path" })
 
-		if not create_result or create_result == "" then
+		if vim.v.shell_error ~= 0 or not create_result or create_result == "" then
 			print("✗ Failed to create zk note - check if zk repo is initialized")
 			return
 		end
 
-		local note_path = create_result:match("([^\n\r]+)")
-		if not note_path then
+		local note_path = vim.trim(create_result:match("([^\n\r]+)") or "")
+		if note_path == "" then
 			print("✗ Could not determine created note path")
 			return
 		end
 
-		note_path = vim.trim(note_path)
+		-- Validate note path is within notebook directory (canonicalize to handle symlinks)
+		local canonical_path = vim.fn.fnamemodify(note_path, ":p")
+		local canonical_notebook = vim.fn.fnamemodify(M.config.notebook_dir, ":p")
+		if not vim.startswith(canonical_path, canonical_notebook) then
+			print("✗ Note path outside notebook directory: " .. note_path)
+			return
+		end
 
 		-- Build note content with frontmatter
 		local note_content = {

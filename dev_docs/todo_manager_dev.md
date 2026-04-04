@@ -60,8 +60,10 @@ Neovim task management system with category-based todos, future scheduling, inte
 ## ZK Integration Details
 
 - **Todo ID**: Hash of `description + category + added_date` → `todo_123456`
-- **Search**: `grep -r "todo_id: <id>" ~/notebook/` (no timeout — macOS lacks GNU `timeout`)
-- **Note creation**: `zk new <folder> --title "..." --print-path`
+- **Search**: `vim.fn.system` with table args: `grep -r -F -l "todo_id: <id>" <notebook_dir>` (no shell, fixed-string match)
+- **Note creation**: `vim.fn.system({ "zk", "new", folder, "--title", title, "--print-path" })` (table args, no shell)
+- **Path validation**: Note path validated against `M.config.notebook_dir` with canonicalization before writing
+- **zk availability**: Checked via `vim.fn.executable("zk")` (no shell)
 - **Frontmatter**: YAML with `todo_id`, category, tags, dates
 - **Template**: Frontmatter → Title → Metadata → `## Original Todo` → `## Notes`
 - **Existing notes**: Opens at end of Notes section, adds new date stamp if different day
