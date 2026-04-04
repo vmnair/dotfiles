@@ -15,7 +15,8 @@ require("vinod.config.lsp")
 vim.opt.rtp:prepend(vim.fn.stdpath("config") .. "/dev-plugins/todo-manager.nvim")
 vim.opt.rtp:prepend(vim.fn.stdpath("config") .. "/dev-plugins/readwise.nvim")
 
-require("vinod.config.todo_commands")
+-- Commands loaded from the todo-manager plugin (rtp must be set before this)
+require("todo-manager.commands")
 
 vim.defer_fn(function()
 	require("fzf-lua").register_ui_select(function(ui_opts, items)
