@@ -10,6 +10,11 @@ require("vinod.config.aliases")
 require("vinod.config.c_dev")
 require("vinod.config.lsp")
 -- require("vinod.config.mappings") Called from lazy.lua
+
+-- Dev plugins must be on rtp before any code that requires their modules
+vim.opt.rtp:prepend(vim.fn.stdpath("config") .. "/dev-plugins/todo-manager.nvim")
+vim.opt.rtp:prepend(vim.fn.stdpath("config") .. "/dev-plugins/readwise.nvim")
+
 require("vinod.config.todo_commands")
 
 vim.defer_fn(function()
@@ -44,6 +49,3 @@ vim.defer_fn(function()
 		}
 	end)
 end, 0)
-
-vim.opt.rtp:prepend(vim.fn.stdpath("config") .. "/dev-plugins/todo-manager.nvim")
-vim.opt.rtp:prepend(vim.fn.stdpath("config") .. "/dev-plugins/readwise.nvim")

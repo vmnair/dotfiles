@@ -29,37 +29,17 @@ local function is_show_date_reached(date_str)
 	return require("todo-manager.dates").is_show_date_reached(date_str)
 end
 
--- Get active todos (real implementation)
+-- Delegate to storage module
 function M.get_active_todos()
-	local all_todos = M.read_todos_from_file(M.config.active_file)
-	local active_todos = {}
-
-	-- Only return todos that are not completed AND have reached their show date
-	for i, todo in ipairs(all_todos) do
-		if not todo.completed and is_show_date_reached(todo.show_date) then
-			table.insert(active_todos, todo)
-		end
-	end
-
-	return active_todos
+	return require("todo-manager.storage").get_active_todos()
 end
 
--- Get completed todos
 function M.get_completed_todos()
-	return M.read_todos_from_file(M.config.completed_file)
+	return require("todo-manager.storage").get_completed_todos()
 end
 
--- Get all todos from active file (including scheduled)
 function M.get_all_todos_from_active_file()
-	local all_todos = M.read_todos_from_file(M.config.active_file)
-	local active_todos = {}
-	-- Return all todos that are not completed (regardless of show date)
-	for _, todo in ipairs(all_todos) do
-		if not todo.completed then
-			table.insert(active_todos, todo)
-		end
-	end
-	return active_todos
+	return require("todo-manager.storage").get_all_todos_from_active_file()
 end
 
 -- Toggle todo completion on current line
@@ -344,8 +324,9 @@ function M.open_filtered_active_view()
 	-- Set up keybindings for filtered view
 	M.setup_todo_buffer_keybindings(buf)
 
-	if M.current_filter then
-		print("✓ Opened filtered active todos view (" .. M.current_filter .. ")")
+	local _filter = M.get_current_filter()
+	if _filter then
+		print("✓ Opened filtered active todos view (" .. _filter .. ")")
 	else
 		print("✓ Opened active todos view")
 	end
@@ -393,10 +374,7 @@ function is_due_today(date_str)
 	return require("todo-manager.dates").is_due_today(date_str)
 end
 
--- Get full file path for todo files
-local function get_file_path(filename)
-	return M.config.todo_dir .. "/" .. filename
-end
+-- get_file_path moved to storage module
 
 -- Delegate to parser module
 function M.parse_todo_line(line)
@@ -488,51 +466,13 @@ end
 -- SCHEDULED AND UPCOMING TODO FUNCTIONS
 -- ========================================
 
--- Get scheduled todos (future show dates)
+-- Delegate to storage module
 function M.get_scheduled_todos()
-	local all_todos = M.read_todos_from_file(M.config.active_file)
-	local scheduled_todos = {}
-
-	for _, todo in ipairs(all_todos) do
-		if not todo.completed and not is_show_date_reached(todo.show_date) then
-			table.insert(scheduled_todos, todo)
-		end
-	end
-
-	return scheduled_todos
+	return require("todo-manager.storage").get_scheduled_todos()
 end
 
--- Get upcoming todos (within specified number of days)
 function M.get_upcoming_todos(days)
-	days = days or 7
-	local all_todos = M.read_todos_from_file(M.config.active_file)
-	local upcoming_todos = {}
-	local current_time = os.time()
-	local future_cutoff = current_time + (days * 24 * 60 * 60)
-
-	for _, todo in ipairs(all_todos) do
-		if not todo.completed and todo.show_date and todo.show_date ~= "" then
-			-- Parse the show date
-			local month, day, year = todo.show_date:match("(%d+)-(%d+)-(%d+)")
-			if month and day and year then
-				local show_time = os.time({
-					year = tonumber(year) --[[@as integer]],
-					month = tonumber(month) --[[@as integer]],
-					day = tonumber(day) --[[@as integer]],
-					hour = 0,
-					min = 0,
-					sec = 0,
-				})
-
-				-- Include if within the upcoming period (from now to future cutoff)
-				if show_time >= current_time and show_time <= future_cutoff then
-					table.insert(upcoming_todos, todo)
-				end
-			end
-		end
-	end
-
-	return upcoming_todos
+	return require("todo-manager.storage").get_upcoming_todos(days)
 end
 
 -- Display todos with a title
@@ -572,88 +512,29 @@ end
 -- ========================================
 
 -- Global filter state
-M.current_filter = nil -- nil means "Clear" (show all), otherwise category name
+-- Filter state is now managed by categories module
+-- M.current_filter kept as a getter for backward compatibility in remaining monolith code
+M.current_filter = nil -- Will be replaced; use M.get_current_filter() instead
 
--- Get current filter state
+-- Delegate to categories module
 function M.get_current_filter()
-	return M.current_filter
+	return require("todo-manager.categories").get_current_filter()
 end
 
--- Set category filter (in-place filtering)
 function M.set_category_filter(category)
-	if category == "Clear" or category == "clear" or category == "" then
-		M.current_filter = nil
-	else
-		M.current_filter = category
-	end
-	-- Apply filter to current view if it's a todo buffer
-	M.apply_category_filter_to_current_view()
+	require("todo-manager.categories").set_category_filter(category)
 end
 
--- Clear category filter (show all todos)
 function M.clear_category_filter()
-	M.current_filter = nil
-	M.apply_category_filter_to_current_view()
+	require("todo-manager.categories").clear_category_filter()
 end
 
--- Validate category name and provide suggestions
 function M.validate_category(name)
-	if not name or name == "" then
-		return false, "Category name cannot be empty"
-	end
-
-	name = name:lower()
-	local valid_categories = {}
-	for _, cat in ipairs(M.config.categories) do
-		table.insert(valid_categories, cat:lower())
-	end
-
-	-- Exact match (case insensitive)
-	for i, cat in ipairs(valid_categories) do
-		if cat == name then
-			return true, M.config.categories[i] -- return proper case
-		end
-	end
-
-	-- Fuzzy matching for suggestions
-	local suggestions = {}
-	for i, cat in ipairs(valid_categories) do
-		if cat:find(name, 1, true) or name:find(cat, 1, true) then
-			table.insert(suggestions, M.config.categories[i])
-		end
-	end
-
-	local available = table.concat(M.config.categories, ", ")
-	if #suggestions > 0 then
-		local suggestion_str = table.concat(suggestions, ", ")
-		return false, "Category '" .. name .. "' not found. Did you mean: " .. suggestion_str .. "?"
-	else
-		return false, "Category '" .. name .. "' not found. Available: " .. available
-	end
+	return require("todo-manager.categories").validate_category(name)
 end
 
--- Get todo counts for each category (for menu display)
 function M.get_category_todo_counts()
-	local active_todos = M.get_active_todos()
-	local counts = {}
-
-	-- Initialize counts for all categories
-	for _, category in ipairs(M.config.categories) do
-		counts[category] = 0
-	end
-
-	-- Count todos by category
-	local total_count = 0
-	for _, todo in ipairs(active_todos) do
-		local cat = todo.category or "Personal" -- default fallback
-		if counts[cat] ~= nil then
-			counts[cat] = counts[cat] + 1
-		end
-		total_count = total_count + 1
-	end
-
-	counts["Clear"] = total_count -- "Clear" shows all todos
-	return counts
+	return require("todo-manager.categories").get_category_todo_counts()
 end
 
 -- Apply category filter to current view (in-place)
@@ -669,7 +550,7 @@ end
 
 -- Refresh filtered view maintaining current filter state
 function M.refresh_filtered_view_with_state()
-	local current_filter = M.current_filter
+	local current_filter = M.get_current_filter()
 	local all_todos = M.get_active_todos()
 	local filtered_todos = all_todos
 
@@ -755,101 +636,17 @@ function M.refresh_filtered_view_with_state()
 	end, 300)
 end
 
--- Update static categories list (for new category additions)
+-- Delegate to categories module
 function M.update_static_categories(new_category)
-	-- Check if category already exists
-	for _, cat in ipairs(M.config.categories) do
-		if cat == new_category then
-			return false, "Category '" .. new_category .. "' already exists"
-		end
-	end
-
-	-- Add new category to config
-	table.insert(M.config.categories, new_category)
-	return true, "Category '" .. new_category .. "' added successfully"
+	return require("todo-manager.categories").update_static_categories(new_category)
 end
 
--- Remove category with safety checks
 function M.remove_category_with_checks(category)
-	-- Check if category exists
-	local found = false
-	for i, cat in ipairs(M.config.categories) do
-		if cat == category then
-			found = true
-			break
-		end
-	end
-
-	if not found then
-		return false, "Category '" .. category .. "' not found"
-	end
-
-	-- Check for active todos in this category
-	local active_todos = M.get_active_todos()
-	local active_count = 0
-	for _, todo in ipairs(active_todos) do
-		if todo.category == category then
-			active_count = active_count + 1
-		end
-	end
-
-	-- Check for scheduled todos in this category
-	local scheduled_todos = M.get_scheduled_todos()
-	local scheduled_count = 0
-	for _, todo in ipairs(scheduled_todos) do
-		if todo.category == category then
-			scheduled_count = scheduled_count + 1
-		end
-	end
-
-	-- Prevent removal if active or scheduled todos exist
-	if active_count > 0 or scheduled_count > 0 then
-		local message = "Cannot remove category '" .. category .. "'. "
-		if active_count > 0 then
-			message = message .. "Complete " .. active_count .. " active todos"
-		end
-		if scheduled_count > 0 then
-			if active_count > 0 then
-				message = message .. " and "
-			end
-			message = message .. "Complete " .. scheduled_count .. " scheduled todos"
-		end
-		message = message .. " first."
-		return false, message
-	end
-
-	-- Safe to remove category
-	for i, cat in ipairs(M.config.categories) do
-		if cat == category then
-			table.remove(M.config.categories, i)
-			break
-		end
-	end
-
-	-- Handle active filter state
-	if M.current_filter == category then
-		M.current_filter = nil -- Auto-clear filter
-		M.apply_category_filter_to_current_view()
-		return true, "Category '" .. category .. "' removed. Filter cleared, showing all todos."
-	end
-
-	return true, "Category '" .. category .. "' removed successfully"
+	return require("todo-manager.categories").remove_category_with_checks(category)
 end
 
--- Add a new category with icon
 function M.add_new_category(name, icon)
-	-- Use the new static category system
-	local success, message = M.update_static_categories(name)
-	if not success then
-		print("✗ " .. message)
-		return false
-	end
-
-	-- Add icon to config
-	M.config.category_icons[name] = icon
-	print("✓ Category '" .. name .. "' (" .. icon .. ") added successfully")
-	print("  Available in TodoFilter, TodoBuilder, and all filtering options")
-	return true
+	return require("todo-manager.categories").add_new_category(name, icon)
 end
 
 -- ========================================
@@ -1210,119 +1007,21 @@ end
 -- MISSING FUNCTIONS (STUBS FOR COMPATIBILITY)
 -- ========================================
 
--- Read todos from file
+-- Delegate to storage module
 function M.read_todos_from_file(filename)
-	local file_path = get_file_path(filename)
-	local file = io.open(file_path, "r")
-	if not file then
-		return {}
-	end
-	local todos = {}
-	for line in file:lines() do
-		local todo = M.parse_todo_line(line)
-		if todo then
-			table.insert(todos, todo)
-		end
-	end
-	file:close()
-	return todos
+	return require("todo-manager.storage").read_todos_from_file(filename)
 end
 
--- Write todos to file with header
 function M.write_todos_to_file(filename, todos, header, context)
-	local file_path = get_file_path(filename)
-	local file = io.open(file_path, "w")
-	if not file then
-		error("Could not open file for writing: " .. file_path)
-		return false
-	end
-	-- Write header if provided
-	if header then
-		file:write(header .. "\n\n")
-	end
-	-- Write each todo
-	for _, todo in ipairs(todos) do
-		file:write(M.format_todo_line(todo, context) .. "\n")
-	end
-	file:close()
-	return true
+	return require("todo-manager.storage").write_todos_to_file(filename, todos, header, context)
 end
 
--- Initialize todo system
 function M.init_todo_files()
-	-- Create todo directory if it doesn't exist
-	local todo_dir = M.config.todo_dir
-	local stat = vim.loop.fs_stat(todo_dir)
-	if not stat then
-		vim.loop.fs_mkdir(todo_dir, 448) -- 0700 in octal
-	end
-
-	-- Initialize active todos file
-	local active_file_path = get_file_path(M.config.active_file)
-	local active_file = io.open(active_file_path, "r")
-	if not active_file then
-		active_file = io.open(active_file_path, "w")
-		if active_file then
-			active_file:write("# Active Todos (Raw)\n\nManaged by Vinod's Todo Manager\n\n")
-			active_file:close()
-		end
-	else
-		active_file:close()
-	end
-
-	-- Initialize completed todos file
-	local completed_file_path = get_file_path(M.config.completed_file)
-	local completed_file = io.open(completed_file_path, "r")
-	if not completed_file then
-		completed_file = io.open(completed_file_path, "w")
-		if completed_file then
-			completed_file:write("# Completed Todos\n\nArchive of completed todos\n\n")
-			completed_file:close()
-		end
-	else
-		completed_file:close()
-	end
-
-	return true
+	return require("todo-manager.storage").init_todo_files()
 end
 
--- Add todo function
 function M.add_todo(description, category, tags, due_date, show_date)
-	if not description or description == "" then
-		return false
-	end
-
-	-- Initialize files if needed
-	M.init_todo_files()
-
-	-- Create todo object
-	local todo = {
-		completed = false,
-		description = description,
-		category = category or "Personal",
-		tags = tags or {},
-		due_date = due_date or "",
-		show_date = show_date or "",
-		added_date = get_current_date(),
-		completion_date = "",
-	}
-
-	-- Read existing todos
-	local todos = M.read_todos_from_file(M.config.active_file)
-
-	-- Add new todo
-	table.insert(todos, todo)
-
-	-- Write back to file
-	local header = "# Active Todos (Raw)\n\nManaged by Vinod's Todo Manager"
-	local success = M.write_todos_to_file(M.config.active_file, todos, header, "storage")
-
-	-- Refresh filtered view if it's open
-	if success then
-		M.refresh_filtered_view_if_open()
-	end
-
-	return success
+	return require("todo-manager.storage").add_todo(description, category, tags, due_date, show_date)
 end
 
 -- Refresh filtered view if it exists and is open
@@ -1525,7 +1224,7 @@ function M.show_todo_modal(options)
 
 	-- Form state with optional pre-population
 	-- Use filtered category if active, otherwise default to "Personal"
-	local default_category = M.current_filter or "Personal"
+	local default_category = M.get_current_filter() or "Personal"
 	local form_data = {
 		description = options.description or "",
 		category = options.category or default_category,
