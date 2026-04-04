@@ -246,7 +246,7 @@ return {
       end
 
       -- Import todo_manager to access dynamic categories and functions
-      local todo_manager = require("vinod.todo_manager")
+      local todo_manager = require("todo-manager")
 
       -- Get dynamic categories from todo_manager
       local categories = {}
