@@ -109,7 +109,7 @@ _G.vim = _G.vim or {
 	loop = { fs_stat = function() return nil end },
 }
 
-package.path = "lua/?.lua;lua/?/init.lua;" .. package.path
+package.path = "lua/?.lua;lua/?/init.lua;dev-plugins/todo-manager.nvim/lua/?.lua;dev-plugins/todo-manager.nvim/lua/?/init.lua;" .. package.path
 
 local ok, M = pcall(require, "vinod.todo_manager")
 if not ok then

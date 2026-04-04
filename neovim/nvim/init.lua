@@ -45,4 +45,5 @@ vim.defer_fn(function()
 	end)
 end, 0)
 
+vim.opt.rtp:prepend(vim.fn.stdpath("config") .. "/dev-plugins/todo-manager.nvim")
 vim.opt.rtp:prepend(vim.fn.stdpath("config") .. "/dev-plugins/readwise.nvim")
