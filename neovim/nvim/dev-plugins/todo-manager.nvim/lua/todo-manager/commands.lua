@@ -775,7 +775,7 @@ vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
     -- Open completed todos file
     vim.keymap.set("n", "<leader>tc", function()
       local file_path = todo_manager.config.todo_dir .. "/" .. todo_manager.config.completed_file
-      vim.cmd("edit " .. file_path)
+      vim.cmd("edit " .. vim.fn.fnameescape(file_path))
     end, {
       buffer = true,
       desc = "Open completed todos file",
@@ -864,7 +864,7 @@ vim.keymap.set("n", "<leader>tc", ":TodoOpenCompleted<CR>", { desc = "Open compl
 -- Open the raw active todos file for editing (includes scheduled todos)
 vim.api.nvim_create_user_command("TodoOpenRaw", function()
   local file_path = todo_manager.config.todo_dir .. "/" .. todo_manager.config.active_file
-  vim.cmd("edit " .. file_path)
+  vim.cmd("edit " .. vim.fn.fnameescape(file_path))
 end, {
   desc = "Open raw active todos file for editing (includes scheduled todos)",
 })
@@ -872,7 +872,7 @@ end, {
 -- Open the completed todos file for viewing
 vim.api.nvim_create_user_command("TodoOpenCompleted", function()
   local file_path = todo_manager.config.todo_dir .. "/" .. todo_manager.config.completed_file
-  vim.cmd("edit " .. file_path)
+  vim.cmd("edit " .. vim.fn.fnameescape(file_path))
 end, {
   desc = "Open the completed todos file for viewing",
 })

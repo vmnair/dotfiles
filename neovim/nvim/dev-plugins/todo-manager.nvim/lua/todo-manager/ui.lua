@@ -310,7 +310,7 @@ function M.setup_todo_buffer_keybindings(buf)
 
 	vim.keymap.set("n", "<leader>tc", function()
 		local file_path = tm.config.todo_dir .. "/" .. tm.config.completed_file
-		vim.cmd("edit " .. file_path)
+		vim.cmd("edit " .. vim.fn.fnameescape(file_path))
 	end, { buffer = buf, desc = "Open completed todos file" })
 end
 

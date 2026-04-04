@@ -3,9 +3,17 @@
 
 local M = {}
 
--- Get full file path for todo files
+-- Get full file path for todo files (with path traversal guard)
 local function get_file_path(filename)
-	return require("todo-manager").config.todo_dir .. "/" .. filename
+	local todo_dir = require("todo-manager").config.todo_dir
+	local full_path = todo_dir .. "/" .. filename
+	-- Prevent path traversal (e.g. "../../.ssh/id_rsa")
+	local canonical = vim.fn.fnamemodify(full_path, ":p")
+	local canonical_dir = vim.fn.fnamemodify(todo_dir, ":p")
+	if not vim.startswith(canonical, canonical_dir) then
+		error("Path outside todo directory: " .. filename)
+	end
+	return full_path
 end
 
 -- Read todos from file

@@ -5,6 +5,8 @@
 
 set -euo pipefail
 
+export _ZO_DOCTOR=0
+
 SCRIPT_DIR="$(builtin cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
