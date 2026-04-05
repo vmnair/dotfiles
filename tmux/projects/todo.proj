@@ -8,24 +8,21 @@ then
 
 # Neovim 
 tmux new-session -s TodoProject -n Todo -d 
-tmux send-keys -t TodoProject 'cd ~/dotfiles/neovim/nvim/lua/vinod' C-m
-tmux send-keys -t TodoProject 'vim todo_manager.lua' C-m
+tmux send-keys -t TodoProject "cd $HOME/dotfiles/neovim/nvim/dev-plugins/todo-manager.nvim/lua/todo-manager/ && vim init.lua" C-m
 
 # Create horizontal split and start claude code
 tmux split-window -h -t TodoProject:1
-tmux send-keys -t TodoProject:1.2 'cd ~/dotfiles/neovim/nvim/lua/vinod' C-m
-tmux send-keys -t TodoProject:1.2 'claude' C-m
+tmux send-keys -t TodoProject:1.2 "cd $HOME/dotfiles/neovim/nvim/dev-plugins/todo-manager.nvim/lua/todo-manager/ && clear" C-m
+tmux send-keys -t TodoProject:1.2 'copilot' C-m
 
 # Console Window
 tmux new-window -n Console -t TodoProject
-tmux send-keys -t TodoProject:2  'cd ~/dotfiles/neovim/nvim/lua/vinod' C-m
-tmux send-keys -t TodoProject:2  'clear' C-m
+tmux send-keys -t TodoProject:2  "cd $HOME/dotfiles/neovim/nvim/dev-plugins/todo-manager.nvim/lua/todo-manager/ && clear" C-m
 
 # Lazygit
 tmux new-window -n Lazygit -t TodoProject
 tmux send-keys -t TodoProject:3  'cd ~/dotfiles/neovim/' C-m
 tmux send-keys -t TodoProject:3  'lg' C-m
-tmux send-keys -t TodoProject:2  'clear' C-m
 
 # Select the Neovim window
 tmux select-window -t TodoProject:1
